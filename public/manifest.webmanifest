@@ -1,0 +1,19 @@
+{
+  "name": "Manifest Journal — Santuario de Manifestación",
+  "short_name": "Manifest",
+  "description": "Tu espacio personal para registrar intenciones, manifestar con presencia, organizar compromisos y liberar cargas.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFCF8",
+  "theme_color": "#DCCFFF",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "productivity", "wellness"]
+}

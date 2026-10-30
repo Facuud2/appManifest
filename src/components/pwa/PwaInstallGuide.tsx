@@ -1,0 +1,162 @@
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { Share, PlusSquare, Smartphone, X, Check, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
+interface PwaInstallGuideProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const PwaInstallGuide: React.FC<PwaInstallGuideProps> = ({ isOpen, onClose }) => {
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isIOS, setIsIOS] = useState(false);
+  const [installed, setInstalled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const userAgent = window.navigator.userAgent.toLowerCase();
+      const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
+      setIsIOS(isIosDevice);
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        setDeferredPrompt(e as BeforeInstallPromptEvent);
+      });
+
+      window.addEventListener('appinstalled', () => {
+        setInstalled(true);
+        setDeferredPrompt(null);
+      });
+    }
+  }, []);
+
+  const handleNativeInstall = async () => {
+    if (deferredPrompt) {
+      await deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if (choice.outcome === 'accepted') {
+        setInstalled(true);
+      }
+      setDeferredPrompt(null);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-manifest-ink/30 backdrop-blur-sm">
+        <motion.div
+          initial={{ opacity: 0, y: 30, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 20, scale: 0.95 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-sm rounded-3xl glass-card p-6 border border-white/95 shadow-liquid text-manifest-ink relative overflow-hidden"
+        >
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 rounded-full glass-pill hover:bg-white/80 transition-colors"
+            aria-label="Cerrar"
+          >
+            <X className="w-4 h-4 text-manifest-inkMuted" />
+          </button>
+
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-manifest-pink via-manifest-lavender to-manifest-celeste flex items-center justify-center shadow-glass">
+              <Sparkles className="w-5 h-5 text-manifest-ink" />
+            </div>
+            <div>
+              <h3 className="font-serif text-lg font-bold text-manifest-ink">
+                Instalar Manifest PWA
+              </h3>
+              <p className="text-xs text-manifest-inkMuted">
+                Lleva tu santuario a tu pantalla de inicio
+              </p>
+            </div>
+          </div>
+
+          {installed ? (
+            <div className="text-center py-6">
+              <div className="w-12 h-12 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2">
+                <Check className="w-6 h-6" />
+              </div>
+              <p className="text-sm font-semibold">¡Aplicación instalada con éxito!</p>
+              <p className="text-xs text-manifest-inkMuted mt-1">
+                Ya puedes abrirla directamente desde tu pantalla de inicio.
+              </p>
+            </div>
+          ) : isIOS ? (
+            <div className="space-y-3.5 my-3">
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/60 border border-white/80">
+                <div className="p-2 rounded-xl bg-manifest-lavender/40 text-manifest-ink shrink-0 mt-0.5">
+                  <Share className="w-4 h-4" />
+                </div>
+                <div className="text-xs leading-relaxed">
+                  <span className="font-semibold block">Paso 1: Compartir</span>
+                  Toca el botón <strong>Compartir</strong> en la barra inferior de Safari.
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/60 border border-white/80">
+                <div className="p-2 rounded-xl bg-manifest-pink/40 text-manifest-ink shrink-0 mt-0.5">
+                  <PlusSquare className="w-4 h-4" />
+                </div>
+                <div className="text-xs leading-relaxed">
+                  <span className="font-semibold block">Paso 2: Añadir</span>
+                  Desliza hacia abajo y pulsa <strong>«Añadir a pantalla de inicio»</strong>.
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/60 border border-white/80">
+                <div className="p-2 rounded-xl bg-manifest-celeste/40 text-manifest-ink shrink-0 mt-0.5">
+                  <Smartphone className="w-4 h-4" />
+                </div>
+                <div className="text-xs leading-relaxed">
+                  <span className="font-semibold block">Paso 3: Disfrutar</span>
+                  Ábrela como una app nativa, a pantalla completa y disponible offline.
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="my-4 space-y-4">
+              <p className="text-xs leading-relaxed text-manifest-inkMuted">
+                Disfruta de una experiencia fluida sin barras de navegador, acceso rápido y persistencia total en tu dispositivo.
+              </p>
+              {deferredPrompt ? (
+                <button
+                  onClick={handleNativeInstall}
+                  className="w-full py-3 px-4 rounded-2xl primary-gradient-btn font-medium text-sm flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Instalar ahora en este dispositivo
+                </button>
+              ) : (
+                <div className="p-3 rounded-2xl bg-white/60 border border-white/80 text-xs text-manifest-inkMuted leading-relaxed">
+                  Para instalar en Chrome o navegadores Android: Toca el menú de tres puntos ⋮ y selecciona <strong>«Instalar aplicación»</strong> o <strong>«Añadir a la pantalla principal»</strong>.
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="mt-4 pt-3 border-t border-white/60 text-center">
+            <button
+              onClick={onClose}
+              className="text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink transition-colors"
+            >
+              Cerrar guía
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    </AnimatePresence>
+  );
+};
