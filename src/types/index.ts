@@ -1,10 +1,14 @@
-export type EntryType = 'manifestation' | 'gratitude' | 'affirmation' | 'reflection' | 'free';
+export type EntryType = 'manifestation' | 'gratitude' | 'affirmation' | 'reflection' | 'free' | 'sign';
 
 export type MoodType = 'peaceful' | 'inspired' | 'grateful' | 'radiant' | 'contemplative';
 
 export type GoalCategory = 'crecimiento' | 'carrera' | 'bienestar' | 'relaciones' | 'abundancia' | 'creatividad';
 
 export type GoalStatus = 'active' | 'paused' | 'completed' | 'archived';
+
+export type SignType = 'angel_number' | 'dream' | 'coincidence' | 'symbol' | 'encounter' | 'intuitive';
+
+export type FutureHorizon = '3_months' | '6_months' | '1_year' | '3_years' | 'exact_date';
 
 export interface JournalEntry {
   id: string;
@@ -40,6 +44,40 @@ export interface Goal {
   targetDate?: string;
   createdAt: string;
   completedAt?: string;
+}
+
+export interface ManifestationSign {
+  id: string;
+  title: string;
+  signType: SignType;
+  description: string;
+  date: string; // YYYY-MM-DD
+  linkedGoalId?: string;
+  feeling: string;
+  createdAt: string;
+}
+
+export interface SuccessStory {
+  id: string;
+  title: string;
+  goalId?: string;
+  manifestedDate: string; // YYYY-MM-DD
+  story: string;
+  signsEncountered: string[];
+  mindsetShift: string;
+  gratitudeNote: string;
+  createdAt: string;
+}
+
+export interface FutureManifestation {
+  id: string;
+  title: string;
+  horizon: FutureHorizon;
+  targetDate?: string;
+  visionText: string;
+  letterToFutureSelf?: string;
+  isSealed: boolean;
+  createdAt: string;
 }
 
 export interface AgendaEvent {
@@ -104,6 +142,9 @@ export interface BackupData {
   agendaEvents: AgendaEvent[];
   releaseEntries: ReleaseEntry[];
   dailyReflections: DailyReflection[];
+  manifestationSigns?: ManifestationSign[];
+  successStories?: SuccessStory[];
+  futureManifestations?: FutureManifestation[];
   settings: UserSettings;
 }
 

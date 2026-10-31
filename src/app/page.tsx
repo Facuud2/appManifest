@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useAppStore } from '@/store';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { BottomNavigation } from '@/components/layout/BottomNavigation';
+import { DesktopSidebar } from '@/components/layout/DesktopSidebar';
 import { ToastContainer } from '@/components/ui/ToastContainer';
 import { PwaInstallGuide } from '@/components/pwa/PwaInstallGuide';
 import { DashboardView } from '@/features/dashboard/DashboardView';
@@ -56,86 +57,92 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen relative flex flex-col max-w-md mx-auto shadow-2xl bg-manifest-warmWhite/80 border-x border-white/60">
+    <div className="min-h-screen relative flex w-full aura-bg">
       {/* Toast Feedback */}
       <ToastContainer />
 
-      {/* Persistent App Header */}
-      <AppHeader onOpenInstallGuide={() => setIsInstallGuideOpen(true)} />
+      {/* Desktop Left Sidebar (>= 1024px) */}
+      <DesktopSidebar onOpenInstallGuide={() => setIsInstallGuideOpen(true)} />
 
-      {/* Main View Area with Tab Crossfade */}
-      <div className="flex-1 px-4 pt-2">
-        <AnimatePresence mode="wait">
-          {activeTab === 'inicio' && (
-            <motion.div
-              key="inicio"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.2 }}
-            >
-              <DashboardView />
-            </motion.div>
-          )}
+      {/* Main Responsive Content Shell */}
+      <main className="flex-1 flex flex-col min-h-screen w-full max-w-full lg:max-w-6xl xl:max-w-7xl mx-auto px-3 sm:px-6 lg:px-10">
+        {/* Mobile Header (< 1024px) */}
+        <AppHeader onOpenInstallGuide={() => setIsInstallGuideOpen(true)} />
 
-          {activeTab === 'agenda' && (
-            <motion.div
-              key="agenda"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.2 }}
-            >
-              <AgendaView />
-            </motion.div>
-          )}
+        {/* Dynamic Content Canvas with View Crossfading */}
+        <div className="flex-1 pt-2 sm:pt-4 lg:pt-6 pb-24 lg:pb-12">
+          <AnimatePresence mode="wait">
+            {activeTab === 'inicio' && (
+              <motion.div
+                key="inicio"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2 }}
+              >
+                <DashboardView />
+              </motion.div>
+            )}
 
-          {activeTab === 'diario' && (
-            <motion.div
-              key="diario"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.2 }}
-            >
-              <JournalView />
-            </motion.div>
-          )}
+            {activeTab === 'agenda' && (
+              <motion.div
+                key="agenda"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2 }}
+              >
+                <AgendaView />
+              </motion.div>
+            )}
 
-          {activeTab === 'objetivos' && (
-            <motion.div
-              key="objetivos"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.2 }}
-            >
-              <GoalsView />
-            </motion.div>
-          )}
+            {activeTab === 'diario' && (
+              <motion.div
+                key="diario"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2 }}
+              >
+                <JournalView />
+              </motion.div>
+            )}
 
-          {activeTab === 'espacio' && (
-            <motion.div
-              key="espacio"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.2 }}
-            >
-              <MySpaceView />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+            {activeTab === 'objetivos' && (
+              <motion.div
+                key="objetivos"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2 }}
+              >
+                <GoalsView />
+              </motion.div>
+            )}
 
-      {/* Fixed Glass Bottom Navigation */}
-      <BottomNavigation />
+            {activeTab === 'espacio' && (
+              <motion.div
+                key="espacio"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2 }}
+              >
+                <MySpaceView />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
-      {/* PWA Install Guide Dialog */}
-      <PwaInstallGuide
-        isOpen={isInstallGuideOpen}
-        onClose={() => setIsInstallGuideOpen(false)}
-      />
-    </main>
+        {/* Mobile Fixed Glass Bottom Navigation (< 1024px) */}
+        <BottomNavigation />
+
+        {/* PWA Install Guide Dialog */}
+        <PwaInstallGuide
+          isOpen={isInstallGuideOpen}
+          onClose={() => setIsInstallGuideOpen(false)}
+        />
+      </main>
+    </div>
   );
 }

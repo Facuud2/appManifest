@@ -100,7 +100,7 @@ export const SettingsView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-3xl mx-auto">
       {/* User Profile / Greeting */}
       <div className="p-5 rounded-3xl glass-card border border-white/95 shadow-glass space-y-4">
         <div className="flex items-center gap-2 pb-2 border-b border-white/70">

@@ -8,6 +8,9 @@ import {
   DailyReflection,
   UserSettings,
   Milestone,
+  ManifestationSign,
+  SuccessStory,
+  FutureManifestation,
 } from '@/types';
 import { storage } from '@/services/storage';
 
@@ -30,6 +33,9 @@ interface AppState {
   agendaEvents: AgendaEvent[];
   releaseEntries: ReleaseEntry[];
   dailyReflections: DailyReflection[];
+  manifestationSigns: ManifestationSign[];
+  successStories: SuccessStory[];
+  futureManifestations: FutureManifestation[];
   settings: UserSettings;
   toasts: ToastMessage[];
 
@@ -48,6 +54,18 @@ interface AppState {
   saveGoalStep: (step: GoalStep) => void;
   toggleGoalStep: (id: string) => void;
   deleteGoalStep: (id: string) => void;
+
+  // Signs & Synchronicities
+  saveManifestationSign: (sign: ManifestationSign) => void;
+  deleteManifestationSign: (id: string) => void;
+
+  // Success Stories
+  saveSuccessStory: (story: SuccessStory) => void;
+  deleteSuccessStory: (id: string) => void;
+
+  // Future Manifestations
+  saveFutureManifestation: (future: FutureManifestation) => void;
+  deleteFutureManifestation: (id: string) => void;
 
   // Agenda
   saveAgendaEvent: (event: AgendaEvent) => void;
@@ -81,6 +99,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   agendaEvents: [],
   releaseEntries: [],
   dailyReflections: [],
+  manifestationSigns: [],
+  successStories: [],
+  futureManifestations: [],
   settings: storage.getUserSettings(),
   toasts: [],
 
@@ -92,6 +113,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     const agendaEvents = storage.getAgendaEvents();
     const releaseEntries = storage.getReleaseEntries();
     const dailyReflections = storage.getDailyReflections();
+    const manifestationSigns = storage.getManifestationSigns();
+    const successStories = storage.getSuccessStories();
+    const futureManifestations = storage.getFutureManifestations();
     const settings = storage.getUserSettings();
 
     // Check streak
@@ -100,14 +124,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       const last = new Date(settings.lastActiveDate);
       const diffDays = Math.round((new Date(today).getTime() - last.getTime()) / (1000 * 3600 * 24));
       if (diffDays === 1) {
-        // Continuous streak
         const updated = storage.saveUserSettings({
           dailyStreak: settings.dailyStreak + 1,
           lastActiveDate: today,
         });
         set({ settings: updated });
       } else if (diffDays > 1) {
-        // Gentle reset without guilt: fresh start
         const updated = storage.saveUserSettings({
           dailyStreak: 1,
           lastActiveDate: today,
@@ -126,6 +148,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       agendaEvents,
       releaseEntries,
       dailyReflections,
+      manifestationSigns,
+      successStories,
+      futureManifestations,
       settings: storage.getUserSettings(),
       isInitialized: true,
     });
@@ -139,6 +164,9 @@ export const useAppStore = create<AppState>((set, get) => ({
           agendaEvents: storage.getAgendaEvents(),
           releaseEntries: storage.getReleaseEntries(),
           dailyReflections: storage.getDailyReflections(),
+          manifestationSigns: storage.getManifestationSigns(),
+          successStories: storage.getSuccessStories(),
+          futureManifestations: storage.getFutureManifestations(),
           settings: storage.getUserSettings(),
         });
       });
@@ -214,6 +242,45 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ goalSteps: storage.getGoalSteps() });
   },
 
+  // Signs & Synchronicities
+  saveManifestationSign: (sign) => {
+    storage.saveManifestationSign(sign);
+    set({ manifestationSigns: storage.getManifestationSigns() });
+    get().showToast('Sincronía capturada en tu camino ✨', 'celebrate');
+  },
+
+  deleteManifestationSign: (id) => {
+    storage.deleteManifestationSign(id);
+    set({ manifestationSigns: storage.getManifestationSigns() });
+    get().showToast('Señal retirada', 'info');
+  },
+
+  // Success Stories
+  saveSuccessStory: (story) => {
+    storage.saveSuccessStory(story);
+    set({ successStories: storage.getSuccessStories() });
+    get().showToast('¡Historia de éxito anclada en gratitud eterna! 🌟', 'celebrate');
+  },
+
+  deleteSuccessStory: (id) => {
+    storage.deleteSuccessStory(id);
+    set({ successStories: storage.getSuccessStories() });
+    get().showToast('Historia retirada del registro', 'info');
+  },
+
+  // Future Manifestations
+  saveFutureManifestation: (future) => {
+    storage.saveFutureManifestation(future);
+    set({ futureManifestations: storage.getFutureManifestations() });
+    get().showToast('Semilla del futuro plantada con certeza 🌱', 'success');
+  },
+
+  deleteFutureManifestation: (id) => {
+    storage.deleteFutureManifestation(id);
+    set({ futureManifestations: storage.getFutureManifestations() });
+    get().showToast('Visión retirada', 'info');
+  },
+
   // Agenda
   saveAgendaEvent: (event) => {
     storage.saveAgendaEvent(event);
@@ -278,6 +345,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         agendaEvents: storage.getAgendaEvents(),
         releaseEntries: storage.getReleaseEntries(),
         dailyReflections: storage.getDailyReflections(),
+        manifestationSigns: storage.getManifestationSigns(),
+        successStories: storage.getSuccessStories(),
+        futureManifestations: storage.getFutureManifestations(),
         settings: storage.getUserSettings(),
       });
       get().showToast('Santuario restaurado íntegramente ✨', 'celebrate');
@@ -302,6 +372,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       return steps.length > 0 && steps.every((s) => s.completed);
     }).length;
     const releaseCount = settings.totalReleases;
+    const successCount = get().successStories.length;
+    const signsCount = get().manifestationSigns.length;
 
     return [
       {
@@ -319,6 +391,22 @@ export const useAppStore = create<AppState>((set, get) => ({
         icon: 'HeartHandshake',
         category: 'action',
         unlocked: completedActions >= 1,
+      },
+      {
+        id: 'sign_observer',
+        title: 'Ojos de Sincronía',
+        description: 'Detectaste y registraste tu primera señal o número repetido en el camino.',
+        icon: 'Compass',
+        category: 'writing',
+        unlocked: signsCount >= 1,
+      },
+      {
+        id: 'first_success',
+        title: 'Manifestador Real',
+        description: 'Anclaste tu primera Historia de Éxito documentando un deseo cumplido.',
+        icon: 'Award',
+        category: 'action',
+        unlocked: successCount >= 1,
       },
       {
         id: 'dedicated_scribe',

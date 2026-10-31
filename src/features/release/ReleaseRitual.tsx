@@ -54,7 +54,7 @@ export const ReleaseRitual: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-md mx-auto">
+    <div className="space-y-6 max-w-xl mx-auto">
       {/* Intro Header */}
       <div className="text-center space-y-1.5 px-2">
         <div className="w-10 h-10 mx-auto rounded-2xl bg-gradient-to-tr from-amber-200 via-rose-200 to-manifest-lavender flex items-center justify-center shadow-glass">

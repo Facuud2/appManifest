@@ -70,12 +70,12 @@ export const TrackingView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Overview Metric Cards (Bento Style, Anti-Slop, Non-Generic) */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="p-4 rounded-3xl glass-card border border-white/95 shadow-glass space-y-1">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <div className="p-4 sm:p-5 rounded-3xl glass-card border border-white/95 shadow-glass space-y-1">
           <div className="w-8 h-8 rounded-xl bg-manifest-pink/50 flex items-center justify-center">
             <Flame className="w-4 h-4 text-manifest-ink" />
           </div>
-          <span className="text-2xl font-serif font-bold text-manifest-ink block pt-1">
+          <span className="text-2xl sm:text-3xl font-serif font-bold text-manifest-ink block pt-1">
             {settings.dailyStreak} {settings.dailyStreak === 1 ? 'Día' : 'Días'}
           </span>
           <p className="text-[11px] text-manifest-inkMuted">
@@ -83,11 +83,11 @@ export const TrackingView: React.FC = () => {
           </p>
         </div>
 
-        <div className="p-4 rounded-3xl glass-card border border-white/95 shadow-glass space-y-1">
+        <div className="p-4 sm:p-5 rounded-3xl glass-card border border-white/95 shadow-glass space-y-1">
           <div className="w-8 h-8 rounded-xl bg-manifest-lavender/50 flex items-center justify-center">
             <CheckCircle2 className="w-4 h-4 text-manifest-ink" />
           </div>
-          <span className="text-2xl font-serif font-bold text-manifest-ink block pt-1">
+          <span className="text-2xl sm:text-3xl font-serif font-bold text-manifest-ink block pt-1">
             {completedStepsCount}
           </span>
           <p className="text-[11px] text-manifest-inkMuted">
@@ -95,11 +95,11 @@ export const TrackingView: React.FC = () => {
           </p>
         </div>
 
-        <div className="p-4 rounded-3xl glass-card border border-white/95 shadow-glass space-y-1">
+        <div className="p-4 sm:p-5 rounded-3xl glass-card border border-white/95 shadow-glass space-y-1">
           <div className="w-8 h-8 rounded-xl bg-manifest-celeste/50 flex items-center justify-center">
             <Feather className="w-4 h-4 text-manifest-ink" />
           </div>
-          <span className="text-2xl font-serif font-bold text-manifest-ink block pt-1">
+          <span className="text-2xl sm:text-3xl font-serif font-bold text-manifest-ink block pt-1">
             {journalEntries.length}
           </span>
           <p className="text-[11px] text-manifest-inkMuted">
@@ -107,11 +107,11 @@ export const TrackingView: React.FC = () => {
           </p>
         </div>
 
-        <div className="p-4 rounded-3xl glass-card border border-white/95 shadow-glass space-y-1">
+        <div className="p-4 sm:p-5 rounded-3xl glass-card border border-white/95 shadow-glass space-y-1">
           <div className="w-8 h-8 rounded-xl bg-manifest-butter/50 flex items-center justify-center">
             <Sparkles className="w-4 h-4 text-manifest-ink" />
           </div>
-          <span className="text-2xl font-serif font-bold text-manifest-ink block pt-1">
+          <span className="text-2xl sm:text-3xl font-serif font-bold text-manifest-ink block pt-1">
             {settings.totalReleases}
           </span>
           <p className="text-[11px] text-manifest-inkMuted">
@@ -129,11 +129,11 @@ export const TrackingView: React.FC = () => {
           </h3>
         </div>
 
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {milestones.map((milestone) => (
             <div
               key={milestone.id}
-              className={`p-3.5 rounded-2xl glass-card border flex items-center gap-3 transition-opacity ${
+              className={`p-3.5 sm:p-4 rounded-2xl glass-card border flex items-center gap-3 transition-opacity ${
                 milestone.unlocked
                   ? 'border-white/95 shadow-glass'
                   : 'border-white/50 opacity-50 bg-white/30'

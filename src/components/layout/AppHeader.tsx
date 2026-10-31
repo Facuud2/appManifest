@@ -32,7 +32,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onOpenInstallGuide }) => {
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 px-4 pt-3 pb-2 backdrop-blur-xl bg-white/40 border-b border-white/60">
+    <header className="lg:hidden sticky top-0 z-30 px-4 pt-3 pb-2 backdrop-blur-xl bg-white/40 border-b border-white/60">
       <div className="max-w-md mx-auto flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-manifest-pink via-manifest-lavender to-manifest-celeste flex items-center justify-center shadow-glass border border-white">

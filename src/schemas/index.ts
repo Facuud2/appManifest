@@ -1,9 +1,11 @@
 import { z } from 'zod';
 
-export const EntryTypeEnum = z.enum(['manifestation', 'gratitude', 'affirmation', 'reflection', 'free']);
+export const EntryTypeEnum = z.enum(['manifestation', 'gratitude', 'affirmation', 'reflection', 'free', 'sign']);
 export const MoodTypeEnum = z.enum(['peaceful', 'inspired', 'grateful', 'radiant', 'contemplative']);
 export const GoalCategoryEnum = z.enum(['crecimiento', 'carrera', 'bienestar', 'relaciones', 'abundancia', 'creatividad']);
 export const GoalStatusEnum = z.enum(['active', 'paused', 'completed', 'archived']);
+export const SignTypeEnum = z.enum(['angel_number', 'dream', 'coincidence', 'symbol', 'encounter', 'intuitive']);
+export const FutureHorizonEnum = z.enum(['3_months', '6_months', '1_year', '3_years', 'exact_date']);
 
 export const JournalEntrySchema = z.object({
   id: z.string().min(1),
@@ -39,6 +41,40 @@ export const GoalSchema = z.object({
   targetDate: z.string().optional(),
   createdAt: z.string(),
   completedAt: z.string().optional(),
+});
+
+export const ManifestationSignSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1, 'Escribe qué señal o sincronía percibiste'),
+  signType: SignTypeEnum,
+  description: z.string().default(''),
+  date: z.string(),
+  linkedGoalId: z.string().optional(),
+  feeling: z.string().default(''),
+  createdAt: z.string(),
+});
+
+export const SuccessStorySchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1, 'Nombra tu manifestación cumplida'),
+  goalId: z.string().optional(),
+  manifestedDate: z.string(),
+  story: z.string().min(1, 'Cuéntanos cómo se desenvolvió en tu realidad'),
+  signsEncountered: z.array(z.string()).default([]),
+  mindsetShift: z.string().default(''),
+  gratitudeNote: z.string().default(''),
+  createdAt: z.string(),
+});
+
+export const FutureManifestationSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1, 'Nombra esta visión futura'),
+  horizon: FutureHorizonEnum,
+  targetDate: z.string().optional(),
+  visionText: z.string().min(1, 'Escribe tu visión sensorial en tiempo presente'),
+  letterToFutureSelf: z.string().optional(),
+  isSealed: z.boolean().default(false),
+  createdAt: z.string(),
 });
 
 export const AgendaEventSchema = z.object({
@@ -101,5 +137,8 @@ export const BackupDataSchema = z.object({
   agendaEvents: z.array(AgendaEventSchema),
   releaseEntries: z.array(ReleaseEntrySchema),
   dailyReflections: z.array(DailyReflectionSchema),
+  manifestationSigns: z.array(ManifestationSignSchema).optional(),
+  successStories: z.array(SuccessStorySchema).optional(),
+  futureManifestations: z.array(FutureManifestationSchema).optional(),
   settings: UserSettingsSchema,
 });

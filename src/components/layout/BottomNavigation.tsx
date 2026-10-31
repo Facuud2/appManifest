@@ -23,7 +23,7 @@ export const BottomNavigation: React.FC = () => {
   const { activeTab, setActiveTab } = useAppStore();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 px-3 pb-3 pt-1 pointer-events-none">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-3 pb-3 pt-1 pointer-events-none">
       <div className="max-w-md mx-auto pointer-events-auto">
         <div className="glass-nav rounded-3xl p-1.5 flex items-center justify-around border border-white/90 shadow-glass">
           {NAV_ITEMS.map((item) => {

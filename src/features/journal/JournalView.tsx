@@ -18,6 +18,7 @@ import {
   Tag,
   Calendar,
   Target,
+  Compass,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -60,6 +61,13 @@ const ENTRY_MODES: {
     color: 'bg-manifest-celeste/40',
   },
   {
+    type: 'sign',
+    label: 'Señal / Sincronía',
+    icon: Compass,
+    prompt: 'Describe la señal o sincronía que viste (ej: 11:11, una pluma, sueño, coincidencia). ¿Qué sentiste al verla?',
+    color: 'bg-manifest-sky/50',
+  },
+  {
     type: 'free',
     label: 'Escritura Libre',
     icon: Feather,
@@ -89,7 +97,7 @@ const MOODS: MoodOption[] = [
 ];
 
 export const JournalView: React.FC = () => {
-  const { journalEntries, saveJournalEntry, deleteJournalEntry, goals } = useAppStore();
+  const { journalEntries, saveJournalEntry, deleteJournalEntry, goals, saveManifestationSign } = useAppStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<EntryType | 'all'>('all');
@@ -182,6 +190,20 @@ export const JournalView: React.FC = () => {
     };
 
     saveJournalEntry(entry);
+
+    if (entryType === 'sign') {
+      saveManifestationSign({
+        id: `sign-${entry.id}`,
+        title: entry.title,
+        signType: 'intuitive',
+        description: entry.content,
+        date: entry.createdAt.split('T')[0],
+        linkedGoalId: selectedGoalId || undefined,
+        feeling: 'Registrada con presencia en el diario',
+        createdAt: entry.createdAt,
+      });
+    }
+
     setIsEditorOpen(false);
   };
 
@@ -272,7 +294,7 @@ export const JournalView: React.FC = () => {
 
       {/* Entries Feed */}
       {filteredEntries.length === 0 ? (
-        <div className="p-8 rounded-3xl glass-card text-center space-y-3 border border-white/80">
+        <div className="p-8 sm:p-12 rounded-3xl glass-card text-center space-y-3 border border-white/80">
           <div className="w-12 h-12 mx-auto rounded-full bg-manifest-lavender/40 flex items-center justify-center text-manifest-ink">
             <Sparkles className="w-6 h-6" />
           </div>
@@ -293,7 +315,7 @@ export const JournalView: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="space-y-3.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
           {filteredEntries.map((entry) => {
             const formattedEntryDate = format(new Date(entry.createdAt), "d 'de' MMMM, yyyy", { locale: es });
             const modeConfig = ENTRY_MODES.find((m) => m.type === entry.entryType);
@@ -306,53 +328,55 @@ export const JournalView: React.FC = () => {
                 layout
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-5 rounded-3xl glass-card border border-white/95 shadow-glass space-y-3 hover:shadow-glass-hover transition-shadow"
+                className="p-5 sm:p-6 rounded-3xl glass-card border border-white/95 shadow-glass space-y-3 hover:shadow-glass-hover transition-shadow flex flex-col justify-between"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${modeConfig?.color || 'bg-white/80'} text-manifest-ink`}>
-                      {modeConfig?.label || 'Diario'}
-                    </span>
-                    {moodConfig && (
-                      <span className="p-1 rounded-md bg-white/60 text-manifest-ink" title={`Ánimo: ${moodConfig.label}`}>
-                        <moodConfig.icon className="w-3 h-3" />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${modeConfig?.color || 'bg-white/80'} text-manifest-ink`}>
+                        {modeConfig?.label || 'Diario'}
                       </span>
-                    )}
-                    <span className="text-[11px] text-manifest-inkMuted flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {formattedEntryDate}
-                    </span>
+                      {moodConfig && (
+                        <span className="p-1 rounded-md bg-white/60 text-manifest-ink" title={`Ánimo: ${moodConfig.label}`}>
+                          <moodConfig.icon className="w-3 h-3" />
+                        </span>
+                      )}
+                      <span className="text-[11px] text-manifest-inkMuted flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {formattedEntryDate}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleEditEntry(entry)}
+                        className="p-1.5 rounded-full hover:bg-white/80 text-manifest-inkMuted hover:text-manifest-ink transition-colors"
+                        title="Editar entrada"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setEntryToDelete(entry.id)}
+                        className="p-1.5 rounded-full hover:bg-white/80 text-manifest-inkMuted hover:text-rose-600 transition-colors"
+                        title="Eliminar entrada"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleEditEntry(entry)}
-                      className="p-1.5 rounded-full hover:bg-white/80 text-manifest-inkMuted hover:text-manifest-ink transition-colors"
-                      title="Editar entrada"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => setEntryToDelete(entry.id)}
-                      className="p-1.5 rounded-full hover:bg-white/80 text-manifest-inkMuted hover:text-rose-600 transition-colors"
-                      title="Eliminar entrada"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                  <div>
+                    <h3 className="font-serif text-base font-bold text-manifest-ink leading-snug">
+                      {entry.title}
+                    </h3>
+                    <p className="text-xs text-manifest-ink/80 leading-relaxed mt-1.5 whitespace-pre-line line-clamp-4">
+                      {entry.content}
+                    </p>
                   </div>
-                </div>
-
-                <div>
-                  <h3 className="font-serif text-base font-bold text-manifest-ink leading-snug">
-                    {entry.title}
-                  </h3>
-                  <p className="text-xs text-manifest-ink/80 leading-relaxed mt-1.5 whitespace-pre-line line-clamp-4">
-                    {entry.content}
-                  </p>
                 </div>
 
                 {/* Tags and Linked Goal */}
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-white/60">
                   {entry.tags.map((t) => (
                     <span
                       key={t}
@@ -377,12 +401,12 @@ export const JournalView: React.FC = () => {
       {/* Editor Modal */}
       <AnimatePresence>
         {isEditorOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-manifest-ink/35 backdrop-blur-sm overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-manifest-ink/35 backdrop-blur-sm overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="w-full max-w-lg rounded-3xl glass-card p-5 sm:p-6 border border-white shadow-liquid max-h-[92vh] flex flex-col my-auto"
+              className="w-full max-w-2xl rounded-3xl glass-card p-5 sm:p-7 border border-white shadow-liquid max-h-[92vh] flex flex-col my-auto"
             >
               {/* Header */}
               <div className="flex items-center justify-between pb-3 border-b border-white/70">

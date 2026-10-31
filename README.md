@@ -112,12 +112,20 @@ appManifest/
 - Vista por día o vista cronológica completa.
 - Marcado de cumplimiento con tachado suave y retroalimentación táctil.
 
-### 4.4. Sistema de Intenciones & Acciones Tangibles
-- Conexión de sueños con la acción real: cada objetivo incluye una lista de pequeños pasos concretos.
-- **Cálculo de progreso real:** el porcentaje se deriva matemáticamente de las acciones completadas sobre el total, sin datos ficticios.
-- Estados de intención: *Activas*, *En pausa* y *Completadas* con celebración de confeti iridiscente al alcanzar la meta.
+### 4.4. Sistema de Intenciones, Historias de Éxito & Visiones Futuras
+- **Intenciones en Curso:** Conexión de deseos con acciones tangibles y progreso derivado matemáticamente.
+- **Historias de Éxito (*Success Stories*):** Muro sagrado de manifestaciones que ya se materializaron en la realidad, documentando la historia real, los detalles y señales que pasaban mientras ocurría, el cambio de mentalidad experimentado y la nota de gratitud.
+- **Manifestaciones Futuras (*Future Scripting*):** Espacio de siembra con horizontes temporales (3 meses, 6 meses, 1 año, 3 años o fecha exacta), redacción sensorial en presente, cartas al Yo del futuro y opción de cápsula sellada.
 
-### 4.5. Ritual de Liberación (Release Ritual)
+### 4.5. Señales & Sincronías del Camino (*Signs & Breadcrumbs*)
+- Registro y clasificación de señales previas a la manifestación:
+  - Números repetidos / Horas espejo (*11:11, 444, 777*).
+  - Sueños reveladores y mensajes intuitivos.
+  - Coincidencias mágicas y encuentros casuales significativos.
+  - Símbolos físicos en el camino (*plumas, animales, sincronicidades*).
+- Accesible tanto desde la pestaña dedicada en **Mi Espacio** como desde la modalidad directa **Señal / Sincronía** del **Diario**.
+
+### 4.6. Ritual de Liberación (Release Ritual)
 - Espacio sagrado para soltar miedos, inseguridades y pensamientos limitantes.
 - **Fase 1:** Escritura íntima en un pergamino digital suave.
 - **Fase 2:** Reflexión opcional guiada (reconocer qué enseña y qué se elige a partir de ahora).

@@ -7,6 +7,9 @@ import {
   DailyReflection,
   UserSettings,
   BackupData,
+  ManifestationSign,
+  SuccessStory,
+  FutureManifestation,
 } from '@/types';
 import {
   BackupDataSchema,
@@ -17,6 +20,9 @@ import {
   ReleaseEntrySchema,
   DailyReflectionSchema,
   UserSettingsSchema,
+  ManifestationSignSchema,
+  SuccessStorySchema,
+  FutureManifestationSchema,
 } from '@/schemas';
 
 const STORAGE_KEYS = {
@@ -26,11 +32,14 @@ const STORAGE_KEYS = {
   AGENDA: 'manifest_agenda_events',
   RELEASES: 'manifest_release_entries',
   REFLECTIONS: 'manifest_reflections',
+  SIGNS: 'manifest_signs',
+  SUCCESS_STORIES: 'manifest_success_stories',
+  FUTURE_MANIFESTATIONS: 'manifest_future_manifestations',
   SETTINGS: 'manifest_user_settings',
   SCHEMA_VERSION: 'manifest_schema_version',
 } as const;
 
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 
 export const DEFAULT_SETTINGS: UserSettings = {
   userName: 'Alma Creadora',
@@ -47,7 +56,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   dailyStreak: 1,
   lastActiveDate: new Date().toISOString().split('T')[0],
   totalJournalEntries: 1,
-  totalActionsCompleted: 0,
+  totalActionsCompleted: 1,
   totalReleases: 0,
   unlockedMilestones: ['first_step', 'welcome_manifest'],
 };
@@ -125,6 +134,50 @@ const SEED_AGENDA: AgendaEvent[] = [
   },
 ];
 
+const SEED_SUCCESS_STORIES: SuccessStory[] = [
+  {
+    id: 'seed-success-1',
+    title: 'El rincón de trabajo bañado de luz natural',
+    goalId: 'seed-goal-1',
+    manifestedDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    story: 'Durante meses visualicé un espacio silencioso con ventanales altos donde pudiera crear en calma. Cuando dejé de forzar la búsqueda y ordené mis intenciones, un amigo me comentó casualmente de un lugar disponible que superaba todo lo imaginado.',
+    signsEncountered: [
+      'Repetición del número 444 durante 3 días seguidos',
+      'Una pluma blanca en el umbral de mi puerta',
+      'Un mensaje inesperado mencionando exactamente la palabra serenidad',
+    ],
+    mindsetShift: 'Solté el cómo y la urgencia; me enfoqué en habitar ya la paz antes de verla materializada físicamente.',
+    gratitudeNote: 'Gracias a la sincronicidad de la vida y a mi valentía de sostener la visión sin dudar.',
+    createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
+const SEED_SIGNS: ManifestationSign[] = [
+  {
+    id: 'seed-sign-1',
+    title: 'Sincronía 11:11 y conversación inspiradora',
+    signType: 'angel_number',
+    description: 'Al mirar el reloj eran las 11:11 en el preciso instante en que recibí una propuesta creativa que encaja con mi proyecto.',
+    date: new Date().toISOString().split('T')[0],
+    linkedGoalId: 'seed-goal-1',
+    feeling: 'Sensación de calidez en el pecho, certeza y alineación total.',
+    createdAt: new Date().toISOString(),
+  },
+];
+
+const SEED_FUTURE_MANIFESTATIONS: FutureManifestation[] = [
+  {
+    id: 'seed-future-1',
+    title: 'Mi retiro creativo en la naturaleza serena',
+    horizon: '6_months',
+    targetDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    visionText: 'Me veo despertando con el sonido de los pájaros y el aroma a pino fresco. Tengo mi cuaderno sobre una mesa de madera maciza, bebiendo té caliente. Mi corazón está en completa gratitud, sintiendo abundancia y ligereza.',
+    letterToFutureSelf: 'Querido Yo del futuro: Recuerda que cuando sembraste esta semilla, confiaste plenamente en tu capacidad de florecer sin prisa.',
+    isSealed: false,
+    createdAt: new Date().toISOString(),
+  },
+];
+
 export interface IStorageService {
   getJournalEntries(): JournalEntry[];
   saveJournalEntry(entry: JournalEntry): void;
@@ -148,6 +201,18 @@ export interface IStorageService {
 
   getDailyReflections(): DailyReflection[];
   saveDailyReflection(reflection: DailyReflection): void;
+
+  getManifestationSigns(): ManifestationSign[];
+  saveManifestationSign(sign: ManifestationSign): void;
+  deleteManifestationSign(id: string): void;
+
+  getSuccessStories(): SuccessStory[];
+  saveSuccessStory(story: SuccessStory): void;
+  deleteSuccessStory(id: string): void;
+
+  getFutureManifestations(): FutureManifestation[];
+  saveFutureManifestation(future: FutureManifestation): void;
+  deleteFutureManifestation(id: string): void;
 
   getUserSettings(): UserSettings;
   saveUserSettings(settings: Partial<UserSettings>): UserSettings;
@@ -178,7 +243,6 @@ class LocalStorageService implements IStorageService {
     if (!this.isBrowser()) return;
     try {
       window.localStorage.setItem(key, JSON.stringify(value));
-      // Notify other components or tabs
       window.dispatchEvent(new Event('manifest_data_changed'));
     } catch (e) {
       console.error(`[LocalStorage] Error saving key ${key}:`, e);
@@ -195,7 +259,19 @@ class LocalStorageService implements IStorageService {
       this.safeSet(STORAGE_KEYS.AGENDA, SEED_AGENDA);
       this.safeSet(STORAGE_KEYS.RELEASES, []);
       this.safeSet(STORAGE_KEYS.REFLECTIONS, []);
+      this.safeSet(STORAGE_KEYS.SIGNS, SEED_SIGNS);
+      this.safeSet(STORAGE_KEYS.SUCCESS_STORIES, SEED_SUCCESS_STORIES);
+      this.safeSet(STORAGE_KEYS.FUTURE_MANIFESTATIONS, SEED_FUTURE_MANIFESTATIONS);
       this.safeSet(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
+      window.localStorage.setItem(STORAGE_KEYS.SCHEMA_VERSION, String(CURRENT_SCHEMA_VERSION));
+    } else {
+      // Migrate if older schema
+      const signs = window.localStorage.getItem(STORAGE_KEYS.SIGNS);
+      if (!signs) this.safeSet(STORAGE_KEYS.SIGNS, SEED_SIGNS);
+      const stories = window.localStorage.getItem(STORAGE_KEYS.SUCCESS_STORIES);
+      if (!stories) this.safeSet(STORAGE_KEYS.SUCCESS_STORIES, SEED_SUCCESS_STORIES);
+      const futures = window.localStorage.getItem(STORAGE_KEYS.FUTURE_MANIFESTATIONS);
+      if (!futures) this.safeSet(STORAGE_KEYS.FUTURE_MANIFESTATIONS, SEED_FUTURE_MANIFESTATIONS);
       window.localStorage.setItem(STORAGE_KEYS.SCHEMA_VERSION, String(CURRENT_SCHEMA_VERSION));
     }
   }
@@ -220,7 +296,6 @@ class LocalStorageService implements IStorageService {
       updated[index] = { ...entry, updatedAt: new Date().toISOString() };
     } else {
       updated = [{ ...entry, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...current];
-      // Increment total count in settings
       const settings = this.getUserSettings();
       this.saveUserSettings({ totalJournalEntries: settings.totalJournalEntries + 1 });
     }
@@ -259,7 +334,6 @@ class LocalStorageService implements IStorageService {
   public deleteGoal(id: string): void {
     const current = this.getGoals();
     this.safeSet(STORAGE_KEYS.GOALS, current.filter((g) => g.id !== id));
-    // Also remove associated steps
     const currentSteps = this.getGoalSteps();
     this.safeSet(STORAGE_KEYS.GOAL_STEPS, currentSteps.filter((s) => s.goalId !== id));
   }
@@ -299,6 +373,93 @@ class LocalStorageService implements IStorageService {
   public deleteGoalStep(id: string): void {
     const current = this.getGoalSteps();
     this.safeSet(STORAGE_KEYS.GOAL_STEPS, current.filter((s) => s.id !== id));
+  }
+
+  // Manifestation Signs & Synchronicities
+  public getManifestationSigns(): ManifestationSign[] {
+    const raw = this.safeGet<unknown[]>(STORAGE_KEYS.SIGNS, []);
+    const valid: ManifestationSign[] = [];
+    for (const item of raw) {
+      const parsed = ManifestationSignSchema.safeParse(item);
+      if (parsed.success) valid.push(parsed.data as ManifestationSign);
+    }
+    return valid.sort((a, b) => b.date.localeCompare(a.date));
+  }
+
+  public saveManifestationSign(sign: ManifestationSign): void {
+    const current = this.getManifestationSigns();
+    const index = current.findIndex((s) => s.id === sign.id);
+    let updated: ManifestationSign[];
+    if (index >= 0) {
+      updated = [...current];
+      updated[index] = sign;
+    } else {
+      updated = [sign, ...current];
+    }
+    this.safeSet(STORAGE_KEYS.SIGNS, updated);
+  }
+
+  public deleteManifestationSign(id: string): void {
+    const current = this.getManifestationSigns();
+    this.safeSet(STORAGE_KEYS.SIGNS, current.filter((s) => s.id !== id));
+  }
+
+  // Success Stories
+  public getSuccessStories(): SuccessStory[] {
+    const raw = this.safeGet<unknown[]>(STORAGE_KEYS.SUCCESS_STORIES, []);
+    const valid: SuccessStory[] = [];
+    for (const item of raw) {
+      const parsed = SuccessStorySchema.safeParse(item);
+      if (parsed.success) valid.push(parsed.data as SuccessStory);
+    }
+    return valid.sort((a, b) => b.manifestedDate.localeCompare(a.manifestedDate));
+  }
+
+  public saveSuccessStory(story: SuccessStory): void {
+    const current = this.getSuccessStories();
+    const index = current.findIndex((s) => s.id === story.id);
+    let updated: SuccessStory[];
+    if (index >= 0) {
+      updated = [...current];
+      updated[index] = story;
+    } else {
+      updated = [story, ...current];
+    }
+    this.safeSet(STORAGE_KEYS.SUCCESS_STORIES, updated);
+  }
+
+  public deleteSuccessStory(id: string): void {
+    const current = this.getSuccessStories();
+    this.safeSet(STORAGE_KEYS.SUCCESS_STORIES, current.filter((s) => s.id !== id));
+  }
+
+  // Future Manifestations
+  public getFutureManifestations(): FutureManifestation[] {
+    const raw = this.safeGet<unknown[]>(STORAGE_KEYS.FUTURE_MANIFESTATIONS, []);
+    const valid: FutureManifestation[] = [];
+    for (const item of raw) {
+      const parsed = FutureManifestationSchema.safeParse(item);
+      if (parsed.success) valid.push(parsed.data as FutureManifestation);
+    }
+    return valid.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  public saveFutureManifestation(future: FutureManifestation): void {
+    const current = this.getFutureManifestations();
+    const index = current.findIndex((f) => f.id === future.id);
+    let updated: FutureManifestation[];
+    if (index >= 0) {
+      updated = [...current];
+      updated[index] = future;
+    } else {
+      updated = [future, ...current];
+    }
+    this.safeSet(STORAGE_KEYS.FUTURE_MANIFESTATIONS, updated);
+  }
+
+  public deleteFutureManifestation(id: string): void {
+    const current = this.getFutureManifestations();
+    this.safeSet(STORAGE_KEYS.FUTURE_MANIFESTATIONS, current.filter((f) => f.id !== id));
   }
 
   // Agenda
@@ -413,6 +574,9 @@ class LocalStorageService implements IStorageService {
       agendaEvents: this.getAgendaEvents(),
       releaseEntries: this.getReleaseEntries(),
       dailyReflections: this.getDailyReflections(),
+      manifestationSigns: this.getManifestationSigns(),
+      successStories: this.getSuccessStories(),
+      futureManifestations: this.getFutureManifestations(),
       settings: this.getUserSettings(),
     };
   }
@@ -436,6 +600,9 @@ class LocalStorageService implements IStorageService {
       this.safeSet(STORAGE_KEYS.AGENDA, data.agendaEvents);
       this.safeSet(STORAGE_KEYS.RELEASES, data.releaseEntries);
       this.safeSet(STORAGE_KEYS.REFLECTIONS, data.dailyReflections);
+      if (data.manifestationSigns) this.safeSet(STORAGE_KEYS.SIGNS, data.manifestationSigns);
+      if (data.successStories) this.safeSet(STORAGE_KEYS.SUCCESS_STORIES, data.successStories);
+      if (data.futureManifestations) this.safeSet(STORAGE_KEYS.FUTURE_MANIFESTATIONS, data.futureManifestations);
       this.safeSet(STORAGE_KEYS.SETTINGS, data.settings);
       window.localStorage.setItem(STORAGE_KEYS.SCHEMA_VERSION, String(data.version || CURRENT_SCHEMA_VERSION));
 
@@ -460,6 +627,9 @@ class LocalStorageService implements IStorageService {
     window.localStorage.removeItem(STORAGE_KEYS.AGENDA);
     window.localStorage.removeItem(STORAGE_KEYS.RELEASES);
     window.localStorage.removeItem(STORAGE_KEYS.REFLECTIONS);
+    window.localStorage.removeItem(STORAGE_KEYS.SIGNS);
+    window.localStorage.removeItem(STORAGE_KEYS.SUCCESS_STORIES);
+    window.localStorage.removeItem(STORAGE_KEYS.FUTURE_MANIFESTATIONS);
     window.localStorage.removeItem(STORAGE_KEYS.SETTINGS);
     window.localStorage.removeItem(STORAGE_KEYS.SCHEMA_VERSION);
     this.initSeedDataIfNeeded();
