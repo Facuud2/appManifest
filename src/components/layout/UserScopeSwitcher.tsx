@@ -39,19 +39,25 @@ const SCOPES: ScopeOption[] = [
 interface UserScopeSwitcherProps {
   className?: string;
   compact?: boolean;
+  fullWidth?: boolean;
+  idPrefix?: string;
 }
 
 export const UserScopeSwitcher: React.FC<UserScopeSwitcherProps> = ({
   className = '',
   compact = false,
+  fullWidth = false,
+  idPrefix = 'scope',
 }) => {
   const { activeScope, setActiveScope, isSyncing, lastSyncTime } = useAppStore();
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`flex items-center gap-1.5 sm:gap-2 ${className}`}>
       {/* Switcher Pill */}
       <div
-        className="relative inline-flex p-1 rounded-2xl backdrop-blur-xl bg-white/60 border border-white/80 shadow-glass"
+        className={`relative p-1 rounded-2xl backdrop-blur-xl bg-white/70 border border-white/90 shadow-glass ${
+          fullWidth ? 'flex-1 flex items-center justify-between' : 'inline-flex'
+        }`}
         role="tablist"
         aria-label="Selector de Santuario Personal o Compartido"
       >
@@ -66,26 +72,30 @@ export const UserScopeSwitcher: React.FC<UserScopeSwitcherProps> = ({
               aria-selected={isActive}
               onClick={() => setActiveScope(scope.key)}
               className={`relative z-10 flex items-center justify-center gap-1.5 rounded-xl font-medium transition-all duration-200 select-none ${
-                compact ? 'px-2.5 py-1 text-xs' : 'px-3.5 py-1.5 text-xs'
+                fullWidth
+                  ? 'flex-1 py-1.5 px-2 text-xs'
+                  : compact
+                  ? 'px-2.5 py-1 text-xs'
+                  : 'px-3.5 py-1.5 text-xs'
               } ${
                 isActive
                   ? 'text-manifest-ink font-semibold shadow-sm'
-                  : 'text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/30'
+                  : 'text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/40'
               }`}
             >
               {isActive && (
                 <motion.div
-                  layoutId="activeUserScopeIndicator"
+                  layoutId={`${idPrefix}-activeUserScopeIndicator`}
                   className={`absolute inset-0 rounded-xl bg-gradient-to-r ${scope.accentColor} border border-white shadow-sm -z-10`}
                   transition={{ type: 'spring', stiffness: 450, damping: 32 }}
                 />
               )}
               <Icon
-                className={`w-3.5 h-3.5 transition-transform ${
+                className={`w-3.5 h-3.5 shrink-0 transition-transform ${
                   isActive ? 'scale-110 text-manifest-ink' : 'opacity-70'
                 }`}
               />
-              <span className="tracking-tight">{scope.label}</span>
+              <span className="tracking-tight whitespace-nowrap">{scope.label}</span>
               {scope.badgeLabel && !isActive && (
                 <span className="text-[10px] leading-none opacity-80">{scope.badgeLabel}</span>
               )}
@@ -96,7 +106,7 @@ export const UserScopeSwitcher: React.FC<UserScopeSwitcherProps> = ({
 
       {/* Cloud Sync Status Indicator */}
       <div
-        className="flex items-center gap-1 text-[11px] text-manifest-inkMuted px-1.5 py-1 rounded-lg hover:bg-white/40 transition-colors"
+        className="flex items-center gap-1 text-[11px] text-manifest-inkMuted px-1.5 py-1 rounded-xl bg-white/40 border border-white/60 hover:bg-white/70 transition-colors shrink-0"
         title={
           isSyncing
             ? 'Sincronizando con Turso Cloud en tiempo real...'

@@ -70,7 +70,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ onOpenInstallGui
 
       {/* User Scope Switcher (Facu / Maia / Juntos) */}
       <div className="pt-4 pb-2">
-        <UserScopeSwitcher className="w-full justify-between" />
+        <UserScopeSwitcher idPrefix="desktop-sidebar" className="w-full justify-between" />
       </div>
 
       {/* User & Streak Banner */}

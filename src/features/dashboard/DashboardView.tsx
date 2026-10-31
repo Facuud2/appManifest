@@ -17,7 +17,9 @@ import {
   CheckCircle2,
   Circle,
   RefreshCw,
+  BookOpen,
 } from 'lucide-react';
+import { UserScopeSwitcher } from '@/components/layout/UserScopeSwitcher';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -74,7 +76,7 @@ export const DashboardView: React.FC = () => {
   const todayStr = new Date().toISOString().split('T')[0];
   const todayEvents = agendaEvents.filter((e) => e.date === todayStr);
   const activeGoals = goals.filter((g) => g.status === 'active');
-  const recentEntries = journalEntries.slice(0, 2);
+  const recentEntries = journalEntries.slice(0, 3);
 
   const formattedDate = format(new Date(), "EEEE, d 'de' MMMM", { locale: es });
   const hour = new Date().getHours();
@@ -130,6 +132,11 @@ export const DashboardView: React.FC = () => {
               );
             })}
           </div>
+        </div>
+
+        {/* Mobile Scope Switcher Quick Bar */}
+        <div className="lg:hidden w-full pt-1 pb-0.5">
+          <UserScopeSwitcher fullWidth idPrefix="dashboard-mobile" className="w-full" />
         </div>
 
         {/* Luminous Daily Affirmation Card (Liquid Glass Aura) */}
@@ -198,6 +205,93 @@ export const DashboardView: React.FC = () => {
           >
             Escribir
           </button>
+        </div>
+
+        {/* Entradas Recientes del Diario (3 más recientes) */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-manifest-inkMuted flex items-center gap-1.5">
+              <BookOpen className="w-4 h-4 text-manifest-ink" />
+              Diario Reciente
+            </h3>
+            <button
+              onClick={() => setActiveTab('diario')}
+              className="text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink transition-colors flex items-center gap-1"
+            >
+              <span>Ver todas ({journalEntries.length})</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
+
+          {recentEntries.length === 0 ? (
+            <div className="p-5 rounded-3xl glass-card text-center space-y-2 border border-white/80">
+              <p className="text-xs text-manifest-inkMuted">
+                Aún no tienes entradas en este diario. Tómate un momento para volcar tus primeras palabras.
+              </p>
+              <button
+                onClick={() => setActiveTab('diario')}
+                className="text-xs font-medium text-manifest-auraPurple underline underline-offset-4"
+              >
+                + Escribir primera entrada
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {recentEntries.map((entry) => {
+                const formattedEntryDate = format(new Date(entry.createdAt), "d 'de' MMMM", { locale: es });
+                const typeLabels: Record<string, { label: string; color: string }> = {
+                  manifestation: { label: 'Manifestación', color: 'bg-manifest-lavender/50' },
+                  gratitude: { label: 'Gratitud', color: 'bg-manifest-pink/50' },
+                  affirmation: { label: 'Afirmación', color: 'bg-manifest-butter/50' },
+                  reflection: { label: 'Reflexión', color: 'bg-manifest-celeste/50' },
+                  sign: { label: 'Señal', color: 'bg-manifest-sky/50' },
+                  free: { label: 'Libre', color: 'bg-manifest-mint/50' },
+                };
+                const config = typeLabels[entry.entryType] || { label: 'Diario', color: 'bg-white/80' };
+
+                return (
+                  <div
+                    key={entry.id}
+                    onClick={() => setActiveTab('diario')}
+                    className="p-4 rounded-2xl glass-card-interactive cursor-pointer border border-white/90 space-y-2 flex flex-col justify-between hover:scale-[1.01] transition-transform"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${config.color} text-manifest-ink`}>
+                          {config.label}
+                        </span>
+                        {entry.userId === 'shared' ? (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gradient-to-r from-manifest-pink/60 to-manifest-celeste/60 text-manifest-ink border border-white">
+                            ✨ Juntos
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-white/70 text-manifest-inkMuted">
+                            {entry.author || (entry.userId === 'facu' ? 'Facu' : 'Maia')}
+                          </span>
+                        )}
+                      </div>
+
+                      <h4 className="text-sm font-serif font-bold text-manifest-ink line-clamp-1">
+                        {entry.title}
+                      </h4>
+
+                      <p className="text-xs text-manifest-inkMuted line-clamp-2 leading-relaxed">
+                        {entry.content}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-white/50 text-[10px] text-manifest-inkMuted">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3 opacity-70" />
+                        {formattedEntryDate}
+                      </span>
+                      <span className="text-manifest-auraPurple font-medium">Leer →</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Active Intentions / Goals Preview */}

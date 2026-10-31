@@ -46,11 +46,11 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onOpenInstallGuide }) => {
   };
 
   return (
-    <header className="lg:hidden sticky top-0 z-30 px-3.5 pt-2.5 pb-2 backdrop-blur-xl bg-white/50 border-b border-white/60 shadow-sm">
-      <div className="max-w-md mx-auto space-y-2">
+    <header className="lg:hidden sticky top-0 z-30 w-full px-3.5 pt-2.5 pb-2.5 backdrop-blur-2xl bg-white/70 border-b border-white/70 shadow-sm">
+      <div className="max-w-md mx-auto space-y-2.5">
         {/* Top Row: Brand & Status */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-manifest-pink via-manifest-lavender to-manifest-celeste flex items-center justify-center shadow-glass border border-white">
               <Sparkles className="w-4 h-4 text-manifest-ink" />
             </div>
@@ -67,7 +67,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onOpenInstallGuide }) => {
           <div className="flex items-center gap-1.5">
             {/* Streak pill */}
             <div
-              className="flex items-center gap-1 px-2 py-0.5 rounded-full glass-pill text-[11px] font-medium text-manifest-ink shadow-sm"
+              className="flex items-center gap-1 px-2.5 py-0.5 rounded-full glass-pill text-[11px] font-medium text-manifest-ink shadow-sm"
               title="Días consecutivos de conexión personal"
             >
               <Flame className="w-3 h-3 text-amber-500 fill-amber-400" />
@@ -88,9 +88,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onOpenInstallGuide }) => {
           </div>
         </div>
 
-        {/* User Scope Switcher (Facu / Maia / Juntos) */}
-        <div className="flex justify-center pt-0.5">
-          <UserScopeSwitcher compact className="w-full justify-between max-w-sm" />
+        {/* User Scope Switcher (Facu / Maia / Juntos) Full Width */}
+        <div className="w-full">
+          <UserScopeSwitcher fullWidth idPrefix="mobile-header" className="w-full" />
         </div>
       </div>
     </header>
