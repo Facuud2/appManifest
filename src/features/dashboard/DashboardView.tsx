@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '@/store';
 import {
   Sparkles,
@@ -13,11 +13,14 @@ import {
   Plus,
   Flame,
   Edit3,
+  Trash2,
+  RotateCcw,
+  X,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Affirmation } from '@/types';
-import { motion, Reorder } from 'framer-motion';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { ManifestationCard } from '@/components/goals/ManifestationCard';
 import { RampageSetView } from '@/components/goals/RampageSetView';
 
@@ -31,10 +34,25 @@ export const DashboardView: React.FC = () => {
     journalEntries,
     affirmations,
     reorderAffirmations,
+    deleteAffirmation,
+    saveAffirmation,
   } = useAppStore();
 
   const [viewMode, setViewMode] = useState<'list' | 'rampage'>('list');
+  const [affirmationToDelete, setAffirmationToDelete] = useState<Affirmation | null>(null);
+  const [recentlyDeletedAffirmation, setRecentlyDeletedAffirmation] = useState<Affirmation | null>(null);
+
   const pinnedContainerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-clear recently deleted undo after 7 seconds
+  useEffect(() => {
+    if (recentlyDeletedAffirmation) {
+      const timer = setTimeout(() => {
+        setRecentlyDeletedAffirmation(null);
+      }, 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [recentlyDeletedAffirmation]);
 
   // Separate pinned and unpinned affirmations
   const pinnedAffirmations = affirmations.filter((a) => a.pinned);
@@ -193,14 +211,17 @@ export const DashboardView: React.FC = () => {
                   onReorder={handleReorderPinned}
                   className="space-y-2.5 list-none m-0 p-0"
                 >
-                  {pinnedAffirmations.map((aff) => (
-                    <ManifestationCard
-                      key={aff.id}
-                      affirmation={aff}
-                      isPinnedMode={true}
-                      containerRef={pinnedContainerRef}
-                    />
-                  ))}
+                  <AnimatePresence initial={false} mode="popLayout">
+                    {pinnedAffirmations.map((aff) => (
+                      <ManifestationCard
+                        key={aff.id}
+                        affirmation={aff}
+                        isPinnedMode={true}
+                        containerRef={pinnedContainerRef}
+                        onDeleteRequest={(targetAff) => setAffirmationToDelete(targetAff)}
+                      />
+                    ))}
+                  </AnimatePresence>
                 </Reorder.Group>
               </div>
             )}
@@ -208,18 +229,126 @@ export const DashboardView: React.FC = () => {
             {/* Unpinned Affirmations - NEVER hidden when others are pinned */}
             {unpinnedAffirmations.length > 0 && (
               <div className="grid grid-cols-1 gap-2.5">
-                {unpinnedAffirmations.slice(0, 6).map((aff) => (
-                  <ManifestationCard
-                    key={aff.id}
-                    affirmation={aff}
-                    isPinnedMode={false}
-                  />
-                ))}
+                <AnimatePresence initial={false} mode="popLayout">
+                  {unpinnedAffirmations.slice(0, 6).map((aff) => (
+                    <ManifestationCard
+                      key={aff.id}
+                      affirmation={aff}
+                      isPinnedMode={false}
+                      onDeleteRequest={(targetAff) => setAffirmationToDelete(targetAff)}
+                    />
+                  ))}
+                </AnimatePresence>
               </div>
             )}
           </div>
         )}
       </section>
+
+      {/* Pop-up de Confirmación de Eliminación con physics Apple / Liquid Glass */}
+      <AnimatePresence>
+        {affirmationToDelete && (
+          <div
+            onClick={() => setAffirmationToDelete(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-manifest-ink/35 backdrop-blur-sm"
+          >
+            <motion.div
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.96, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{
+                opacity: 0,
+                scale: 0.96,
+                y: 6,
+                transition: { duration: 0.15, ease: [0.22, 1, 0.36, 1] },
+              }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              className="w-full max-w-sm rounded-3xl glass-card p-5 sm:p-6 border border-white shadow-liquid space-y-4"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-100/80 border border-rose-200/80 text-rose-500 flex items-center justify-center shrink-0 shadow-sm">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-sm font-bold text-manifest-ink">
+                    ¿Retirar esta afirmación?
+                  </h3>
+                  <p className="text-[11px] text-manifest-inkMuted">
+                    Confirmación de retiro
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-white/70 border border-white/90">
+                <p className="text-xs font-medium text-manifest-ink line-clamp-3 italic">
+                  “{affirmationToDelete.text}”
+                </p>
+              </div>
+
+              <p className="text-[11.5px] text-manifest-inkMuted leading-relaxed">
+                Esta acción retirará la afirmación de tu tablero de inicio. <span className="font-semibold text-manifest-auraPurple">Podrás deshacer la acción de inmediato</span> si lo deseas.
+              </p>
+
+              <div className="flex items-center justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setAffirmationToDelete(null)}
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/70 transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const deleted = affirmationToDelete;
+                    deleteAffirmation(deleted.id);
+                    setRecentlyDeletedAffirmation(deleted);
+                    setAffirmationToDelete(null);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
+                >
+                  Retirar afirmación
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Undo Pill (Deshacer) */}
+      <AnimatePresence>
+        {recentlyDeletedAffirmation && (
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.95, transition: { duration: 0.15 } }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed bottom-20 lg:bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-2xl glass-card border border-white/95 shadow-liquid bg-white/95 backdrop-blur-xl"
+          >
+            <span className="text-xs font-medium text-manifest-ink">
+              Afirmación retirada
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                saveAffirmation(recentlyDeletedAffirmation);
+                setRecentlyDeletedAffirmation(null);
+              }}
+              className="text-xs font-bold text-manifest-auraPurple px-2.5 py-1 rounded-xl bg-manifest-lavender/70 hover:bg-manifest-lavender border border-manifest-auraPurple/30 transition-all cursor-pointer flex items-center gap-1 shadow-sm active:scale-95"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Deshacer</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setRecentlyDeletedAffirmation(null)}
+              className="text-manifest-inkMuted hover:text-manifest-ink p-1 rounded-full cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 3. SECCIÓN: Diario & Cuaderno */}
       <section className="space-y-3 pt-1">

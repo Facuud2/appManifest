@@ -20,6 +20,7 @@ interface ManifestationCardProps {
   isPinnedMode?: boolean;
   containerRef?: React.RefObject<HTMLDivElement | null>;
   onEdit?: (aff: Affirmation) => void;
+  onDeleteRequest?: (aff: Affirmation) => void;
 }
 
 export const ManifestationCard: React.FC<ManifestationCardProps> = ({
@@ -27,6 +28,7 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
   isPinnedMode = false,
   containerRef,
   onEdit,
+  onDeleteRequest,
 }) => {
   const {
     incrementAffirmationRepeat,
@@ -61,7 +63,11 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    deleteAffirmation(affirmation.id);
+    if (onDeleteRequest) {
+      onDeleteRequest(affirmation);
+    } else {
+      deleteAffirmation(affirmation.id);
+    }
   };
 
   const cardContent = (
@@ -179,6 +185,16 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
         dragControls={dragControls}
         dragConstraints={containerRef}
         dragElastic={0.02}
+        layout
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{
+          opacity: 0,
+          scale: 0.96,
+          filter: 'blur(3px)',
+          transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
+        }}
+        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
         className="w-full relative touch-none select-none list-none"
       >
         {cardContent}
@@ -186,5 +202,21 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
     );
   }
 
-  return <motion.div layout className="w-full list-none">{cardContent}</motion.div>;
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.97 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{
+        opacity: 0,
+        scale: 0.96,
+        filter: 'blur(3px)',
+        transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
+      }}
+      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+      className="w-full list-none"
+    >
+      {cardContent}
+    </motion.div>
+  );
 };

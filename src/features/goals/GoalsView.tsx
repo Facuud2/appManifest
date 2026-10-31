@@ -219,14 +219,16 @@ export const GoalsView: React.FC = () => {
                   onReorder={handleReorderPinned}
                   className="space-y-2.5 list-none m-0 p-0"
                 >
-                  {pinnedAffirmations.map((item) => (
-                    <ManifestationCard
-                      key={item.id}
-                      affirmation={item}
-                      isPinnedMode={true}
-                      containerRef={pinnedContainerRef}
-                    />
-                  ))}
+                  <AnimatePresence initial={false} mode="popLayout">
+                    {pinnedAffirmations.map((item) => (
+                      <ManifestationCard
+                        key={item.id}
+                        affirmation={item}
+                        isPinnedMode={true}
+                        containerRef={pinnedContainerRef}
+                      />
+                    ))}
+                  </AnimatePresence>
                 </Reorder.Group>
               </div>
             </div>
@@ -260,13 +262,15 @@ export const GoalsView: React.FC = () => {
               </p>
             ) : (
               <div className="grid grid-cols-1 gap-2.5">
-                {unpinnedAffirmations.map((item) => (
-                  <ManifestationCard
-                    key={item.id}
-                    affirmation={item}
-                    isPinnedMode={false}
-                  />
-                ))}
+                <AnimatePresence initial={false} mode="popLayout">
+                  {unpinnedAffirmations.map((item) => (
+                    <ManifestationCard
+                      key={item.id}
+                      affirmation={item}
+                      isPinnedMode={false}
+                    />
+                  ))}
+                </AnimatePresence>
               </div>
             )}
           </div>
