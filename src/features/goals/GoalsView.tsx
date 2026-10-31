@@ -102,7 +102,7 @@ export const GoalsView: React.FC = () => {
           value={manifestationText}
           onChange={(e) => setManifestationText(e.target.value)}
           placeholder="Escribe en tiempo presente tu deseo o afirmación... (Ej: Atraigo abundancia, tranquilidad y felicidad cada día)"
-          className="w-full p-3 rounded-2xl glass-input text-xs resize-none placeholder:text-manifest-inkLight font-serif"
+          className="w-full p-3 rounded-2xl glass-input text-base sm:text-xs resize-none placeholder:text-manifest-inkLight font-serif"
           required
         />
 

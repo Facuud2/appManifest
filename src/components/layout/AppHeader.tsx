@@ -36,7 +36,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onOpenInstallGuide }) => {
   };
 
   return (
-    <header className="lg:hidden sticky top-0 z-30 w-full px-3.5 pt-2.5 pb-2 backdrop-blur-2xl bg-white/90 border-b border-white/80 shadow-sm transition-all space-y-2">
+    <header className="lg:hidden sticky top-0 z-30 w-full px-3.5 pt-[calc(env(safe-area-inset-top,0px)+0.65rem)] pb-2.5 backdrop-blur-2xl bg-white/90 border-b border-white/80 shadow-sm transition-all space-y-2">
       <div className="max-w-md mx-auto flex items-center justify-between gap-2">
         {/* Brand logo & space name */}
         <div className="flex items-center gap-2 shrink-0">

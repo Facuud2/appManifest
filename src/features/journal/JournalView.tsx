@@ -311,12 +311,12 @@ export const JournalView: React.FC = () => {
       {/* MODAL: Escribir / Editar Entrada */}
       <AnimatePresence>
         {isJournalEditorOpen && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4 bg-manifest-ink/35 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4 bg-manifest-ink/35 backdrop-blur-sm pb-[max(1rem,env(safe-area-inset-bottom))]">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 16 }}
-              className="w-full max-w-lg rounded-3xl glass-card p-5 sm:p-6 border border-white shadow-liquid space-y-4 max-h-[85vh] overflow-y-auto"
+              className="w-full max-w-lg rounded-3xl glass-card p-5 sm:p-6 border border-white shadow-liquid space-y-4 max-h-[85dvh] overflow-y-auto"
             >
               <div className="flex items-center justify-between pb-3 border-b border-white/70">
                 <div className="flex items-center gap-2">
@@ -416,7 +416,7 @@ export const JournalView: React.FC = () => {
                         ? 'Ej: Primer indicio de mi nuevo proyecto...'
                         : 'Ej: Mi visión viviendo en el campo...'
                     }
-                    className="w-full px-3 py-2 rounded-2xl glass-input text-xs font-serif placeholder:text-manifest-inkLight"
+                    className="w-full px-3 py-2 rounded-2xl glass-input text-base sm:text-xs font-serif placeholder:text-manifest-inkLight"
                   />
                 </div>
 
@@ -437,7 +437,7 @@ export const JournalView: React.FC = () => {
                         ? 'Describe qué sucedió, qué señal percibiste o qué paso diste...'
                         : 'Escribe en tiempo presente como si ya estuviese ocurriendo, detallando tus sensaciones...'
                     }
-                    className="w-full p-3 rounded-2xl glass-input text-xs resize-none placeholder:text-manifest-inkLight leading-relaxed"
+                    className="w-full p-3 rounded-2xl glass-input text-base sm:text-xs resize-none placeholder:text-manifest-inkLight leading-relaxed"
                   />
                 </div>
 

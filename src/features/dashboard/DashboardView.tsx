@@ -360,12 +360,12 @@ export const DashboardView: React.FC = () => {
       {/* MODAL: Nueva Afirmación Consciente */}
       <AnimatePresence>
         {isNewAffirmationModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4 bg-manifest-ink/35 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4 bg-manifest-ink/35 backdrop-blur-sm pb-[max(1rem,env(safe-area-inset-bottom))]">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 16 }}
-              className="w-full max-w-lg rounded-3xl glass-card p-5 sm:p-6 border border-white shadow-liquid space-y-4 max-h-[85vh] overflow-y-auto"
+              className="w-full max-w-lg rounded-3xl glass-card p-5 sm:p-6 border border-white shadow-liquid space-y-4 max-h-[85dvh] overflow-y-auto"
             >
               <div className="flex items-center justify-between pb-3 border-b border-white/70">
                 <div className="flex items-center gap-2">
@@ -428,8 +428,7 @@ export const DashboardView: React.FC = () => {
                     value={newAffirmationText}
                     onChange={(e) => setNewAffirmationText(e.target.value)}
                     placeholder="Ej: Merezco vivir con paz, abundancia y felicidad..."
-                    className="w-full p-3 rounded-2xl glass-input text-xs resize-none placeholder:text-manifest-inkLight font-serif"
-                    autoFocus
+                    className="w-full p-3 rounded-2xl glass-input text-base sm:text-xs resize-none placeholder:text-manifest-inkLight font-serif"
                   />
                 </div>
 
