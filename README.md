@@ -28,7 +28,7 @@
 | **Animaciones & Rituales**| Framer Motion + Canvas Confetti | Transiciones semánticas de pantalla, microinteracciones y el ritual de disolución y liberación. |
 | **Iconografía** | Lucide React | Iconos vectoriales minimalistas y coherentes sin depender de emojis del sistema. |
 | **PWA & Offline** | Web Manifest + Service Worker nativo | Instalable en iOS / Android, soporte standalone y caché offline. |
-| **Despliegue** | Netlify | Preconfigurado con `netlify.toml` y `@netlify/plugin-nextjs`. |
+| **Despliegue** | Vercel | Optimizado de forma nativa con `vercel.json` y Edge runtime para Next.js 15. |
 
 ---
 
@@ -198,16 +198,18 @@ npm run dev
 
 ---
 
-## 🌐 7. Despliegue en Netlify
+## 🌐 7. Despliegue en Vercel
 
-El repositorio está configurado de forma nativa para Netlify mediante `netlify.toml`:
-1. Sube el repositorio a GitHub, GitLab o Bitbucket.
-2. En Netlify, selecciona **"Add new site" -> "Import an existing project"**.
-3. Netlify detectará automáticamente:
-   - **Build command:** `npm run build`
-   - **Publish directory:** `.next`
-   - **Plugin:** `@netlify/plugin-nextjs`
-4. Haz clic en **Deploy Site**.
+El repositorio está optimizado de forma nativa para Vercel mediante `vercel.json`:
+1. Conecta tu repositorio de GitHub (`Facuud2/appManifest`) a tu panel de Vercel.
+2. Vercel detectará automáticamente Next.js 15:
+   - **Framework Preset:** Next.js
+   - **Build Command:** `npm run build`
+   - **Output Directory:** Automatic (`.next`)
+3. En **Project Settings > Environment Variables**, añade tus credenciales de base de datos Turso:
+   - `TURSO_DATABASE_URL`: Tu URL de base de datos de Turso (`libsql://...`)
+   - `TURSO_AUTH_TOKEN`: Tu token de autenticación de Turso
+4. Haz clic en **Deploy**. Cada `git push origin main` desplegará automáticamente la versión más reciente en producción.
 
 ---
 
