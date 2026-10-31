@@ -810,8 +810,14 @@ class LocalStorageService implements IStorageService {
           map.set(rItem.id, rItem);
           changed = true;
         } else {
-          // If remote item exists, keep whichever is updated or keep current
-          map.set(rItem.id, rItem);
+          // If remote item exists, merge fields cleanly without overwriting local client-pinned states
+          const currentItem = map.get(rItem.id) as any;
+          const mergedItem = {
+            ...rItem,
+            pinned: (rItem as any).pinned !== undefined ? (rItem as any).pinned : currentItem?.pinned,
+            order: (rItem as any).order !== undefined ? (rItem as any).order : currentItem?.order,
+          };
+          map.set(rItem.id, mergedItem as T);
         }
       }
       const merged = Array.from(map.values());

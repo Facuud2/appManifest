@@ -275,21 +275,10 @@ export const RampageSetView: React.FC = () => {
               </div>
 
               {/* Affirmation Text Protagonist */}
-              <div className="relative z-10 my-auto py-3 text-center px-4 sm:px-6">
+              <div className="relative z-10 my-auto py-5 text-center px-4 sm:px-6">
                 <p className="text-base sm:text-xl md:text-2xl font-serif font-bold text-manifest-ink leading-relaxed tracking-tight">
                   {currentAffirmation.text}
                 </p>
-              </div>
-
-              {/* Bottom Cue to Tap for Next / Infinite Loop */}
-              <div className="relative z-10 pt-2 border-t border-white/60 flex items-center justify-between text-[10.5px] text-manifest-inkMuted">
-                <span className="flex items-center gap-1">
-                  <RotateCcw className="w-3 h-3 text-manifest-auraPurple" />
-                  Toca la tarjeta para vibrar y avanzar
-                </span>
-                <span className="font-semibold text-manifest-auraPurple">
-                  +1 Repetición
-                </span>
               </div>
             </motion.div>
           )}

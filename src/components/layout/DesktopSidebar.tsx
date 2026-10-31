@@ -24,7 +24,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { key: 'inicio', label: 'Inicio', subtitle: 'Tu santuario de manifestación', icon: Sparkles },
-  { key: 'objetivos', label: 'Manifestaciones', subtitle: 'Tus afirmaciones y decretos', icon: Target },
+  { key: 'objetivos', label: 'Afirmaciones', subtitle: 'Tus afirmaciones y sets de rampage', icon: Target },
   { key: 'diario', label: 'Diario', subtitle: 'Notas y avances', icon: BookOpen },
   { key: 'espacio', label: 'Mi Espacio', subtitle: 'Progreso y santuario', icon: Compass },
 ];

@@ -314,10 +314,6 @@ export const useAppStore = create<AppState>((set, get) => {
       set({ includeSharedInPersonal: nextState });
       const scoped = computeScopedState(get().activeScope, nextState);
       set(scoped);
-      get().showToast(
-        nextState ? 'Mostrando también vivencias en conjunto ✨' : 'Vista personal privada restaurada 🌿',
-        'info'
-      );
     },
 
     syncFromRemote: async () => {
@@ -363,7 +359,6 @@ export const useAppStore = create<AppState>((set, get) => {
     saveAffirmation: (affirmation) => {
       const scope = affirmation.userId || get().activeScope;
       const author = affirmation.author || getAuthorForScope(scope);
-      const isExisting = storage.getAffirmations().some((a) => a.id === affirmation.id);
       const enriched: Affirmation = {
         ...affirmation,
         userId: scope,
@@ -376,10 +371,6 @@ export const useAppStore = create<AppState>((set, get) => {
       storage.saveAffirmation(enriched);
       const incShared = get().includeSharedInPersonal;
       set(computeScopedState(get().activeScope, incShared));
-      get().showToast(
-        isExisting ? 'Manifestación actualizada con éxito ✨' : 'Manifestación anclada al universo ✨',
-        'gentle'
-      );
       tursoSync.pushChange({ entity: 'affirmation', action: 'save', data: enriched });
     },
 
@@ -396,10 +387,6 @@ export const useAppStore = create<AppState>((set, get) => {
       if (!updated) return;
       const incShared = get().includeSharedInPersonal;
       set(computeScopedState(get().activeScope, incShared));
-      get().showToast(
-        updated.pinned ? 'Manifestación fijada arriba 📌' : 'Manifestación desfijada',
-        'gentle'
-      );
       tursoSync.pushChange({ entity: 'affirmation', action: 'save', data: updated });
     },
 
@@ -413,7 +400,6 @@ export const useAppStore = create<AppState>((set, get) => {
       storage.deleteAffirmation(id);
       const incShared = get().includeSharedInPersonal;
       set(computeScopedState(get().activeScope, incShared));
-      get().showToast('Manifestación retirada', 'gentle');
       tursoSync.pushChange({ entity: 'affirmation', action: 'delete', id });
     },
 
@@ -431,14 +417,12 @@ export const useAppStore = create<AppState>((set, get) => {
       storage.saveRampageSet(enriched);
       const incShared = get().includeSharedInPersonal;
       set(computeScopedState(get().activeScope, incShared));
-      get().showToast('Set de Rampage guardado ✨', 'gentle');
     },
 
     deleteRampageSet: (id) => {
       storage.deleteRampageSet(id);
       const incShared = get().includeSharedInPersonal;
       set(computeScopedState(get().activeScope, incShared));
-      get().showToast('Set de Rampage retirado', 'gentle');
     },
 
     incrementRampageAffirmationRepeat: (setId, affirmationId) => {
@@ -462,10 +446,11 @@ export const useAppStore = create<AppState>((set, get) => {
 
       storage.saveJournalEntry(enriched);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-      get().showToast(
-        isExisting ? 'Entrada actualizada con serenidad ✨' : 'Palabras guardadas con serenidad ✨',
-        'success'
-      );
+
+      // ÚNICAMENTE mostrar notificación al crear una nueva entrada de notas de cuaderno
+      if (!isExisting) {
+        get().showToast('Nueva nota guardada en tu cuaderno ✨', 'success');
+      }
 
       // Async Turso sync
       tursoSync.pushChange({ entity: 'journal', action: 'save', data: enriched });
@@ -474,9 +459,6 @@ export const useAppStore = create<AppState>((set, get) => {
     deleteJournalEntry: (id) => {
       storage.deleteJournalEntry(id);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-      get().showToast('Entrada retirada del diario', 'info');
-
-      // Async Turso sync
       tursoSync.pushChange({ entity: 'journal', action: 'delete', id });
     },
 
@@ -492,7 +474,6 @@ export const useAppStore = create<AppState>((set, get) => {
 
       storage.saveGoal(enriched);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-      get().showToast('Intención anclada al universo ✨', 'success');
 
       // Async Turso sync
       tursoSync.pushChange({ entity: 'goal', action: 'save', data: enriched });
@@ -501,7 +482,6 @@ export const useAppStore = create<AppState>((set, get) => {
     deleteGoal: (id) => {
       storage.deleteGoal(id);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-      get().showToast('Intención retirada', 'info');
 
       // Async Turso sync
       tursoSync.pushChange({ entity: 'goal', action: 'delete', id });
@@ -516,7 +496,6 @@ export const useAppStore = create<AppState>((set, get) => {
 
       storage.saveGoalStep(enriched);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-      get().showToast('Paso de acción registrado', 'gentle');
 
       // Async Turso sync
       tursoSync.pushChange({ entity: 'step', action: 'save', data: enriched });
@@ -535,10 +514,6 @@ export const useAppStore = create<AppState>((set, get) => {
       storage.saveGoalStep(updatedStep);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
       set({ settings: storage.getUserSettings() });
-
-      if (willBeCompleted) {
-        get().showToast('¡Un paso tangible manifestado con éxito! 🌸', 'celebrate');
-      }
 
       // Async Turso sync
       tursoSync.pushChange({ entity: 'step', action: 'save', data: updatedStep });
@@ -564,7 +539,6 @@ export const useAppStore = create<AppState>((set, get) => {
 
       storage.saveManifestationSign(enriched);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-      get().showToast('Sincronía capturada en tu camino ✨', 'celebrate');
 
       // Async Turso sync
       tursoSync.pushChange({ entity: 'sign', action: 'save', data: enriched });
@@ -573,7 +547,6 @@ export const useAppStore = create<AppState>((set, get) => {
     deleteManifestationSign: (id) => {
       storage.deleteManifestationSign(id);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-      get().showToast('Señal retirada', 'info');
 
       // Async Turso sync
       tursoSync.pushChange({ entity: 'sign', action: 'delete', id });
@@ -591,7 +564,6 @@ export const useAppStore = create<AppState>((set, get) => {
 
       storage.saveSuccessStory(enriched);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-      get().showToast('¡Historia de éxito anclada en gratitud eterna! 🌟', 'celebrate');
 
       // Async Turso sync
       tursoSync.pushChange({ entity: 'story', action: 'save', data: enriched });
@@ -600,7 +572,6 @@ export const useAppStore = create<AppState>((set, get) => {
     deleteSuccessStory: (id) => {
       storage.deleteSuccessStory(id);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-      get().showToast('Historia retirada del registro', 'info');
 
       // Async Turso sync
       tursoSync.pushChange({ entity: 'story', action: 'delete', id });
@@ -618,7 +589,6 @@ export const useAppStore = create<AppState>((set, get) => {
 
       storage.saveFutureManifestation(enriched);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-      get().showToast('Semilla del futuro plantada con certeza 🌱', 'success');
 
       // Async Turso sync
       tursoSync.pushChange({ entity: 'future', action: 'save', data: enriched });
@@ -627,7 +597,6 @@ export const useAppStore = create<AppState>((set, get) => {
     deleteFutureManifestation: (id) => {
       storage.deleteFutureManifestation(id);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-      get().showToast('Visión retirada', 'info');
 
       // Async Turso sync
       tursoSync.pushChange({ entity: 'future', action: 'delete', id });
@@ -645,7 +614,6 @@ export const useAppStore = create<AppState>((set, get) => {
 
       storage.saveAgendaEvent(enriched);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-      get().showToast('Compromiso agendado con presencia', 'gentle');
 
       // Async Turso sync
       tursoSync.pushChange({ entity: 'event', action: 'save', data: enriched });
@@ -658,9 +626,6 @@ export const useAppStore = create<AppState>((set, get) => {
       const updated: AgendaEvent = { ...event, completed: !event.completed };
       storage.saveAgendaEvent(updated);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-      if (updated.completed) {
-        get().showToast('Actividad cumplida con amor ✨', 'success');
-      }
 
       // Async Turso sync
       tursoSync.pushChange({ entity: 'event', action: 'save', data: updated });
@@ -669,7 +634,6 @@ export const useAppStore = create<AppState>((set, get) => {
     deleteAgendaEvent: (id) => {
       storage.deleteAgendaEvent(id);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-      get().showToast('Actividad eliminada', 'info');
 
       // Async Turso sync
       tursoSync.pushChange({ entity: 'event', action: 'delete', id });
@@ -694,7 +658,6 @@ export const useAppStore = create<AppState>((set, get) => {
       storage.permanentlyDestroyRelease(id);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
       set({ settings: storage.getUserSettings() });
-      get().showToast('Liberado y desvanecido en gratitud y paz 🕊️', 'celebrate');
 
       // Async Turso sync
       tursoSync.pushChange({ entity: 'release', action: 'delete', id });
@@ -710,14 +673,12 @@ export const useAppStore = create<AppState>((set, get) => {
 
       storage.saveDailyReflection(enriched);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-      get().showToast('Reflexión diaria guardada en tu santuario', 'success');
     },
 
     // Settings & Backup
     updateSettings: (partial) => {
       const updated = storage.saveUserSettings(partial);
       set({ settings: updated });
-      get().showToast('Tus preferencias han sido actualizadas', 'gentle');
     },
 
     restoreFromBackup: (json) => {
@@ -729,7 +690,6 @@ export const useAppStore = create<AppState>((set, get) => {
           ...computeScopedState(currentScope, incShared),
           settings: storage.getUserSettings(),
         });
-        get().showToast('Santuario restaurado íntegramente ✨', 'celebrate');
       }
       return res;
     },

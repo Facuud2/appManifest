@@ -13,7 +13,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { key: 'inicio', label: 'Inicio', icon: Sparkles },
-  { key: 'objetivos', label: 'Manifestaciones', icon: Target },
+  { key: 'objetivos', label: 'Afirmaciones', icon: Target },
   { key: 'diario', label: 'Diario', icon: BookOpen },
   { key: 'espacio', label: 'Mi Espacio', icon: Compass },
 ];

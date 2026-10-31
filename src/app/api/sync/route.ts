@@ -149,6 +149,8 @@ export async function GET(req: NextRequest) {
       category: (r.category as string) || undefined,
       createdAt: r.created_at as string,
       lastRepeatedAt: (r.last_repeated_at as string) || undefined,
+      pinned: Boolean(r.pinned),
+      order: r.order_index != null ? Number(r.order_index) : undefined,
     }));
 
     return NextResponse.json({
@@ -351,8 +353,8 @@ export async function POST(req: NextRequest) {
     } else if (entity === 'affirmation') {
       await turso.execute({
         sql: `INSERT OR REPLACE INTO affirmations (
-          id, user_id, author, text, repeat_count, category, created_at, last_repeated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+          id, user_id, author, text, repeat_count, category, created_at, last_repeated_at, pinned, order_index
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
         args: [
           data.id,
           data.userId || 'facu',
@@ -362,6 +364,8 @@ export async function POST(req: NextRequest) {
           data.category || null,
           data.createdAt,
           data.lastRepeatedAt || null,
+          data.pinned ? 1 : 0,
+          data.order != null ? Number(data.order) : 0,
         ],
       });
     }

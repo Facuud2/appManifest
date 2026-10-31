@@ -67,11 +67,8 @@ export const GoalsView: React.FC = () => {
         <div>
           <h2 className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-manifest-auraPurple" />
-            Manifestaciones
+            Afirmaciones
           </h2>
-          <p className="text-xs text-manifest-inkMuted mt-0.5">
-            Afirmaciones conscientes, fijados prioritarios y sets de rampage
-          </p>
         </div>
 
         {/* iOS Segmented Control / Switch */}
@@ -132,7 +129,7 @@ export const GoalsView: React.FC = () => {
           >
             <div className="flex items-center justify-between gap-2">
               <label className="text-xs font-semibold text-manifest-ink">
-                Nueva Manifestación
+                Nueva Afirmación
               </label>
               <div className="flex items-center gap-1">
                 {[
@@ -181,22 +178,19 @@ export const GoalsView: React.FC = () => {
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>Guardar Manifestación</span>
+                <span>Guardar Afirmación</span>
               </button>
             </div>
           </form>
 
-          {/* SECTION: PINNED MANIFESTATIONS (DRAG & DROP RESTRICTED) */}
+          {/* SECTION: PINNED (DRAG & DROP RESTRICTED) */}
           {pinnedAffirmations.length > 0 && (
             <div className="space-y-2.5">
               <div className="flex items-center justify-between px-1">
                 <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
                   <Pin className="w-3.5 h-3.5 text-manifest-auraPurple fill-manifest-auraPurple" />
-                  Manifestaciones Fijadas ({pinnedAffirmations.length})
+                  Afirmaciones Fijadas ({pinnedAffirmations.length})
                 </h3>
-                <span className="text-[10px] text-manifest-inkMuted">
-                  Arrastra desde (=) para reordenar
-                </span>
               </div>
 
               {/* CRITICAL CONTAINER RESTRICTION: overflow-hidden & contain-layout */}
@@ -224,13 +218,13 @@ export const GoalsView: React.FC = () => {
             </div>
           )}
 
-          {/* SECTION: ALL / UNPINNED MANIFESTATIONS */}
+          {/* SECTION: ALL / UNPINNED AFIRMACIONES */}
           <div className="space-y-2.5">
             <div className="flex items-center justify-between px-1">
               <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-manifest-ink">
                 {pinnedAffirmations.length > 0
-                  ? `Otras Manifestaciones (${unpinnedAffirmations.length})`
-                  : `Todas tus Manifestaciones (${affirmations.length})`}
+                  ? `Otras Afirmaciones (${unpinnedAffirmations.length})`
+                  : `Todas las Afirmaciones (${affirmations.length})`}
               </h3>
             </div>
 
@@ -240,15 +234,15 @@ export const GoalsView: React.FC = () => {
                   <Sparkles className="w-6 h-6" />
                 </div>
                 <h4 className="font-serif text-base font-bold text-manifest-ink">
-                  Sin manifestaciones aún
+                  Sin afirmaciones aún
                 </h4>
                 <p className="text-xs text-manifest-inkMuted max-w-xs mx-auto">
-                  Escribe arriba tu primera manifestación o afirmación para comenzar a proyectar tu realidad.
+                  Escribe arriba tu primera afirmación para comenzar a proyectar tu realidad.
                 </p>
               </div>
             ) : unpinnedAffirmations.length === 0 && pinnedAffirmations.length > 0 ? (
               <p className="text-xs text-manifest-inkMuted text-center py-2">
-                Todas tus manifestaciones están fijadas como prioritarias arriba.
+                Todas tus afirmaciones están fijadas como prioritarias arriba.
               </p>
             ) : (
               <div className="grid grid-cols-1 gap-2.5">

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAppStore } from '@/store';
 import {
   Sparkles,
@@ -11,14 +11,15 @@ import {
   CloudSun,
   BookOpen,
   Plus,
-  Pin,
+  Flame,
   Edit3,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Affirmation } from '@/types';
-import { Reorder } from 'framer-motion';
+import { motion, Reorder } from 'framer-motion';
 import { ManifestationCard } from '@/components/goals/ManifestationCard';
+import { RampageSetView } from '@/components/goals/RampageSetView';
 
 export const DashboardView: React.FC = () => {
   const {
@@ -31,16 +32,12 @@ export const DashboardView: React.FC = () => {
     reorderAffirmations,
   } = useAppStore();
 
+  const [viewMode, setViewMode] = useState<'list' | 'rampage'>('list');
   const pinnedContainerRef = useRef<HTMLDivElement>(null);
 
-  // Separate pinned and unpinned manifestations
+  // Separate pinned and unpinned affirmations
   const pinnedAffirmations = affirmations.filter((a) => a.pinned);
   const unpinnedAffirmations = affirmations.filter((a) => !a.pinned);
-
-  // If there are pinned manifestations, show ALL pinned manifestations.
-  // If none are pinned yet, show the first 2-3 unpinned manifestations as quick suggestions with Pin button.
-  const displayAffirmations =
-    pinnedAffirmations.length > 0 ? pinnedAffirmations : unpinnedAffirmations.slice(0, 3);
 
   const recentEntries = journalEntries.slice(0, 3);
 
@@ -88,35 +85,62 @@ export const DashboardView: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. SECCIÓN: Manifestaciones / Afirmaciones (Fijadas con Drag & Drop o Recientes) */}
+      {/* 2. SECCIÓN: Afirmaciones & Sets de Rampage */}
       <section className="space-y-3">
-        <div className="flex items-center justify-between px-1">
-          <div>
-            <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
-              {pinnedAffirmations.length > 0 ? (
-                <>
-                  <Pin className="w-3.5 h-3.5 text-manifest-auraPurple fill-manifest-auraPurple" />
-                  <span>Manifestaciones Fijadas ({pinnedAffirmations.length})</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-3.5 h-3.5 text-manifest-auraPurple" />
-                  <span>Manifestaciones Clave</span>
-                </>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-1">
+          {/* iOS Segmented Control */}
+          <div className="flex p-1 rounded-2xl bg-white/75 border border-white shadow-sm backdrop-blur-md self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className={`relative px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors duration-200 cursor-pointer ${
+                viewMode === 'list'
+                  ? 'text-manifest-ink'
+                  : 'text-manifest-inkMuted hover:text-manifest-ink'
+              }`}
+            >
+              {viewMode === 'list' && (
+                <motion.div
+                  layoutId="dashboardViewMode"
+                  className="absolute inset-0 rounded-xl bg-white shadow-sm border border-white -z-10"
+                  transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                />
               )}
-            </h3>
-            <p className="text-[11px] text-manifest-inkMuted">
-              {pinnedAffirmations.length > 0
-                ? 'Arrastra desde (=) para reordenar tu prioridad diaria'
-                : 'Fija tus intenciones con el icono de chincheta 📌'}
-            </p>
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-manifest-auraPurple" />
+                Afirmaciones ({affirmations.length})
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setViewMode('rampage')}
+              className={`relative px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors duration-200 cursor-pointer ${
+                viewMode === 'rampage'
+                  ? 'text-manifest-ink'
+                  : 'text-manifest-inkMuted hover:text-manifest-ink'
+              }`}
+            >
+              {viewMode === 'rampage' && (
+                <motion.div
+                  layoutId="dashboardViewMode"
+                  className="absolute inset-0 rounded-xl bg-white shadow-sm border border-white -z-10"
+                  transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                />
+              )}
+              <span className="flex items-center gap-1.5">
+                <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                Sets de Rampage
+              </span>
+            </button>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex items-center gap-2 self-end sm:self-auto">
             <button
               onClick={() => setActiveTab('objetivos')}
-              className="text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink transition-colors flex items-center gap-0.5"
+              className="text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink transition-colors flex items-center gap-0.5 cursor-pointer"
             >
-              <span>Ver todas ({affirmations.length})</span>
+              <span>Ver todas</span>
               <ArrowRight className="w-3 h-3" />
             </button>
             <button
@@ -129,58 +153,66 @@ export const DashboardView: React.FC = () => {
           </div>
         </div>
 
-        {displayAffirmations.length === 0 ? (
-          <div className="p-5 rounded-3xl glass-card text-center space-y-2 border border-white/80">
+        {viewMode === 'rampage' ? (
+          <RampageSetView />
+        ) : affirmations.length === 0 ? (
+          <div className="p-6 rounded-3xl glass-card text-center space-y-2 border border-white/80">
             <p className="text-xs text-manifest-inkMuted">
-              Aún no tienes manifestaciones registradas en este espacio.
+              Aún no tienes afirmaciones registradas en este espacio.
             </p>
             <button
               onClick={() => openAffirmationEditor(null)}
               className="text-xs font-semibold text-manifest-auraPurple underline underline-offset-4 cursor-pointer"
             >
-              + Escribir tu primera manifestación
+              + Escribir tu primera afirmación
             </button>
           </div>
-        ) : pinnedAffirmations.length > 0 ? (
-          /* Pinned Manifestations Container with Reorder and Layout Containment */
-          <div
-            ref={pinnedContainerRef}
-            style={{ contain: 'layout' }}
-            className="relative overflow-hidden w-full rounded-3xl space-y-2.5"
-          >
-            <Reorder.Group
-              axis="y"
-              values={pinnedAffirmations}
-              onReorder={handleReorderPinned}
-              className="space-y-2.5 list-none m-0 p-0"
-            >
-              {pinnedAffirmations.map((aff) => (
-                <ManifestationCard
-                  key={aff.id}
-                  affirmation={aff}
-                  isPinnedMode={true}
-                  containerRef={pinnedContainerRef}
-                />
-              ))}
-            </Reorder.Group>
-          </div>
         ) : (
-          /* Unpinned Quick Suggestions */
-          <div className="grid grid-cols-1 gap-2.5">
-            {displayAffirmations.map((aff) => (
-              <ManifestationCard
-                key={aff.id}
-                affirmation={aff}
-                isPinnedMode={false}
-              />
-            ))}
+          <div className="space-y-2.5">
+            {/* Pinned Affirmations with Drag & Drop */}
+            {pinnedAffirmations.length > 0 && (
+              <div
+                ref={pinnedContainerRef}
+                style={{ contain: 'layout' }}
+                className="relative overflow-hidden w-full rounded-3xl space-y-2.5"
+              >
+                <Reorder.Group
+                  axis="y"
+                  values={pinnedAffirmations}
+                  onReorder={handleReorderPinned}
+                  className="space-y-2.5 list-none m-0 p-0"
+                >
+                  {pinnedAffirmations.map((aff) => (
+                    <ManifestationCard
+                      key={aff.id}
+                      affirmation={aff}
+                      isPinnedMode={true}
+                      containerRef={pinnedContainerRef}
+                    />
+                  ))}
+                </Reorder.Group>
+              </div>
+            )}
+
+            {/* Unpinned Affirmations - NEVER hidden when others are pinned */}
+            {unpinnedAffirmations.length > 0 && (
+              <div className="grid grid-cols-1 gap-2.5">
+                {unpinnedAffirmations.slice(0, 6).map((aff) => (
+                  <ManifestationCard
+                    key={aff.id}
+                    affirmation={aff}
+                    isPinnedMode={false}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </section>
 
-      {/* 3. SECCIÓN: Diario de Manifestación */}
-      <section className="space-y-3">
-        {/* Quick Action: Start Journal Entry */}
+      {/* 3. SECCIÓN: Diario & Cuaderno */}
+      <section className="space-y-3 pt-1">
+        {/* Quick Action: Start Notebook Entry */}
         <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl glass-card flex items-center justify-between gap-3 border border-white/90 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-manifest-peach via-manifest-pink to-manifest-lavender flex items-center justify-center shrink-0 shadow-sm">
@@ -188,10 +220,10 @@ export const DashboardView: React.FC = () => {
             </div>
             <div>
               <h4 className="text-xs sm:text-sm font-semibold text-manifest-ink">
-                Registrar en el Diario
+                Escribir en el Cuaderno
               </h4>
               <p className="text-[11px] text-manifest-inkMuted">
-                Notas de manifestación y avances en tu camino
+                Notas y reflexiones personales
               </p>
             </div>
           </div>
@@ -203,22 +235,17 @@ export const DashboardView: React.FC = () => {
           </button>
         </div>
 
-        {/* Recent Journal Entries */}
+        {/* Recent Notebook Entries */}
         <div className="space-y-2.5">
           <div className="flex items-center justify-between px-1">
-            <div>
-              <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
-                <BookOpen className="w-3.5 h-3.5 text-manifest-ink" />
-                Diario Reciente
-              </h3>
-              <p className="text-[11px] text-manifest-inkMuted">
-                Notas y avances de manifestación
-              </p>
-            </div>
+            <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5 text-manifest-ink" />
+              Diario Reciente
+            </h3>
             {journalEntries.length > 0 && (
               <button
                 onClick={() => setActiveTab('diario')}
-                className="text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink transition-colors flex items-center gap-0.5"
+                className="text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink transition-colors flex items-center gap-0.5 cursor-pointer"
               >
                 <span>Ver todas ({journalEntries.length})</span>
                 <ArrowRight className="w-3 h-3" />
@@ -227,15 +254,15 @@ export const DashboardView: React.FC = () => {
           </div>
 
           {recentEntries.length === 0 ? (
-            <div className="p-6 rounded-3xl glass-card text-center space-y-2.5 border border-white/80">
+            <div className="p-6 rounded-3xl glass-card text-center space-y-2 border border-white/80">
               <p className="text-xs text-manifest-inkMuted">
-                Aún no tienes notas de manifestación o avances en tu diario.
+                Aún no tienes notas en tu cuaderno.
               </p>
               <button
                 onClick={() => openJournalEditor('manifestation', null)}
                 className="text-xs font-semibold text-manifest-auraPurple underline underline-offset-4 cursor-pointer"
               >
-                + Escribir tu primera nota de manifestación
+                + Escribir tu primera nota
               </button>
             </div>
           ) : (
@@ -248,7 +275,7 @@ export const DashboardView: React.FC = () => {
                   <div
                     key={entry.id}
                     onClick={() => openJournalEditor(entry.entryType, entry)}
-                    className="p-3.5 sm:p-4 rounded-2xl glass-card-interactive cursor-pointer border border-white/90 space-y-2 hover:scale-[1.005] transition-transform"
+                    className="p-3.5 sm:p-4 rounded-2xl glass-card-interactive cursor-pointer border border-white/90 space-y-2 hover:scale-[1.005] transition-transform select-none"
                   >
                     <div className="flex items-center justify-between gap-1">
                       <div className="flex items-center gap-2">
@@ -257,7 +284,7 @@ export const DashboardView: React.FC = () => {
                             isProgress ? 'bg-manifest-mint/50 text-manifest-ink' : 'bg-manifest-lavender/50 text-manifest-ink'
                           }`}
                         >
-                          {isProgress ? 'Avance de Manifestación' : 'Nota de Manifestación'}
+                          {isProgress ? 'Avance / Logro' : 'Nota de Cuaderno'}
                         </span>
                         <span className="text-[10px] text-manifest-inkMuted">
                           {formattedEntryDate}
@@ -275,7 +302,7 @@ export const DashboardView: React.FC = () => {
                             openJournalEditor(entry.entryType, entry);
                           }}
                           title="Editar entrada"
-                          className="p-1 rounded-full hover:bg-white text-manifest-inkMuted hover:text-manifest-ink transition-colors"
+                          className="p-1 rounded-full hover:bg-white text-manifest-inkMuted hover:text-manifest-ink transition-colors cursor-pointer"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
@@ -289,13 +316,6 @@ export const DashboardView: React.FC = () => {
                       <p className="text-[11px] text-manifest-inkMuted line-clamp-2 leading-relaxed mt-0.5">
                         {entry.content}
                       </p>
-                    </div>
-
-                    <div className="flex items-center justify-between text-[10px] pt-1 border-t border-white/50">
-                      <span className="text-manifest-inkMuted">Toca para editar</span>
-                      <span className="text-manifest-auraPurple font-medium flex items-center gap-0.5">
-                        Editar entrada →
-                      </span>
                     </div>
                   </div>
                 );

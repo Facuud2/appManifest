@@ -138,7 +138,7 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
           <button
             type="button"
             onClick={handleRepeat}
-            title="Pulsar para sumar una repetición"
+            title="Repeticiones"
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-2xl bg-white/90 hover:bg-white text-manifest-ink border border-white shadow-sm transition-all"
           >
             <Flame
@@ -148,9 +148,6 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
             />
             <span className="text-xs font-bold font-mono text-manifest-ink">
               {affirmation.repeatCount || 0}
-            </span>
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-manifest-lavender/50 text-manifest-auraPurple">
-              +1
             </span>
           </button>
 
@@ -170,15 +167,6 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
       <p className="text-sm sm:text-base font-semibold text-manifest-ink leading-relaxed">
         {affirmation.text}
       </p>
-
-      {/* Subtle Bottom Interaction Hint */}
-      <div className="flex items-center justify-between pt-1 border-t border-white/60 text-[10px] text-manifest-inkMuted">
-        <span>Toca la tarjeta al vibrar con tu intención</span>
-        <span className="text-manifest-auraPurple font-semibold flex items-center gap-1">
-          <Sparkles className="w-3 h-3" />
-          Repetir (+1)
-        </span>
-      </div>
     </div>
   );
 

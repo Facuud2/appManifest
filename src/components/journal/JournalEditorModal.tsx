@@ -129,11 +129,8 @@ export const JournalEditorModal: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-serif text-sm font-bold text-manifest-ink">
-                  {editingJournalEntry ? 'Editar Entrada de Diario' : 'Nueva Entrada en Diario'}
+                  {editingJournalEntry ? 'Editar Nota de Cuaderno' : 'Nueva Nota de Cuaderno'}
                 </h3>
-                <p className="text-[11px] text-manifest-inkMuted">
-                  Notas de manifestación y avances en tu realidad
-                </p>
               </div>
             </div>
             <button
@@ -188,8 +185,8 @@ export const JournalEditorModal: React.FC = () => {
                       : 'bg-white/70 hover:bg-white text-manifest-inkMuted border-white/80'
                   }`}
                 >
-                  <Target className="w-3.5 h-3.5" />
-                  <span>Nota de Manifestación</span>
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>Nota de Cuaderno</span>
                 </button>
                 <button
                   type="button"
@@ -201,7 +198,7 @@ export const JournalEditorModal: React.FC = () => {
                   }`}
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Avance de Manifestación</span>
+                  <span>Avance / Logro</span>
                 </button>
               </div>
             </div>
@@ -285,7 +282,7 @@ export const JournalEditorModal: React.FC = () => {
                 type="submit"
                 className="px-5 py-2.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm cursor-pointer"
               >
-                {editingJournalEntry ? 'Guardar Cambios' : 'Guardar en Diario'}
+                {editingJournalEntry ? 'Guardar Cambios' : 'Guardar en Cuaderno'}
               </button>
             </div>
           </form>
