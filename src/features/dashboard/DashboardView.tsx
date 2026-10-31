@@ -18,12 +18,17 @@ import {
   Circle,
   RefreshCw,
   BookOpen,
+  Plus,
+  Flame,
+  X,
+  Check,
+  Tag,
 } from 'lucide-react';
 import { UserScopeSwitcher } from '@/components/layout/UserScopeSwitcher';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { MoodType } from '@/types';
+import { MoodType, UserScope } from '@/types';
 import {
   Sparkles as SparklesIcon,
   Wind as WindIcon,
@@ -31,16 +36,6 @@ import {
   Flower2 as Flower2Icon,
   Moon as MoonIcon,
 } from 'lucide-react';
-
-const DAILY_AFFIRMATIONS = [
-  'Todo lo que busco ya habita en mi interior esperando ser despertado.',
-  'Hoy elijo actuar desde la certeza y soltar la necesidad de controlar todo.',
-  'Mi energía es sagrada y elijo sembrarla en lo que expande mi corazón.',
-  'Doy gracias por cada oportunidad de comenzar de nuevo con serenidad.',
-  'La claridad llega cuando avanzo con pasos pequeños y constantes.',
-  'Merezco recibir la abundancia y la paz que con tanto amor ofrezco.',
-  'Confío en el tiempo perfecto de mi vida y abrazo mi presente.',
-];
 
 interface MoodConfig {
   type: MoodType;
@@ -56,6 +51,15 @@ const MOODS: MoodConfig[] = [
   { type: 'contemplative', label: 'Reflexiva', icon: MoonIcon },
 ];
 
+const AFFIRMATION_CATEGORIES = [
+  'Abundancia',
+  'Certeza & Fe',
+  'Amor & Vínculo',
+  'Paz & Claridad',
+  'Éxito & Proyectos',
+  'Salud & Energía',
+];
+
 export const DashboardView: React.FC = () => {
   const {
     settings,
@@ -68,26 +72,63 @@ export const DashboardView: React.FC = () => {
     journalEntries,
     manifestationSigns,
     successStories,
+    affirmations,
+    incrementAffirmationRepeat,
+    saveAffirmation,
   } = useAppStore();
 
-  const [currentAffirmationIndex, setCurrentAffirmationIndex] = useState(0);
   const [selectedMood, setSelectedMood] = useState<MoodType>('radiant');
+
+  // Affirmations interaction & creation state
+  const [pulsingAffirmationId, setPulsingAffirmationId] = useState<string | null>(null);
+  const [isNewAffirmationModalOpen, setIsNewAffirmationModalOpen] = useState(false);
+  const [newAffirmationText, setNewAffirmationText] = useState('');
+  const [newAffirmationCategory, setNewAffirmationCategory] = useState('Abundancia');
+  const [newAffirmationScope, setNewAffirmationScope] = useState<UserScope>(activeScope);
 
   const todayStr = new Date().toISOString().split('T')[0];
   const todayEvents = agendaEvents.filter((e) => e.date === todayStr);
   const activeGoals = goals.filter((g) => g.status === 'active');
   const recentEntries = journalEntries.slice(0, 3);
+  const topAffirmations = affirmations.slice(0, 3);
 
   const formattedDate = format(new Date(), "EEEE, d 'de' MMMM", { locale: es });
   const hour = new Date().getHours();
 
-  const handleNextAffirmation = () => {
-    setCurrentAffirmationIndex((prev) => (prev + 1) % DAILY_AFFIRMATIONS.length);
+  const handleRepeatAffirmation = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    incrementAffirmationRepeat(id);
+    setPulsingAffirmationId(id);
+    setTimeout(() => {
+      setPulsingAffirmationId(null);
+    }, 500);
+  };
+
+  const handleCreateAffirmation = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAffirmationText.trim()) return;
+
+    const author =
+      newAffirmationScope === 'facu' ? 'Facu' : newAffirmationScope === 'maia' ? 'Maia' : 'Facu & Maia';
+
+    saveAffirmation({
+      id: `aff-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      userId: newAffirmationScope,
+      author,
+      text: newAffirmationText.trim(),
+      repeatCount: 1,
+      category: newAffirmationCategory,
+      createdAt: new Date().toISOString(),
+      lastRepeatedAt: new Date().toISOString(),
+    });
+
+    setNewAffirmationText('');
+    setIsNewAffirmationModalOpen(false);
   };
 
   return (
     <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-12 lg:gap-8 pb-20 pt-1 sm:pt-2">
-      {/* Left Column (Primary Focus: Affirmation, Intentions & Journal CTA) */}
+      {/* Left Column (Primary Focus: Affirmations, Journal Entries, Intentions) */}
       <div className="lg:col-span-7 space-y-6">
         {/* Date & Welcoming Context */}
         <div className="flex items-center justify-between px-1">
@@ -139,50 +180,125 @@ export const DashboardView: React.FC = () => {
           <UserScopeSwitcher fullWidth idPrefix="dashboard-mobile" className="w-full" />
         </div>
 
-        {/* Luminous Daily Affirmation Card (Liquid Glass Aura) */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="relative overflow-hidden rounded-3xl p-6 sm:p-7 glass-card border border-white/95 shadow-liquid"
-        >
-          <div className="absolute -top-12 -right-12 w-44 h-44 rounded-full bg-gradient-to-br from-manifest-pink/40 via-manifest-lavender/40 to-transparent blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-gradient-to-tr from-manifest-celeste/40 via-manifest-mint/30 to-transparent blur-2xl pointer-events-none" />
-
-          <div className="relative z-10 space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-manifest-inkMuted/90 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-manifest-auraPurple" />
-                Afirmación Consciente
-              </span>
-              <button
-                onClick={handleNextAffirmation}
-                className="p-1.5 rounded-full hover:bg-white/80 text-manifest-inkMuted hover:text-manifest-ink transition-colors"
-                title="Inspirar otra afirmación"
-                aria-label="Cambiar afirmación"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-              </button>
+        {/* SECCIÓN 1: Afirmaciones Conscientes (Primeras 3 con Contador Táctil de Repetición) */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-manifest-auraPurple" />
+                Afirmaciones de Poder
+              </h3>
+              <p className="text-[11px] text-manifest-inkMuted">
+                Pulsa en la afirmación cada vez que la repitas para registrar tu energía viva (+1)
+              </p>
             </div>
-
-            <p className="font-serif text-lg sm:text-2xl font-medium text-manifest-ink leading-relaxed italic">
-              «{DAILY_AFFIRMATIONS[currentAffirmationIndex]}»
-            </p>
-
-            <div className="flex items-center justify-between pt-3 border-t border-white/60 text-xs">
-              <span className="text-manifest-inkMuted font-medium">
-                {hour < 12 ? 'Intención matutina' : hour < 20 ? 'Presencia en la tarde' : 'Gratitud nocturna'}
-              </span>
-              <button
-                onClick={() => setActiveTab('diario')}
-                className="font-medium text-manifest-ink hover:text-manifest-auraPurple flex items-center gap-1.5 transition-colors"
-              >
-                <span>Escribir en el diario</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                setNewAffirmationScope(activeScope);
+                setIsNewAffirmationModalOpen(true);
+              }}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Nueva</span>
+            </button>
           </div>
-        </motion.div>
+
+          {topAffirmations.length === 0 ? (
+            <div className="p-6 rounded-3xl glass-card text-center space-y-2 border border-white/80">
+              <p className="text-xs text-manifest-inkMuted">
+                Aún no tienes afirmaciones registradas en este espacio.
+              </p>
+              <button
+                onClick={() => {
+                  setNewAffirmationScope(activeScope);
+                  setIsNewAffirmationModalOpen(true);
+                }}
+                className="text-xs font-medium text-manifest-auraPurple underline underline-offset-4"
+              >
+                + Crear primera afirmación
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3">
+              {topAffirmations.map((aff) => {
+                const isPulsing = pulsingAffirmationId === aff.id;
+                return (
+                  <motion.div
+                    key={aff.id}
+                    layout
+                    whileTap={{ scale: 0.985 }}
+                    onClick={() => handleRepeatAffirmation(aff.id)}
+                    className={`relative overflow-hidden p-5 rounded-3xl glass-card-interactive cursor-pointer border border-white/95 shadow-liquid space-y-3 transition-all ${
+                      isPulsing ? 'ring-2 ring-manifest-auraPurple/70 bg-white/95 scale-[1.015]' : ''
+                    }`}
+                  >
+                    {/* Background subtle glowing aura */}
+                    <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-gradient-to-br from-manifest-pink/30 via-manifest-lavender/30 to-transparent blur-xl pointer-events-none" />
+
+                    <div className="relative z-10 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        {aff.category && (
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-manifest-lavender/50 text-manifest-ink">
+                            {aff.category}
+                          </span>
+                        )}
+                        {aff.userId === 'shared' ? (
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-manifest-pink/60 to-manifest-celeste/60 text-manifest-ink border border-white">
+                            ✨ Juntos
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-medium px-2 py-0.5 rounded-full bg-white/70 text-manifest-inkMuted">
+                            {aff.author || (aff.userId === 'facu' ? 'Facu' : 'Maia')}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Repetition Button / Counter Pill */}
+                      <button
+                        type="button"
+                        onClick={(e) => handleRepeatAffirmation(aff.id, e)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl transition-all shadow-sm ${
+                          isPulsing
+                            ? 'bg-manifest-lavender text-manifest-ink scale-110 shadow-md ring-2 ring-manifest-auraPurple'
+                            : 'bg-white/85 hover:bg-white text-manifest-ink border border-white'
+                        }`}
+                        title="Pulsar para sumar una repetición"
+                      >
+                        <Flame
+                          className={`w-3.5 h-3.5 transition-colors ${
+                            aff.repeatCount > 0 ? 'text-amber-500 fill-amber-400' : 'text-manifest-inkMuted'
+                          }`}
+                        />
+                        <span className="text-xs font-bold font-mono text-manifest-ink">
+                          {aff.repeatCount}
+                        </span>
+                        <span className="text-[10px] font-semibold text-manifest-inkMuted hidden sm:inline">
+                          {aff.repeatCount === 1 ? 'repetición' : 'repeticiones'}
+                        </span>
+                        <span className="ml-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-manifest-lavender/50 text-manifest-auraPurple">
+                          +1
+                        </span>
+                      </button>
+                    </div>
+
+                    <p className="relative z-10 font-serif text-base sm:text-xl font-medium text-manifest-ink leading-relaxed italic">
+                      «{aff.text}»
+                    </p>
+
+                    <div className="relative z-10 flex items-center justify-between pt-2.5 border-t border-white/60 text-[11px] text-manifest-inkMuted">
+                      <span>Toca la tarjeta al repetir tu mantra en voz alta o mentalmente</span>
+                      <span className="text-manifest-auraPurple font-medium flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" />
+                        Repetir
+                      </span>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* Quick Action: Start Journal Entry */}
         <div className="p-4 sm:p-5 rounded-3xl glass-card flex items-center justify-between gap-4 border border-white/90">
@@ -192,10 +308,10 @@ export const DashboardView: React.FC = () => {
             </div>
             <div>
               <h4 className="text-sm font-semibold text-manifest-ink">
-                Registrar pensamientos
+                Registrar en el Diario
               </h4>
               <p className="text-xs text-manifest-inkMuted">
-                Gratitud, manifestación, sincronías o escritura libre
+                Avances de manifestación, señales 11:11, gratitud o sincronías
               </p>
             </div>
           </div>
@@ -207,13 +323,18 @@ export const DashboardView: React.FC = () => {
           </button>
         </div>
 
-        {/* Entradas Recientes del Diario (3 más recientes) */}
+        {/* SECCIÓN 2: Entradas Recientes del Diario (3 primeras más recientes) */}
         <div className="space-y-3">
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-manifest-inkMuted flex items-center gap-1.5">
-              <BookOpen className="w-4 h-4 text-manifest-ink" />
-              Diario Reciente
-            </h3>
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
+                <BookOpen className="w-4 h-4 text-manifest-ink" />
+                Diario Reciente
+              </h3>
+              <p className="text-[11px] text-manifest-inkMuted">
+                Últimos 3 avances, señales y vivencias plasmadas
+              </p>
+            </div>
             <button
               onClick={() => setActiveTab('diario')}
               className="text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink transition-colors flex items-center gap-1"
@@ -240,12 +361,12 @@ export const DashboardView: React.FC = () => {
               {recentEntries.map((entry) => {
                 const formattedEntryDate = format(new Date(entry.createdAt), "d 'de' MMMM", { locale: es });
                 const typeLabels: Record<string, { label: string; color: string }> = {
+                  progress: { label: 'Avance', color: 'bg-manifest-mint/50' },
                   manifestation: { label: 'Manifestación', color: 'bg-manifest-lavender/50' },
-                  gratitude: { label: 'Gratitud', color: 'bg-manifest-pink/50' },
-                  affirmation: { label: 'Afirmación', color: 'bg-manifest-butter/50' },
-                  reflection: { label: 'Reflexión', color: 'bg-manifest-celeste/50' },
                   sign: { label: 'Señal', color: 'bg-manifest-sky/50' },
-                  free: { label: 'Libre', color: 'bg-manifest-mint/50' },
+                  gratitude: { label: 'Gratitud', color: 'bg-manifest-pink/50' },
+                  reflection: { label: 'Reflexión', color: 'bg-manifest-celeste/50' },
+                  free: { label: 'Libre', color: 'bg-manifest-butter/50' },
                 };
                 const config = typeLabels[entry.entryType] || { label: 'Diario', color: 'bg-white/80' };
 
@@ -464,6 +585,141 @@ export const DashboardView: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* MODAL: Nueva Afirmación Consciente */}
+      <AnimatePresence>
+        {isNewAffirmationModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-manifest-ink/35 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 16 }}
+              className="w-full max-w-lg rounded-3xl glass-card p-6 border border-white shadow-liquid space-y-4"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-white/70">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-manifest-butter to-manifest-pink flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-manifest-ink" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-sm font-bold text-manifest-ink">
+                      Nueva Afirmación Consciente
+                    </h3>
+                    <p className="text-[10px] text-manifest-inkMuted">
+                      Un mantra de poder para repetir e interiorizar en tu realidad
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsNewAffirmationModalOpen(false)}
+                  className="p-1.5 rounded-full hover:bg-white/80 text-manifest-inkMuted hover:text-manifest-ink transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateAffirmation} className="space-y-4">
+                {/* Scope selector */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-manifest-ink block">
+                    ¿Para quién es esta afirmación?
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setNewAffirmationScope('facu')}
+                      className={`py-2 px-3 rounded-2xl text-xs font-medium transition-all ${
+                        newAffirmationScope === 'facu'
+                          ? 'bg-manifest-lavender text-manifest-ink font-semibold shadow-sm'
+                          : 'bg-white/60 text-manifest-inkMuted hover:bg-white/80'
+                      }`}
+                    >
+                      🌙 Facu
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewAffirmationScope('maia')}
+                      className={`py-2 px-3 rounded-2xl text-xs font-medium transition-all ${
+                        newAffirmationScope === 'maia'
+                          ? 'bg-manifest-pink text-manifest-ink font-semibold shadow-sm'
+                          : 'bg-white/60 text-manifest-inkMuted hover:bg-white/80'
+                      }`}
+                    >
+                      🌸 Maia
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewAffirmationScope('shared')}
+                      className={`py-2 px-3 rounded-2xl text-xs font-medium transition-all ${
+                        newAffirmationScope === 'shared'
+                          ? 'bg-gradient-to-r from-manifest-pink/70 to-manifest-celeste/70 text-manifest-ink font-semibold shadow-sm'
+                          : 'bg-white/60 text-manifest-inkMuted hover:bg-white/80'
+                      }`}
+                    >
+                      ✨ Juntos
+                    </button>
+                  </div>
+                </div>
+
+                {/* Category selector */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-manifest-ink block">
+                    Categoría
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {AFFIRMATION_CATEGORIES.map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setNewAffirmationCategory(cat)}
+                        className={`text-[11px] px-3 py-1 rounded-full transition-all ${
+                          newAffirmationCategory === cat
+                            ? 'bg-manifest-ink text-white font-medium'
+                            : 'bg-white/70 text-manifest-inkMuted hover:bg-white'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Affirmation Text */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-manifest-ink block">
+                    Frase de Afirmación (en tiempo presente)
+                  </label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={newAffirmationText}
+                    onChange={(e) => setNewAffirmationText(e.target.value)}
+                    placeholder="Ej: «Merezco recibir con los brazos abiertos la abundancia que el universo tiene para mí»"
+                    className="w-full p-3 rounded-2xl glass-input text-xs font-serif italic text-manifest-ink placeholder:text-manifest-inkLight resize-none"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/60">
+                  <button
+                    type="button"
+                    onClick={() => setIsNewAffirmationModalOpen(false)}
+                    className="px-4 py-2 rounded-2xl glass-pill text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-2xl primary-gradient-btn text-xs font-semibold shadow-sm flex items-center gap-1.5"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Guardar Afirmación</span>
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

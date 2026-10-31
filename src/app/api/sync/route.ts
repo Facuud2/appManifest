@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
       storiesRes,
       futuresRes,
       releasesRes,
+      affirmationsRes,
     ] = await Promise.all([
       turso.execute({ sql: `SELECT * FROM journal_entries ${whereClause} ORDER BY created_at DESC;`, args }),
       turso.execute({ sql: `SELECT * FROM goals ${whereClause} ORDER BY created_at DESC;`, args }),
@@ -32,6 +33,7 @@ export async function GET(req: NextRequest) {
       turso.execute({ sql: `SELECT * FROM success_stories ${whereClause} ORDER BY manifested_date DESC;`, args }),
       turso.execute({ sql: `SELECT * FROM future_manifestations ${whereClause} ORDER BY created_at DESC;`, args }),
       turso.execute({ sql: `SELECT * FROM release_entries ${whereClause} ORDER BY created_at DESC;`, args }),
+      turso.execute({ sql: `SELECT * FROM affirmations ${whereClause} ORDER BY repeat_count DESC, created_at DESC;`, args }),
     ]);
 
     const journalEntries = journalsRes.rows.map((r) => ({
@@ -138,6 +140,17 @@ export async function GET(req: NextRequest) {
       status: r.status as string,
     }));
 
+    const affirmations = affirmationsRes.rows.map((r) => ({
+      id: r.id as string,
+      userId: r.user_id as string,
+      author: r.author as string,
+      text: r.text as string,
+      repeatCount: Number(r.repeat_count || 0),
+      category: (r.category as string) || undefined,
+      createdAt: r.created_at as string,
+      lastRepeatedAt: (r.last_repeated_at as string) || undefined,
+    }));
+
     return NextResponse.json({
       success: true,
       data: {
@@ -149,6 +162,7 @@ export async function GET(req: NextRequest) {
         successStories,
         futureManifestations,
         releaseEntries,
+        affirmations,
       },
     });
   } catch (error) {
@@ -175,6 +189,7 @@ export async function POST(req: NextRequest) {
         story: 'success_stories',
         future: 'future_manifestations',
         release: 'release_entries',
+        affirmation: 'affirmations',
       };
 
       const table = tableMap[entity];
@@ -331,6 +346,22 @@ export async function POST(req: NextRequest) {
           data.createdAt,
           data.releasedAt || null,
           data.status,
+        ],
+      });
+    } else if (entity === 'affirmation') {
+      await turso.execute({
+        sql: `INSERT OR REPLACE INTO affirmations (
+          id, user_id, author, text, repeat_count, category, created_at, last_repeated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+        args: [
+          data.id,
+          data.userId || 'facu',
+          data.author || 'Facu',
+          data.text,
+          Number(data.repeatCount || 0),
+          data.category || null,
+          data.createdAt,
+          data.lastRepeatedAt || null,
         ],
       });
     }

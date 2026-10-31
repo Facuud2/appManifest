@@ -1,5 +1,5 @@
 export interface SyncPayload {
-  entity: 'journal' | 'goal' | 'step' | 'event' | 'sign' | 'story' | 'future' | 'release';
+  entity: 'journal' | 'goal' | 'step' | 'event' | 'sign' | 'story' | 'future' | 'release' | 'affirmation';
   action: 'save' | 'delete';
   data?: unknown;
   id?: string;

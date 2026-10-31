@@ -11,6 +11,7 @@ import {
   ManifestationSign,
   SuccessStory,
   FutureManifestation,
+  Affirmation,
   UserScope,
 } from '@/types';
 import { storage } from '@/services/storage';
@@ -78,6 +79,7 @@ interface AppState {
   manifestationSigns: ManifestationSign[];
   successStories: SuccessStory[];
   futureManifestations: FutureManifestation[];
+  affirmations: Affirmation[];
   settings: UserSettings;
   toasts: ToastMessage[];
 
@@ -85,6 +87,11 @@ interface AppState {
   init: () => void;
   showToast: (text: string, type?: ToastMessage['type']) => void;
   removeToast: (id: string) => void;
+
+  // Affirmations
+  saveAffirmation: (affirmation: Affirmation) => void;
+  incrementAffirmationRepeat: (id: string) => void;
+  deleteAffirmation: (id: string) => void;
 
   // Journal
   saveJournalEntry: (entry: JournalEntry) => void;
@@ -145,6 +152,7 @@ export const useAppStore = create<AppState>((set, get) => {
       manifestationSigns: filterByScope(storage.getManifestationSigns(), scope, includeShared),
       successStories: filterByScope(storage.getSuccessStories(), scope, includeShared),
       futureManifestations: filterByScope(storage.getFutureManifestations(), scope, includeShared),
+      affirmations: filterByScope(storage.getAffirmations(), scope, includeShared),
     };
   };
 
@@ -167,6 +175,7 @@ export const useAppStore = create<AppState>((set, get) => {
     manifestationSigns: [],
     successStories: [],
     futureManifestations: [],
+    affirmations: [],
     settings: initialSettings,
     toasts: [],
 
@@ -307,6 +316,40 @@ export const useAppStore = create<AppState>((set, get) => {
 
     removeToast: (id) => {
       set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
+    },
+
+    // Affirmations
+    saveAffirmation: (affirmation) => {
+      const scope = affirmation.userId || get().activeScope;
+      const author = affirmation.author || getAuthorForScope(scope);
+      const enriched: Affirmation = {
+        ...affirmation,
+        userId: scope,
+        author,
+        repeatCount: affirmation.repeatCount || 0,
+        createdAt: affirmation.createdAt || new Date().toISOString(),
+      };
+      storage.saveAffirmation(enriched);
+      const incShared = get().includeSharedInPersonal;
+      set(computeScopedState(get().activeScope, incShared));
+      get().showToast('Afirmación guardada ✨', 'gentle');
+      tursoSync.pushChange({ entity: 'affirmation', action: 'save', data: enriched });
+    },
+
+    incrementAffirmationRepeat: (id) => {
+      const updated = storage.incrementAffirmationRepeat(id);
+      if (!updated) return;
+      const incShared = get().includeSharedInPersonal;
+      set(computeScopedState(get().activeScope, incShared));
+      tursoSync.pushChange({ entity: 'affirmation', action: 'save', data: updated });
+    },
+
+    deleteAffirmation: (id) => {
+      storage.deleteAffirmation(id);
+      const incShared = get().includeSharedInPersonal;
+      set(computeScopedState(get().activeScope, incShared));
+      get().showToast('Afirmación retirada', 'gentle');
+      tursoSync.pushChange({ entity: 'affirmation', action: 'delete', id });
     },
 
     // Journal

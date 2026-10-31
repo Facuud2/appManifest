@@ -33,9 +33,23 @@ const ENTRY_MODES: {
   color: string;
 }[] = [
   {
+    type: 'progress',
+    label: 'Avance / Evidencia',
+    icon: Sparkles,
+    prompt: '¿Qué progreso tangible, paso o evidencia de tu manifestación experimentaste hoy?',
+    color: 'bg-manifest-mint/40',
+  },
+  {
+    type: 'sign',
+    label: 'Señal / Sincronía',
+    icon: Compass,
+    prompt: 'Describe la señal o sincronía que viste (ej: 11:11, una pluma, sueño, coincidencia). ¿Qué sentiste al verla?',
+    color: 'bg-manifest-sky/50',
+  },
+  {
     type: 'manifestation',
     label: 'Manifestación',
-    icon: Sparkles,
+    icon: Target,
     prompt: 'Escribe en tiempo presente como si ya estuviera sucediendo. Describe cómo te sientes al vivirlo...',
     color: 'bg-manifest-lavender/40',
   },
@@ -47,13 +61,6 @@ const ENTRY_MODES: {
     color: 'bg-manifest-pink/40',
   },
   {
-    type: 'affirmation',
-    label: 'Afirmaciones',
-    icon: Lightbulb,
-    prompt: 'Plasma afirmaciones poderosas y amables para tu subconsciente hoy...',
-    color: 'bg-manifest-butter/40',
-  },
-  {
     type: 'reflection',
     label: 'Reflexión Guiada',
     icon: Feather,
@@ -61,18 +68,11 @@ const ENTRY_MODES: {
     color: 'bg-manifest-celeste/40',
   },
   {
-    type: 'sign',
-    label: 'Señal / Sincronía',
-    icon: Compass,
-    prompt: 'Describe la señal o sincronía que viste (ej: 11:11, una pluma, sueño, coincidencia). ¿Qué sentiste al verla?',
-    color: 'bg-manifest-sky/50',
-  },
-  {
     type: 'free',
     label: 'Escritura Libre',
     icon: Feather,
     prompt: 'Vierte tu mente y tu sentir sin censura, este papel digital guarda silencio...',
-    color: 'bg-manifest-mint/40',
+    color: 'bg-manifest-butter/40',
   },
 ];
 
@@ -342,7 +342,7 @@ export const JournalView: React.FC = () => {
           <p className="text-xs text-manifest-inkMuted max-w-xs mx-auto">
             {searchQuery
               ? 'No encontramos entradas con esa búsqueda. Prueba con otras palabras.'
-              : 'Escribe tu primera afirmación o un pensamiento sincero para comenzar.'}
+              : 'Escribe tu primer avance, señal sincrónica o reflexión para comenzar.'}
           </p>
           <button
             onClick={() => handleOpenNew('manifestation')}

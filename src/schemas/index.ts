@@ -129,6 +129,17 @@ export const DailyReflectionSchema = z.object({
   createdAt: z.string(),
 });
 
+export const AffirmationSchema = z.object({
+  id: z.string().min(1),
+  userId: UserScopeEnum.default('facu'),
+  author: z.string().default('Facu'),
+  text: z.string().min(1, 'El texto de la afirmación es requerido'),
+  repeatCount: z.number().int().nonnegative().default(0),
+  category: z.string().optional(),
+  createdAt: z.string(),
+  lastRepeatedAt: z.string().optional(),
+});
+
 export const UserSettingsSchema = z.object({
   userName: z.string().default('Facu'),
   greetingPreference: z.enum(['morning_gentle', 'intimate', 'empowered']).default('intimate'),
@@ -158,5 +169,6 @@ export const BackupDataSchema = z.object({
   manifestationSigns: z.array(ManifestationSignSchema).optional(),
   successStories: z.array(SuccessStorySchema).optional(),
   futureManifestations: z.array(FutureManifestationSchema).optional(),
+  affirmations: z.array(AffirmationSchema).optional(),
   settings: UserSettingsSchema,
 });

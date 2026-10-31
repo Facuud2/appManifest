@@ -10,6 +10,7 @@ import {
   ManifestationSign,
   SuccessStory,
   FutureManifestation,
+  Affirmation,
   UserScope,
 } from '@/types';
 import {
@@ -24,6 +25,7 @@ import {
   ManifestationSignSchema,
   SuccessStorySchema,
   FutureManifestationSchema,
+  AffirmationSchema,
 } from '@/schemas';
 
 const STORAGE_KEYS = {
@@ -36,6 +38,7 @@ const STORAGE_KEYS = {
   SIGNS: 'manifest_signs',
   SUCCESS_STORIES: 'manifest_success_stories',
   FUTURE_MANIFESTATIONS: 'manifest_future_manifestations',
+  AFFIRMATIONS: 'manifest_affirmations',
   SETTINGS: 'manifest_user_settings',
   SCHEMA_VERSION: 'manifest_schema_version',
 } as const;
@@ -278,10 +281,102 @@ const SEED_FUTURE_MANIFESTATIONS: FutureManifestation[] = [
   },
 ];
 
+const SEED_AFFIRMATIONS: Affirmation[] = [
+  // Facu
+  {
+    id: 'aff-facu-1',
+    userId: 'facu',
+    author: 'Facu',
+    text: 'Todo lo que busco con serenidad ya habita en mi interior esperando expandirse.',
+    repeatCount: 5,
+    category: 'Paz Interior',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'aff-facu-2',
+    userId: 'facu',
+    author: 'Facu',
+    text: 'Actúo desde la certeza de que mis pasos conscientes crean mi realidad.',
+    repeatCount: 3,
+    category: 'Certeza',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'aff-facu-3',
+    userId: 'facu',
+    author: 'Facu',
+    text: 'Merezco recibir la abundancia y la armonía que con tanto cariño entrego.',
+    repeatCount: 7,
+    category: 'Abundancia',
+    createdAt: new Date().toISOString(),
+  },
+  // Maia
+  {
+    id: 'aff-maia-1',
+    userId: 'maia',
+    author: 'Maia',
+    text: 'Honro mi intuición y confío en que el universo organiza los tiempos perfectos para mí.',
+    repeatCount: 4,
+    category: 'Intuición',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'aff-maia-2',
+    userId: 'maia',
+    author: 'Maia',
+    text: 'Mi sensibilidad es mi mayor poder creador y manifiesto con dulzura y alegría.',
+    repeatCount: 6,
+    category: 'Creación',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'aff-maia-3',
+    userId: 'maia',
+    author: 'Maia',
+    text: 'Me abro a recibir bendiciones inesperadas y milagros en mi día a día.',
+    repeatCount: 2,
+    category: 'Gratitud',
+    createdAt: new Date().toISOString(),
+  },
+  // Shared
+  {
+    id: 'aff-shared-1',
+    userId: 'shared',
+    author: 'Facu & Maia',
+    text: 'Juntos multiplicamos la alegría, la complicidad, el amor y la abundancia en nuestras vidas.',
+    repeatCount: 8,
+    category: 'Unión',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'aff-shared-2',
+    userId: 'shared',
+    author: 'Facu & Maia',
+    text: 'Nuestros sueños compartidos se materializan con gracia, ligereza y armonía mutua.',
+    repeatCount: 5,
+    category: 'Co-Creación',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'aff-shared-3',
+    userId: 'shared',
+    author: 'Facu & Maia',
+    text: 'Cada día celebramos nuestro camino juntos y la magia que creamos como equipo.',
+    repeatCount: 4,
+    category: 'Amor',
+    createdAt: new Date().toISOString(),
+  },
+];
+
 export interface IStorageService {
   getJournalEntries(): JournalEntry[];
   saveJournalEntry(entry: JournalEntry): void;
   deleteJournalEntry(id: string): void;
+
+  getAffirmations(): Affirmation[];
+  saveAffirmation(affirmation: Affirmation): void;
+  incrementAffirmationRepeat(id: string): Affirmation | null;
+  deleteAffirmation(id: string): void;
 
   getGoals(): Goal[];
   saveGoal(goal: Goal): void;
@@ -363,8 +458,13 @@ class LocalStorageService implements IStorageService {
       this.safeSet(STORAGE_KEYS.SIGNS, SEED_SIGNS);
       this.safeSet(STORAGE_KEYS.SUCCESS_STORIES, SEED_SUCCESS_STORIES);
       this.safeSet(STORAGE_KEYS.FUTURE_MANIFESTATIONS, SEED_FUTURE_MANIFESTATIONS);
+      this.safeSet(STORAGE_KEYS.AFFIRMATIONS, SEED_AFFIRMATIONS);
       this.safeSet(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
       window.localStorage.setItem(STORAGE_KEYS.SCHEMA_VERSION, String(CURRENT_SCHEMA_VERSION));
+    } else {
+      if (!this.safeGet(STORAGE_KEYS.AFFIRMATIONS, null)) {
+        this.safeSet(STORAGE_KEYS.AFFIRMATIONS, SEED_AFFIRMATIONS);
+      }
     }
   }
 
@@ -378,6 +478,7 @@ class LocalStorageService implements IStorageService {
     if (data.successStories) this.safeSet(STORAGE_KEYS.SUCCESS_STORIES, data.successStories);
     if (data.futureManifestations) this.safeSet(STORAGE_KEYS.FUTURE_MANIFESTATIONS, data.futureManifestations);
     if (data.releaseEntries) this.safeSet(STORAGE_KEYS.RELEASES, data.releaseEntries);
+    if (data.affirmations) this.safeSet(STORAGE_KEYS.AFFIRMATIONS, data.affirmations);
   }
 
   // Journal
@@ -409,6 +510,50 @@ class LocalStorageService implements IStorageService {
   public deleteJournalEntry(id: string): void {
     const current = this.getJournalEntries();
     this.safeSet(STORAGE_KEYS.JOURNAL, current.filter((e) => e.id !== id));
+  }
+
+  // Affirmations
+  public getAffirmations(): Affirmation[] {
+    const raw = this.safeGet<unknown[]>(STORAGE_KEYS.AFFIRMATIONS, []);
+    const valid: Affirmation[] = [];
+    for (const item of raw) {
+      const parsed = AffirmationSchema.safeParse(item);
+      if (parsed.success) valid.push(parsed.data as Affirmation);
+    }
+    return valid.sort((a, b) => (b.repeatCount || 0) - (a.repeatCount || 0) || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  public saveAffirmation(affirmation: Affirmation): void {
+    const current = this.getAffirmations();
+    const index = current.findIndex((a) => a.id === affirmation.id);
+    let updated: Affirmation[];
+    if (index >= 0) {
+      updated = [...current];
+      updated[index] = affirmation;
+    } else {
+      updated = [affirmation, ...current];
+    }
+    this.safeSet(STORAGE_KEYS.AFFIRMATIONS, updated);
+  }
+
+  public incrementAffirmationRepeat(id: string): Affirmation | null {
+    const current = this.getAffirmations();
+    const index = current.findIndex((a) => a.id === id);
+    if (index < 0) return null;
+    const target = current[index];
+    const updated: Affirmation = {
+      ...target,
+      repeatCount: (target.repeatCount || 0) + 1,
+      lastRepeatedAt: new Date().toISOString(),
+    };
+    current[index] = updated;
+    this.safeSet(STORAGE_KEYS.AFFIRMATIONS, current);
+    return updated;
+  }
+
+  public deleteAffirmation(id: string): void {
+    const current = this.getAffirmations();
+    this.safeSet(STORAGE_KEYS.AFFIRMATIONS, current.filter((a) => a.id !== id));
   }
 
   // Goals
@@ -681,6 +826,7 @@ class LocalStorageService implements IStorageService {
       manifestationSigns: this.getManifestationSigns(),
       successStories: this.getSuccessStories(),
       futureManifestations: this.getFutureManifestations(),
+      affirmations: this.getAffirmations(),
       settings: this.getUserSettings(),
     };
   }
@@ -707,6 +853,7 @@ class LocalStorageService implements IStorageService {
       if (data.manifestationSigns) this.safeSet(STORAGE_KEYS.SIGNS, data.manifestationSigns);
       if (data.successStories) this.safeSet(STORAGE_KEYS.SUCCESS_STORIES, data.successStories);
       if (data.futureManifestations) this.safeSet(STORAGE_KEYS.FUTURE_MANIFESTATIONS, data.futureManifestations);
+      if (data.affirmations) this.safeSet(STORAGE_KEYS.AFFIRMATIONS, data.affirmations);
       this.safeSet(STORAGE_KEYS.SETTINGS, data.settings);
       window.localStorage.setItem(STORAGE_KEYS.SCHEMA_VERSION, String(data.version || CURRENT_SCHEMA_VERSION));
 
@@ -732,6 +879,7 @@ class LocalStorageService implements IStorageService {
     successStories?: SuccessStory[];
     futureManifestations?: FutureManifestation[];
     releaseEntries?: ReleaseEntry[];
+    affirmations?: Affirmation[];
   }): boolean {
     if (!this.isBrowser()) return false;
     let changed = false;
@@ -768,6 +916,7 @@ class LocalStorageService implements IStorageService {
     if (remoteData.successStories) mergeList(STORAGE_KEYS.SUCCESS_STORIES, this.getSuccessStories(), remoteData.successStories);
     if (remoteData.futureManifestations) mergeList(STORAGE_KEYS.FUTURE_MANIFESTATIONS, this.getFutureManifestations(), remoteData.futureManifestations);
     if (remoteData.releaseEntries) mergeList(STORAGE_KEYS.RELEASES, this.getReleaseEntries(), remoteData.releaseEntries);
+    if (remoteData.affirmations) mergeList(STORAGE_KEYS.AFFIRMATIONS, this.getAffirmations(), remoteData.affirmations);
 
     return changed;
   }
@@ -783,6 +932,7 @@ class LocalStorageService implements IStorageService {
     window.localStorage.removeItem(STORAGE_KEYS.SIGNS);
     window.localStorage.removeItem(STORAGE_KEYS.SUCCESS_STORIES);
     window.localStorage.removeItem(STORAGE_KEYS.FUTURE_MANIFESTATIONS);
+    window.localStorage.removeItem(STORAGE_KEYS.AFFIRMATIONS);
     window.localStorage.removeItem(STORAGE_KEYS.SETTINGS);
     window.localStorage.removeItem(STORAGE_KEYS.SCHEMA_VERSION);
     this.initSeedDataIfNeeded();

@@ -1,8 +1,19 @@
 export type UserScope = 'facu' | 'maia' | 'shared';
 
-export type EntryType = 'manifestation' | 'gratitude' | 'affirmation' | 'reflection' | 'free' | 'sign';
+export type EntryType = 'progress' | 'sign' | 'manifestation' | 'gratitude' | 'reflection' | 'free' | 'affirmation';
 
 export type MoodType = 'peaceful' | 'inspired' | 'grateful' | 'radiant' | 'contemplative';
+
+export interface Affirmation {
+  id: string;
+  userId: UserScope;
+  author: string;
+  text: string;
+  repeatCount: number;
+  category?: string;
+  createdAt: string;
+  lastRepeatedAt?: string;
+}
 
 export type GoalCategory = 'crecimiento' | 'carrera' | 'bienestar' | 'relaciones' | 'abundancia' | 'creatividad';
 
@@ -164,6 +175,7 @@ export interface BackupData {
   manifestationSigns?: ManifestationSign[];
   successStories?: SuccessStory[];
   futureManifestations?: FutureManifestation[];
+  affirmations?: Affirmation[];
   settings: UserSettings;
 }
 
