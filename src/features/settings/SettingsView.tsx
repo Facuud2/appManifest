@@ -150,8 +150,8 @@ export const SettingsView: React.FC = () => {
               key={index}
               className="p-3 rounded-2xl bg-white/70 border border-white flex items-center justify-between gap-2 text-xs"
             >
-              <p className="font-serif italic text-manifest-ink leading-relaxed">
-                «{aff}»
+              <p className="font-medium text-manifest-ink leading-relaxed">
+                {aff}
               </p>
               <button
                 onClick={() => handleRemoveAffirmation(index)}

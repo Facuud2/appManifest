@@ -174,7 +174,7 @@ export const JournalEditorModal: React.FC = () => {
                     ? 'Ej: Primer indicio de mi nuevo proyecto...'
                     : 'Ej: Mi visión viviendo en el campo...'
                 }
-                className="w-full px-3 py-2 rounded-2xl glass-input text-base sm:text-xs font-serif placeholder:text-manifest-inkLight"
+                className="w-full px-3 py-2 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight"
               />
             </div>
 

@@ -102,7 +102,7 @@ export const GoalsView: React.FC = () => {
           value={manifestationText}
           onChange={(e) => setManifestationText(e.target.value)}
           placeholder="Escribe en tiempo presente tu deseo o afirmación... (Ej: Atraigo abundancia, tranquilidad y felicidad cada día)"
-          className="w-full p-3 rounded-2xl glass-input text-base sm:text-xs resize-none placeholder:text-manifest-inkLight font-serif"
+          className="w-full p-3 rounded-2xl glass-input text-base sm:text-xs resize-none placeholder:text-manifest-inkLight"
           required
         />
 
@@ -203,8 +203,8 @@ export const GoalsView: React.FC = () => {
                     </div>
                   </div>
 
-                  <p className="font-serif text-sm sm:text-base font-medium text-manifest-ink leading-relaxed italic">
-                    «{item.text}»
+                  <p className="text-sm sm:text-base font-semibold text-manifest-ink leading-relaxed">
+                    {item.text}
                   </p>
                 </motion.div>
               );

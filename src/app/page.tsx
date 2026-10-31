@@ -49,7 +49,7 @@ export default function Home() {
           <div className="w-12 h-12 mx-auto rounded-3xl bg-gradient-to-tr from-manifest-pink via-manifest-lavender to-manifest-celeste flex items-center justify-center shadow-glass">
             <Sparkles className="w-6 h-6 text-manifest-ink" />
           </div>
-          <p className="font-serif italic text-sm text-manifest-ink tracking-wide">
+          <p className="text-sm font-semibold text-manifest-ink tracking-wide">
             Abriendo tu santuario...
           </p>
         </motion.div>

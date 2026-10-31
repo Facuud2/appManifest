@@ -220,8 +220,8 @@ export const SignsView: React.FC = () => {
                 </div>
 
                 {sign.feeling && (
-                  <div className="text-[11px] text-manifest-inkMuted italic">
-                    <span className="font-medium">Sensación:</span> «{sign.feeling}»
+                  <div className="text-[11px] text-manifest-inkMuted">
+                    <span className="font-semibold">Sensación:</span> {sign.feeling}
                   </div>
                 )}
 

@@ -229,8 +229,8 @@ export const DashboardView: React.FC = () => {
                     </div>
                   </div>
 
-                  <p className="relative z-10 font-serif text-sm sm:text-base font-medium text-manifest-ink leading-relaxed italic">
-                    «{aff.text}»
+                  <p className="relative z-10 text-sm sm:text-base font-semibold text-manifest-ink leading-relaxed">
+                    {aff.text}
                   </p>
 
                   <div className="relative z-10 flex items-center justify-between pt-1.5 border-t border-white/60 text-[10px] text-manifest-inkMuted">
@@ -432,7 +432,7 @@ export const DashboardView: React.FC = () => {
                     value={newAffirmationText}
                     onChange={(e) => setNewAffirmationText(e.target.value)}
                     placeholder="Ej: Merezco vivir con paz, abundancia y felicidad..."
-                    className="w-full p-3 rounded-2xl glass-input text-base sm:text-xs resize-none placeholder:text-manifest-inkLight font-serif"
+                    className="w-full p-3 rounded-2xl glass-input text-base sm:text-xs resize-none placeholder:text-manifest-inkLight"
                   />
                 </div>
 

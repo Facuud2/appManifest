@@ -81,7 +81,7 @@ export const ReleaseRitual: React.FC = () => {
             {/* Digital Parchment */}
             <div className="relative rounded-3xl p-6 bg-gradient-to-b from-[#FFFDF9] via-[#FAF4EA] to-[#F7EDE0] border border-amber-100/80 shadow-liquid text-manifest-ink overflow-hidden">
               <div className="flex items-center justify-between pb-3 border-b border-amber-900/10">
-                <span className="text-[11px] font-serif italic text-amber-900/70 flex items-center gap-1.5">
+                <span className="text-[11px] font-medium text-amber-900/70 flex items-center gap-1.5">
                   <Feather className="w-3.5 h-3.5 text-amber-700" />
                   Hoja de desahogo y verdad
                 </span>
@@ -95,10 +95,10 @@ export const ReleaseRitual: React.FC = () => {
                 value={fearContent}
                 onChange={(e) => setFearContent(e.target.value)}
                 placeholder="Escribe aquí ese pensamiento limitante, esa duda, ese miedo o esa situación que sientes que pesa en tu pecho... Nadie más leerá esto."
-                className="w-full mt-3 bg-transparent border-none focus:outline-none text-xs md:text-sm leading-relaxed text-amber-950 placeholder:text-amber-900/40 resize-none font-serif"
+                className="w-full mt-3 bg-transparent border-none focus:outline-none text-xs md:text-sm leading-relaxed text-amber-950 placeholder:text-amber-900/40 resize-none font-sans"
               />
 
-              <div className="pt-2 text-[10px] text-amber-800/60 text-right italic">
+              <div className="pt-2 text-[10px] text-amber-800/60 text-right">
                 {fearContent.length > 0 ? `${fearContent.length} caracteres volcados` : 'Escribe con total sinceridad'}
               </div>
             </div>
@@ -233,8 +233,8 @@ export const ReleaseRitual: React.FC = () => {
               transition={{ duration: 2.7, ease: 'easeOut' }}
               className="p-6 rounded-2xl bg-[#FAF4EA] border border-amber-200/50 shadow-inner max-w-xs mx-auto"
             >
-              <p className="font-serif italic text-xs text-amber-950 line-clamp-3">
-                «{fearContent}»
+              <p className="text-xs text-amber-950 font-medium line-clamp-3">
+                {fearContent}
               </p>
             </motion.div>
 
@@ -247,10 +247,10 @@ export const ReleaseRitual: React.FC = () => {
               >
                 <Sparkles className="w-8 h-8" />
               </motion.div>
-              <p className="font-serif text-sm font-semibold text-manifest-ink">
+              <p className="text-sm font-semibold text-manifest-ink">
                 Transformando la carga en luz y espacio fértil...
               </p>
-              <p className="text-[11px] text-manifest-inkMuted italic">
+              <p className="text-[11px] text-manifest-inkMuted">
                 El peso se desvanece de tu templo interior.
               </p>
             </div>
@@ -280,8 +280,8 @@ export const ReleaseRitual: React.FC = () => {
             </div>
 
             {chooseNow && (
-              <div className="p-3.5 rounded-2xl bg-manifest-mint/40 border border-white text-xs text-manifest-ink font-medium italic">
-                «{chooseNow}»
+              <div className="p-3.5 rounded-2xl bg-manifest-mint/40 border border-white text-xs text-manifest-ink font-semibold">
+                {chooseNow}
               </div>
             )}
 

@@ -1,5 +1,13 @@
 import type { Metadata, Viewport } from 'next';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Manifest Journal — Santuario Personal',
@@ -32,14 +40,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
+    <html lang="es" className={plusJakartaSans.variable}>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/icons/icon.svg" />
       </head>
-      <body className="aura-bg text-manifest-ink antialiased selection:bg-manifest-lavender/50 min-h-screen">
+      <body className="aura-bg text-manifest-ink font-sans antialiased selection:bg-manifest-lavender/50 min-h-screen">
         {children}
         <script
           dangerouslySetInnerHTML={{
