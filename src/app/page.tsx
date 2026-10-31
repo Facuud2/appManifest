@@ -8,6 +8,7 @@ import { DesktopSidebar } from '@/components/layout/DesktopSidebar';
 import { ToastContainer } from '@/components/ui/ToastContainer';
 import { JournalEditorModal } from '@/components/journal/JournalEditorModal';
 import { AffirmationEditorModal } from '@/components/goals/AffirmationEditorModal';
+import { RampageSetEditorModal } from '@/components/goals/RampageSetEditorModal';
 import { PwaInstallGuide } from '@/components/pwa/PwaInstallGuide';
 import { InteractiveTour } from '@/components/onboarding/InteractiveTour';
 import { DashboardView } from '@/features/dashboard/DashboardView';
@@ -68,6 +69,9 @@ export default function Home() {
 
       {/* Global Affirmation Editor Modal */}
       <AffirmationEditorModal />
+
+      {/* Global Rampage Set Editor Modal */}
+      <RampageSetEditorModal />
 
       {/* Desktop Left Sidebar (>= 1024px) */}
       <DesktopSidebar onOpenInstallGuide={() => setIsInstallGuideOpen(true)} />

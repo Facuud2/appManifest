@@ -99,6 +99,12 @@ interface AppState {
   openAffirmationEditor: (affirmationToEdit?: Affirmation | null) => void;
   closeAffirmationEditor: () => void;
 
+  // Rampage Set Editor Modal
+  isRampageSetEditorOpen: boolean;
+  editingRampageSet: RampageSet | null;
+  openRampageSetEditor: (setToEdit?: RampageSet | null) => void;
+  closeRampageSetEditor: () => void;
+
   // Actions
   init: () => void;
   showToast: (text: string, type?: ToastMessage['type']) => void;
@@ -208,6 +214,15 @@ export const useAppStore = create<AppState>((set, get) => {
     },
     closeAffirmationEditor: () => {
       set({ isAffirmationEditorOpen: false, editingAffirmation: null });
+    },
+
+    isRampageSetEditorOpen: false,
+    editingRampageSet: null,
+    openRampageSetEditor: (setToEdit = null) => {
+      set({ isRampageSetEditorOpen: true, editingRampageSet: setToEdit });
+    },
+    closeRampageSetEditor: () => {
+      set({ isRampageSetEditorOpen: false, editingRampageSet: null });
     },
 
     activeScope: initialScope,

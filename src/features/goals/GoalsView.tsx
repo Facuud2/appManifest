@@ -22,6 +22,7 @@ export const GoalsView: React.FC = () => {
     affirmations,
     saveAffirmation,
     reorderAffirmations,
+    openRampageSetEditor,
   } = useAppStore();
 
   const [viewMode, setViewMode] = useState<'list' | 'rampage'>('list');
@@ -71,51 +72,64 @@ export const GoalsView: React.FC = () => {
           </h2>
         </div>
 
-        {/* iOS Segmented Control / Switch */}
-        <div className="flex p-1 rounded-2xl bg-white/75 border border-white shadow-sm backdrop-blur-md self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setViewMode('list')}
-            className={`relative px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors duration-200 ${
-              viewMode === 'list'
-                ? 'text-manifest-ink'
-                : 'text-manifest-inkMuted hover:text-manifest-ink'
-            }`}
-          >
-            {viewMode === 'list' && (
-              <motion.div
-                layoutId="manifestationViewMode"
-                className="absolute inset-0 rounded-xl bg-white shadow-sm border border-white -z-10"
-                transition={{ type: 'spring', stiffness: 450, damping: 35 }}
-              />
-            )}
-            <span className="flex items-center gap-1.5">
-              <Pin className="w-3.5 h-3.5 text-manifest-auraPurple" />
-              Lista y Fijados
-            </span>
-          </button>
+        {/* iOS Segmented Control / Switch + Action */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div className="flex p-1 rounded-2xl bg-white/75 border border-white shadow-sm backdrop-blur-md">
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className={`relative px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors duration-200 cursor-pointer ${
+                viewMode === 'list'
+                  ? 'text-manifest-ink'
+                  : 'text-manifest-inkMuted hover:text-manifest-ink'
+              }`}
+            >
+              {viewMode === 'list' && (
+                <motion.div
+                  layoutId="manifestationViewMode"
+                  className="absolute inset-0 rounded-xl bg-white shadow-sm border border-white -z-10"
+                  transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                />
+              )}
+              <span className="flex items-center gap-1.5">
+                <Pin className="w-3.5 h-3.5 text-manifest-auraPurple" />
+                Lista y Fijados
+              </span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setViewMode('rampage')}
-            className={`relative px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors duration-200 ${
-              viewMode === 'rampage'
-                ? 'text-manifest-ink'
-                : 'text-manifest-inkMuted hover:text-manifest-ink'
-            }`}
-          >
-            {viewMode === 'rampage' && (
-              <motion.div
-                layoutId="manifestationViewMode"
-                className="absolute inset-0 rounded-xl bg-white shadow-sm border border-white -z-10"
-                transition={{ type: 'spring', stiffness: 450, damping: 35 }}
-              />
-            )}
-            <span className="flex items-center gap-1.5">
-              <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
-              Sets de Rampage
-            </span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('rampage')}
+              className={`relative px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors duration-200 cursor-pointer ${
+                viewMode === 'rampage'
+                  ? 'text-manifest-ink'
+                  : 'text-manifest-inkMuted hover:text-manifest-ink'
+              }`}
+            >
+              {viewMode === 'rampage' && (
+                <motion.div
+                  layoutId="manifestationViewMode"
+                  className="absolute inset-0 rounded-xl bg-white shadow-sm border border-white -z-10"
+                  transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                />
+              )}
+              <span className="flex items-center gap-1.5">
+                <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                Sets de Rampage
+              </span>
+            </button>
+          </div>
+
+          {viewMode === 'rampage' && (
+            <button
+              type="button"
+              onClick={() => openRampageSetEditor(null)}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Nuevo Set</span>
+            </button>
+          )}
         </div>
       </div>
 

@@ -29,17 +29,27 @@ const rampageFormSchema = z.object({
 type RampageFormData = z.infer<typeof rampageFormSchema>;
 
 interface RampageSetEditorModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  setOrNull: RampageSet | null;
+  isOpen?: boolean;
+  onClose?: () => void;
+  setOrNull?: RampageSet | null;
 }
 
 export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
-  isOpen,
-  onClose,
-  setOrNull,
+  isOpen: propIsOpen,
+  onClose: propOnClose,
+  setOrNull: propSetOrNull,
 }) => {
-  const { activeScope, saveRampageSet } = useAppStore();
+  const {
+    activeScope,
+    saveRampageSet,
+    isRampageSetEditorOpen,
+    editingRampageSet,
+    closeRampageSetEditor,
+  } = useAppStore();
+
+  const isOpen = propIsOpen !== undefined ? propIsOpen : isRampageSetEditorOpen;
+  const onClose = propOnClose || closeRampageSetEditor;
+  const setOrNull = propSetOrNull !== undefined ? propSetOrNull : editingRampageSet;
 
   const {
     control,
@@ -140,9 +150,6 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                 <h3 className="font-serif text-sm font-bold text-manifest-ink">
                   {setOrNull ? 'Editar Set de Rampage' : 'Nuevo Set de Rampage'}
                 </h3>
-                <p className="text-[11px] text-manifest-inkMuted">
-                  Secuencia continua de afirmaciones de alto impacto
-                </p>
               </div>
             </div>
             <button

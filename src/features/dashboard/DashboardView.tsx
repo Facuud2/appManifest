@@ -27,6 +27,7 @@ export const DashboardView: React.FC = () => {
     setActiveTab,
     openJournalEditor,
     openAffirmationEditor,
+    openRampageSetEditor,
     journalEntries,
     affirmations,
     reorderAffirmations,
@@ -143,13 +144,23 @@ export const DashboardView: React.FC = () => {
               <span>Ver todas</span>
               <ArrowRight className="w-3 h-3" />
             </button>
-            <button
-              onClick={() => openAffirmationEditor(null)}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Nueva</span>
-            </button>
+            {viewMode === 'rampage' ? (
+              <button
+                onClick={() => openRampageSetEditor(null)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Nuevo Set</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => openAffirmationEditor(null)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Nueva</span>
+              </button>
+            )}
           </div>
         </div>
 
