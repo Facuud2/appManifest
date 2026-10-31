@@ -53,6 +53,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
     'Doy gracias por este nuevo día y por mi capacidad de crear mi realidad.',
   ],
   firstLaunchCompleted: true,
+  tutorialCompleted: false,
   dailyStreak: 1,
   lastActiveDate: new Date().toISOString().split('T')[0],
   totalJournalEntries: 1,

@@ -7,6 +7,7 @@ import { BottomNavigation } from '@/components/layout/BottomNavigation';
 import { DesktopSidebar } from '@/components/layout/DesktopSidebar';
 import { ToastContainer } from '@/components/ui/ToastContainer';
 import { PwaInstallGuide } from '@/components/pwa/PwaInstallGuide';
+import { InteractiveTour } from '@/components/onboarding/InteractiveTour';
 import { DashboardView } from '@/features/dashboard/DashboardView';
 import { AgendaView } from '@/features/agenda/AgendaView';
 import { JournalView } from '@/features/journal/JournalView';
@@ -142,6 +143,9 @@ export default function Home() {
           isOpen={isInstallGuideOpen}
           onClose={() => setIsInstallGuideOpen(false)}
         />
+
+        {/* Interactive Spotlight Onboarding Tour */}
+        <InteractiveTour />
       </main>
     </div>
   );

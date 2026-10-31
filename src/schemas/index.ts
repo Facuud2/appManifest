@@ -120,6 +120,7 @@ export const UserSettingsSchema = z.object({
   reducedMotion: z.boolean().default(false),
   favoriteAffirmations: z.array(z.string()).default([]),
   firstLaunchCompleted: z.boolean().default(false),
+  tutorialCompleted: z.boolean().default(false),
   dailyStreak: z.number().default(1),
   lastActiveDate: z.string().default(''),
   totalJournalEntries: z.number().default(0),

@@ -125,6 +125,7 @@ export interface UserSettings {
   reducedMotion: boolean;
   favoriteAffirmations: string[];
   firstLaunchCompleted: boolean;
+  tutorialCompleted: boolean;
   dailyStreak: number;
   lastActiveDate: string;
   totalJournalEntries: number;

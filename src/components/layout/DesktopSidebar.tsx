@@ -79,6 +79,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ onOpenInstallGui
           return (
             <button
               key={item.key}
+              data-tour={`desktop-nav-${item.key}`}
               onClick={() => setActiveTab(item.key)}
               className={`w-full relative flex items-center gap-3.5 px-4 py-3 rounded-2xl text-left transition-all duration-200 group ${
                 isActive

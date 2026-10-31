@@ -137,7 +137,16 @@ appManifest/
 - Hitos desbloqueables automáticos (*Primer Destello*, *Manifestación en Acción*, *Alma Reflexiva*, *Vuelo Ligero*, *Ritmo Sereno*).
 - Registro diario de reflexiones nocturnas con aprendizajes y motivos de gratitud.
 
-### 4.7. Seguridad, Privacidad y Copias de Seguridad
+### 4.7. Tutorial Interactivo con Foco & Láminas Semiopacas
+- **Sistema Onboarding Spotlight Dinámico:**
+  - Capa oscura semiopaca (`rgba(8, 6, 12, 0.78)`) con máscara SVG que realiza un recorte preciso iluminado sobre el botón correspondiente.
+  - **Adaptación automática Móvil / Escritorio:**
+    - En móvil ilumina los botones de la barra inferior fija (`mobile-nav-*`).
+    - En computadora ilumina los accesos de la barra lateral izquierda líquida (`desktop-nav-*`).
+  - Navegación paso a paso con indicador de progreso de 5 pasos, botones de *Siguiente*, *Atrás*, *Saltar* y botón final *Finalizar Tutorial*.
+  - **Persistencia en LocalStorage:** El estado `tutorialCompleted: true` queda anclado en `localStorage`. Se puede volver a ejecutar en cualquier momento desde el botón dedicado en **Ajustes**.
+
+### 4.8. Seguridad, Privacidad y Copias de Seguridad
 - **100% Local:** Todos los datos se almacenan en el dispositivo del usuario (`localStorage`).
 - **Exportación en un clic:** Descarga de archivo `.json` estructurado con fecha.
 - **Restauración con validación estricta Zod:** Comprobación de versión de esquema y prevención de corrupción de datos.

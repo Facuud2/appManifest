@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   Plus,
   X,
+  Compass,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -184,6 +185,31 @@ export const SettingsView: React.FC = () => {
             Añadir
           </button>
         </div>
+      </div>
+
+      {/* Interactive Tour Trigger */}
+      <div className="p-5 rounded-3xl glass-card border border-white/95 shadow-glass space-y-3">
+        <div className="flex items-center gap-2 pb-2 border-b border-white/70">
+          <Sparkles className="w-4 h-4 text-manifest-auraPurple" />
+          <h3 className="font-serif text-sm font-bold text-manifest-ink">
+            Recorrido Interactivo del Santuario
+          </h3>
+        </div>
+
+        <p className="text-xs text-manifest-inkMuted leading-relaxed">
+          Vuelve a experimentar el tutorial con láminas de foco para recordar dónde se encuentra cada botón y funcionalidad, adaptado a tu vista móvil o computadora.
+        </p>
+
+        <button
+          onClick={() => {
+            updateSettings({ tutorialCompleted: false });
+            showToast('Iniciando recorrido interactivo...', 'gentle');
+          }}
+          className="w-full py-2.5 px-4 rounded-2xl glass-pill font-semibold text-xs text-manifest-ink hover:bg-white flex items-center justify-center gap-2 transition-colors border border-white"
+        >
+          <Compass className="w-3.5 h-3.5 text-manifest-auraPurple" />
+          <span>Iniciar tutorial interactivo</span>
+        </button>
       </div>
 
       {/* Backup and Restore */}
