@@ -13,6 +13,7 @@ import {
   SuccessStory,
   FutureManifestation,
   Affirmation,
+  RampageSet,
   UserScope,
 } from '@/types';
 import { storage } from '@/services/storage';
@@ -88,8 +89,15 @@ interface AppState {
   successStories: SuccessStory[];
   futureManifestations: FutureManifestation[];
   affirmations: Affirmation[];
+  rampageSets: RampageSet[];
   settings: UserSettings;
   toasts: ToastMessage[];
+
+  // Affirmation Editor Modal
+  isAffirmationEditorOpen: boolean;
+  editingAffirmation: Affirmation | null;
+  openAffirmationEditor: (affirmationToEdit?: Affirmation | null) => void;
+  closeAffirmationEditor: () => void;
 
   // Actions
   init: () => void;
@@ -99,7 +107,14 @@ interface AppState {
   // Affirmations
   saveAffirmation: (affirmation: Affirmation) => void;
   incrementAffirmationRepeat: (id: string) => void;
+  togglePinAffirmation: (id: string) => void;
+  reorderAffirmations: (ordered: Affirmation[]) => void;
   deleteAffirmation: (id: string) => void;
+
+  // Rampage Sets
+  saveRampageSet: (set: RampageSet) => void;
+  deleteRampageSet: (id: string) => void;
+  incrementRampageAffirmationRepeat: (setId: string, affirmationId: string) => void;
 
   // Journal
   saveJournalEntry: (entry: JournalEntry) => void;
@@ -150,6 +165,8 @@ export const useAppStore = create<AppState>((set, get) => {
   const initialScope: UserScope = initialSettings.activeScope || 'facu';
 
   const computeScopedState = (scope: UserScope, includeShared: boolean = false) => {
+    const rawRampage = storage.getRampageSets();
+    const scopedRampage = filterByScope(rawRampage, scope, true);
     return {
       journalEntries: filterByScope(storage.getJournalEntries(), scope, includeShared),
       goals: filterByScope(storage.getGoals(), scope, includeShared),
@@ -161,6 +178,7 @@ export const useAppStore = create<AppState>((set, get) => {
       successStories: filterByScope(storage.getSuccessStories(), scope, includeShared),
       futureManifestations: filterByScope(storage.getFutureManifestations(), scope, includeShared),
       affirmations: filterByScope(storage.getAffirmations(), scope, includeShared),
+      rampageSets: scopedRampage.length > 0 ? scopedRampage : rawRampage,
     };
   };
 
@@ -183,6 +201,15 @@ export const useAppStore = create<AppState>((set, get) => {
       set({ isJournalEditorOpen: false, editingJournalEntry: null });
     },
 
+    isAffirmationEditorOpen: false,
+    editingAffirmation: null,
+    openAffirmationEditor: (aff = null) => {
+      set({ isAffirmationEditorOpen: true, editingAffirmation: aff });
+    },
+    closeAffirmationEditor: () => {
+      set({ isAffirmationEditorOpen: false, editingAffirmation: null });
+    },
+
     activeScope: initialScope,
     includeSharedInPersonal: false,
     isSyncing: false,
@@ -198,6 +225,7 @@ export const useAppStore = create<AppState>((set, get) => {
     successStories: [],
     futureManifestations: [],
     affirmations: [],
+    rampageSets: [],
     settings: initialSettings,
     toasts: [],
 
@@ -335,17 +363,23 @@ export const useAppStore = create<AppState>((set, get) => {
     saveAffirmation: (affirmation) => {
       const scope = affirmation.userId || get().activeScope;
       const author = affirmation.author || getAuthorForScope(scope);
+      const isExisting = storage.getAffirmations().some((a) => a.id === affirmation.id);
       const enriched: Affirmation = {
         ...affirmation,
         userId: scope,
         author,
-        repeatCount: affirmation.repeatCount || 0,
+        repeatCount: affirmation.repeatCount ?? 0,
         createdAt: affirmation.createdAt || new Date().toISOString(),
+        pinned: affirmation.pinned ?? false,
+        order: affirmation.order,
       };
       storage.saveAffirmation(enriched);
       const incShared = get().includeSharedInPersonal;
       set(computeScopedState(get().activeScope, incShared));
-      get().showToast('Afirmación guardada ✨', 'gentle');
+      get().showToast(
+        isExisting ? 'Manifestación actualizada con éxito ✨' : 'Manifestación anclada al universo ✨',
+        'gentle'
+      );
       tursoSync.pushChange({ entity: 'affirmation', action: 'save', data: enriched });
     },
 
@@ -357,18 +391,68 @@ export const useAppStore = create<AppState>((set, get) => {
       tursoSync.pushChange({ entity: 'affirmation', action: 'save', data: updated });
     },
 
+    togglePinAffirmation: (id) => {
+      const updated = storage.togglePinAffirmation(id);
+      if (!updated) return;
+      const incShared = get().includeSharedInPersonal;
+      set(computeScopedState(get().activeScope, incShared));
+      get().showToast(
+        updated.pinned ? 'Manifestación fijada arriba 📌' : 'Manifestación desfijada',
+        'gentle'
+      );
+      tursoSync.pushChange({ entity: 'affirmation', action: 'save', data: updated });
+    },
+
+    reorderAffirmations: (ordered) => {
+      storage.reorderAffirmations(ordered);
+      const incShared = get().includeSharedInPersonal;
+      set(computeScopedState(get().activeScope, incShared));
+    },
+
     deleteAffirmation: (id) => {
       storage.deleteAffirmation(id);
       const incShared = get().includeSharedInPersonal;
       set(computeScopedState(get().activeScope, incShared));
-      get().showToast('Afirmación retirada', 'gentle');
+      get().showToast('Manifestación retirada', 'gentle');
       tursoSync.pushChange({ entity: 'affirmation', action: 'delete', id });
+    },
+
+    // Rampage Sets
+    saveRampageSet: (setObj) => {
+      const scope = setObj.userId || get().activeScope;
+      const author = setObj.author || getAuthorForScope(scope);
+      const enriched: RampageSet = {
+        ...setObj,
+        userId: scope,
+        author,
+        createdAt: setObj.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      storage.saveRampageSet(enriched);
+      const incShared = get().includeSharedInPersonal;
+      set(computeScopedState(get().activeScope, incShared));
+      get().showToast('Set de Rampage guardado ✨', 'gentle');
+    },
+
+    deleteRampageSet: (id) => {
+      storage.deleteRampageSet(id);
+      const incShared = get().includeSharedInPersonal;
+      set(computeScopedState(get().activeScope, incShared));
+      get().showToast('Set de Rampage retirado', 'gentle');
+    },
+
+    incrementRampageAffirmationRepeat: (setId, affirmationId) => {
+      const result = storage.incrementRampageAffirmationRepeat(setId, affirmationId);
+      if (!result) return;
+      const incShared = get().includeSharedInPersonal;
+      set(computeScopedState(get().activeScope, incShared));
     },
 
     // Journal
     saveJournalEntry: (entry) => {
       const scope = entry.userId || get().activeScope;
       const author = entry.author || getAuthorForScope(scope);
+      const isExisting = storage.getJournalEntries().some((j) => j.id === entry.id);
       const enriched: JournalEntry = {
         ...entry,
         userId: scope,
@@ -378,7 +462,10 @@ export const useAppStore = create<AppState>((set, get) => {
 
       storage.saveJournalEntry(enriched);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-      get().showToast('Palabras guardadas con serenidad ✨', 'success');
+      get().showToast(
+        isExisting ? 'Entrada actualizada con serenidad ✨' : 'Palabras guardadas con serenidad ✨',
+        'success'
+      );
 
       // Async Turso sync
       tursoSync.pushChange({ entity: 'journal', action: 'save', data: enriched });

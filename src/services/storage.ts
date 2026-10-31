@@ -11,6 +11,8 @@ import {
   SuccessStory,
   FutureManifestation,
   Affirmation,
+  RampageSet,
+  RampageAffirmation,
   UserScope,
 } from '@/types';
 import {
@@ -26,6 +28,7 @@ import {
   SuccessStorySchema,
   FutureManifestationSchema,
   AffirmationSchema,
+  RampageSetSchema,
 } from '@/schemas';
 
 const STORAGE_KEYS = {
@@ -39,6 +42,7 @@ const STORAGE_KEYS = {
   SUCCESS_STORIES: 'manifest_success_stories',
   FUTURE_MANIFESTATIONS: 'manifest_future_manifestations',
   AFFIRMATIONS: 'manifest_affirmations',
+  RAMPAGE_SETS: 'manifest_rampage_sets',
   SETTINGS: 'manifest_user_settings',
   SCHEMA_VERSION: 'manifest_schema_version',
 } as const;
@@ -80,7 +84,14 @@ export interface IStorageService {
   getAffirmations(): Affirmation[];
   saveAffirmation(affirmation: Affirmation): void;
   incrementAffirmationRepeat(id: string): Affirmation | null;
+  togglePinAffirmation(id: string): Affirmation | null;
+  reorderAffirmations(orderedAffirmations: Affirmation[]): void;
   deleteAffirmation(id: string): void;
+
+  getRampageSets(): RampageSet[];
+  saveRampageSet(set: RampageSet): void;
+  deleteRampageSet(id: string): void;
+  incrementRampageAffirmationRepeat(setId: string, affirmationId: string): { updatedSet: RampageSet; repeatCount: number } | null;
 
   getGoals(): Goal[];
   saveGoal(goal: Goal): void;
@@ -254,7 +265,19 @@ class LocalStorageService implements IStorageService {
         valid.push(parsed.data as Affirmation);
       }
     }
-    return valid.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return valid.sort((a, b) => {
+      // Pinned items come first
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      // If both are pinned or have custom orders, respect order
+      if (a.order !== undefined && b.order !== undefined) {
+        return a.order - b.order;
+      }
+      if (a.order !== undefined) return -1;
+      if (b.order !== undefined) return 1;
+      // Fallback to createdAt desc
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
   }
 
   public saveAffirmation(affirmation: Affirmation): void {
@@ -267,6 +290,42 @@ class LocalStorageService implements IStorageService {
     } else {
       updated = [affirmation, ...current];
     }
+    this.safeSet(STORAGE_KEYS.AFFIRMATIONS, updated);
+  }
+
+  public togglePinAffirmation(id: string): Affirmation | null {
+    const current = this.getAffirmations();
+    const index = current.findIndex((a) => a.id === id);
+    if (index < 0) return null;
+    const target = current[index];
+    const willBePinned = !target.pinned;
+    const updated: Affirmation = {
+      ...target,
+      pinned: willBePinned,
+      order: willBePinned ? 0 : undefined,
+    };
+    current[index] = updated;
+    this.safeSet(STORAGE_KEYS.AFFIRMATIONS, current);
+    return updated;
+  }
+
+  public reorderAffirmations(orderedAffirmations: Affirmation[]): void {
+    const current = this.getAffirmations();
+    const orderMap = new Map<string, number>();
+    orderedAffirmations.forEach((item, idx) => {
+      orderMap.set(item.id, idx);
+    });
+
+    const updated = current.map((item) => {
+      if (orderMap.has(item.id)) {
+        return {
+          ...item,
+          order: orderMap.get(item.id),
+        };
+      }
+      return item;
+    });
+
     this.safeSet(STORAGE_KEYS.AFFIRMATIONS, updated);
   }
 
@@ -288,6 +347,124 @@ class LocalStorageService implements IStorageService {
   public deleteAffirmation(id: string): void {
     const current = this.getAffirmations();
     this.safeSet(STORAGE_KEYS.AFFIRMATIONS, current.filter((a) => a.id !== id));
+  }
+
+  // Rampage Sets
+  public getRampageSets(): RampageSet[] {
+    const raw = this.safeGet<unknown[]>(STORAGE_KEYS.RAMPAGE_SETS, []);
+    const valid: RampageSet[] = [];
+    if (raw && raw.length > 0) {
+      for (const item of raw) {
+        const parsed = RampageSetSchema.safeParse(item);
+        if (parsed.success) {
+          valid.push(parsed.data as RampageSet);
+        }
+      }
+    }
+
+    if (valid.length === 0) {
+      const defaultSets: RampageSet[] = [
+        {
+          id: 'set-abundancia',
+          userId: 'facu',
+          author: 'Facu',
+          title: 'Abundancia & Prosperidad',
+          category: 'abundancia',
+          affirmations: [
+            { id: 'aff-ramp-1', text: 'Merezco recibir abundancia ilimitada de forma fluida y natural.', repeatCount: 0 },
+            { id: 'aff-ramp-2', text: 'El dinero y las oportunidades bendecidas llegan a mí constantemente.', repeatCount: 0 },
+            { id: 'aff-ramp-3', text: 'Agradezco la prosperidad presente y me abro a multiplicarla con gozo.', repeatCount: 0 },
+            { id: 'aff-ramp-4', text: 'Todo lo que invierto en mi crecimiento regresa multiplicado a mi vida.', repeatCount: 0 },
+          ],
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: 'set-amor-paz',
+          userId: 'facu',
+          author: 'Facu',
+          title: 'Amor Propio & Paz Serena',
+          category: 'bienestar',
+          affirmations: [
+            { id: 'aff-ramp-5', text: 'Me acepto con profunda ternura y honro mi propio ritmo sagrado.', repeatCount: 0 },
+            { id: 'aff-ramp-6', text: 'Mi mente descansa en una calma lúcida, luminosa y agradecida.', repeatCount: 0 },
+            { id: 'aff-ramp-7', text: 'Suelto lo que escapa a mi control y habito el presente con serenidad.', repeatCount: 0 },
+            { id: 'aff-ramp-8', text: 'Merezco relaciones amorosas, honestas y de apoyo mutuo.', repeatCount: 0 },
+          ],
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: 'set-exito',
+          userId: 'facu',
+          author: 'Facu',
+          title: 'Éxito & Expansión Creativa',
+          category: 'carrera',
+          affirmations: [
+            { id: 'aff-ramp-9', text: 'Mis talentos únicos generan valor real e inspiran a quienes me rodean.', repeatCount: 0 },
+            { id: 'aff-ramp-10', text: 'Confío en mi intuición y en mi capacidad técnica para superar retos.', repeatCount: 0 },
+            { id: 'aff-ramp-11', text: 'Cada proyecto que inicio florece con impacto, claridad y trascendencia.', repeatCount: 0 },
+          ],
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: 'set-salud',
+          userId: 'facu',
+          author: 'Facu',
+          title: 'Salud Radiante & Vitalidad',
+          category: 'bienestar',
+          affirmations: [
+            { id: 'aff-ramp-12', text: 'Cada célula de mi cuerpo vibra en óptima salud, energía y vitalidad.', repeatCount: 0 },
+            { id: 'aff-ramp-13', text: 'Nutro mi cuerpo y mi mente con hábitos que expanden mi bienestar.', repeatCount: 0 },
+            { id: 'aff-ramp-14', text: 'Respiro vida plena, renuevo mi fuerza y despierto con gozo cada día.', repeatCount: 0 },
+          ],
+          createdAt: new Date().toISOString(),
+        },
+      ];
+      this.safeSet(STORAGE_KEYS.RAMPAGE_SETS, defaultSets);
+      return defaultSets;
+    }
+
+    return valid;
+  }
+
+  public saveRampageSet(set: RampageSet): void {
+    const current = this.getRampageSets();
+    const index = current.findIndex((s) => s.id === set.id);
+    let updated: RampageSet[];
+    if (index >= 0) {
+      updated = [...current];
+      updated[index] = { ...set, updatedAt: new Date().toISOString() };
+    } else {
+      updated = [set, ...current];
+    }
+    this.safeSet(STORAGE_KEYS.RAMPAGE_SETS, updated);
+  }
+
+  public deleteRampageSet(id: string): void {
+    const current = this.getRampageSets();
+    this.safeSet(STORAGE_KEYS.RAMPAGE_SETS, current.filter((s) => s.id !== id));
+  }
+
+  public incrementRampageAffirmationRepeat(setId: string, affirmationId: string): { updatedSet: RampageSet; repeatCount: number } | null {
+    const current = this.getRampageSets();
+    const setIndex = current.findIndex((s) => s.id === setId);
+    if (setIndex < 0) return null;
+    const targetSet = current[setIndex];
+    let newRepeat = 1;
+    const updatedAffirmations = targetSet.affirmations.map((aff) => {
+      if (aff.id === affirmationId) {
+        newRepeat = (aff.repeatCount || 0) + 1;
+        return { ...aff, repeatCount: newRepeat };
+      }
+      return aff;
+    });
+    const updatedSet: RampageSet = {
+      ...targetSet,
+      affirmations: updatedAffirmations,
+      updatedAt: new Date().toISOString(),
+    };
+    current[setIndex] = updatedSet;
+    this.safeSet(STORAGE_KEYS.RAMPAGE_SETS, current);
+    return { updatedSet, repeatCount: newRepeat };
   }
 
   // Goals

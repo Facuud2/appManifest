@@ -1,37 +1,38 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAppStore } from '@/store';
 import {
   Sparkles,
   Plus,
+  Pin,
+  ListOrdered,
   Flame,
-  Trash2,
-  Calendar,
 } from 'lucide-react';
-import { UserScope } from '@/types';
-import { motion } from 'framer-motion';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { UserScope, Affirmation } from '@/types';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
+import { VoiceDictationButton } from '@/components/ui/VoiceDictationButton';
+import { ManifestationCard } from '@/components/goals/ManifestationCard';
+import { RampageSetView } from '@/components/goals/RampageSetView';
 
 export const GoalsView: React.FC = () => {
   const {
     activeScope,
     affirmations,
     saveAffirmation,
-    incrementAffirmationRepeat,
-    deleteAffirmation,
+    reorderAffirmations,
   } = useAppStore();
 
+  const [viewMode, setViewMode] = useState<'list' | 'rampage'>('list');
   const [manifestationText, setManifestationText] = useState('');
   const [scope, setScope] = useState<UserScope>(activeScope);
-  const [pulsingId, setPulsingId] = useState<string | null>(null);
 
-  const handleRepeat = (id: string) => {
-    incrementAffirmationRepeat(id);
-    setPulsingId(id);
-    setTimeout(() => setPulsingId(null), 450);
-  };
+  const pinnedContainerRef = useRef<HTMLDivElement>(null);
+
+  // Split pinned and unpinned manifestations
+  const pinnedAffirmations = affirmations.filter((a) => a.pinned);
+  const unpinnedAffirmations = affirmations.filter((a) => !a.pinned);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +47,7 @@ export const GoalsView: React.FC = () => {
       author,
       text: manifestationText.trim(),
       repeatCount: 1,
+      pinned: false,
       createdAt: new Date().toISOString(),
       lastRepeatedAt: new Date().toISOString(),
     });
@@ -53,165 +55,218 @@ export const GoalsView: React.FC = () => {
     setManifestationText('');
   };
 
-  return (
-    <div className="max-w-2xl mx-auto space-y-5 pt-1">
-      {/* Header */}
-      <div className="px-1">
-        <h2 className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-manifest-auraPurple" />
-          Manifestaciones
-        </h2>
-        <p className="text-xs text-manifest-inkMuted mt-0.5">
-          Todas tus afirmaciones y decretos conscientes en un solo lugar
-        </p>
-      </div>
+  const handleReorderPinned = (reordered: Affirmation[]) => {
+    // Preserve unpinned items, only update order for pinned items
+    reorderAffirmations([...reordered, ...unpinnedAffirmations]);
+  };
 
-      {/* Quick Manifestation Writer */}
-      <form
-        onSubmit={handleSave}
-        className="p-4 sm:p-5 rounded-3xl glass-card border border-white/95 shadow-sm space-y-3.5"
-      >
-        <div className="flex items-center justify-between gap-2">
-          <label className="text-xs font-semibold text-manifest-ink">
-            Escribe tu manifestación
-          </label>
-          <div className="flex items-center gap-1">
-            {[
-              { key: 'facu' as UserScope, label: 'Facu' },
-              { key: 'maia' as UserScope, label: 'Maia' },
-              { key: 'shared' as UserScope, label: '✨ Juntos' },
-            ].map((sc) => (
-              <button
-                key={sc.key}
-                type="button"
-                onClick={() => setScope(sc.key)}
-                className={`py-1 px-2.5 rounded-xl text-[11px] font-semibold transition-all border ${
-                  scope === sc.key
-                    ? 'bg-manifest-ink text-white border-manifest-ink shadow-sm'
-                    : 'bg-white/70 hover:bg-white text-manifest-inkMuted border-white/80'
-                }`}
-              >
-                {sc.label}
-              </button>
-            ))}
-          </div>
+  return (
+    <div className="max-w-2xl mx-auto space-y-4 pt-1">
+      {/* Header with iOS Segmented Control */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-manifest-auraPurple" />
+            Manifestaciones
+          </h2>
+          <p className="text-xs text-manifest-inkMuted mt-0.5">
+            Afirmaciones conscientes, fijados prioritarios y sets de rampage
+          </p>
         </div>
 
-        <textarea
-          rows={3}
-          value={manifestationText}
-          onChange={(e) => setManifestationText(e.target.value)}
-          placeholder="Escribe en tiempo presente tu deseo o afirmación... (Ej: Atraigo abundancia, tranquilidad y felicidad cada día)"
-          className="w-full p-3 rounded-2xl glass-input text-base sm:text-xs resize-none placeholder:text-manifest-inkLight"
-          required
-        />
-
-        <div className="flex justify-end pt-1">
+        {/* iOS Segmented Control / Switch */}
+        <div className="flex p-1 rounded-2xl bg-white/75 border border-white shadow-sm backdrop-blur-md self-start sm:self-auto">
           <button
-            type="submit"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm"
+            type="button"
+            onClick={() => setViewMode('list')}
+            className={`relative px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors duration-200 ${
+              viewMode === 'list'
+                ? 'text-manifest-ink'
+                : 'text-manifest-inkMuted hover:text-manifest-ink'
+            }`}
           >
-            <Plus className="w-4 h-4" />
-            <span>Guardar Manifestación</span>
+            {viewMode === 'list' && (
+              <motion.div
+                layoutId="manifestationViewMode"
+                className="absolute inset-0 rounded-xl bg-white shadow-sm border border-white -z-10"
+                transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+              />
+            )}
+            <span className="flex items-center gap-1.5">
+              <Pin className="w-3.5 h-3.5 text-manifest-auraPurple" />
+              Lista y Fijados
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setViewMode('rampage')}
+            className={`relative px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors duration-200 ${
+              viewMode === 'rampage'
+                ? 'text-manifest-ink'
+                : 'text-manifest-inkMuted hover:text-manifest-ink'
+            }`}
+          >
+            {viewMode === 'rampage' && (
+              <motion.div
+                layoutId="manifestationViewMode"
+                className="absolute inset-0 rounded-xl bg-white shadow-sm border border-white -z-10"
+                transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+              />
+            )}
+            <span className="flex items-center gap-1.5">
+              <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+              Sets de Rampage
+            </span>
           </button>
         </div>
-      </form>
-
-      {/* Manifestations List */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between px-1">
-          <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-manifest-ink">
-            Todas tus manifestaciones ({affirmations.length})
-          </h3>
-        </div>
-
-        {affirmations.length === 0 ? (
-          <div className="p-8 rounded-3xl glass-card text-center space-y-2.5 border border-white/80">
-            <div className="w-12 h-12 mx-auto rounded-full bg-manifest-lavender/40 flex items-center justify-center text-manifest-ink">
-              <Sparkles className="w-6 h-6" />
-            </div>
-            <h4 className="font-serif text-base font-bold text-manifest-ink">
-              Sin manifestaciones aún
-            </h4>
-            <p className="text-xs text-manifest-inkMuted max-w-xs mx-auto">
-              Escribe arriba tu primera manifestación o afirmación para comenzar a proyectar tu realidad.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-3">
-            {affirmations.map((item) => {
-              const formattedDate = format(new Date(item.createdAt), "d 'de' MMMM", { locale: es });
-              const isPulsing = pulsingId === item.id;
-
-              return (
-                <motion.div
-                  key={item.id}
-                  layout
-                  className={`p-4 sm:p-5 rounded-3xl glass-card border border-white/95 shadow-sm space-y-2.5 transition-all ${
-                    isPulsing ? 'ring-2 ring-manifest-auraPurple/70 bg-white/95 scale-[1.01]' : ''
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      {item.userId === 'shared' ? (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-manifest-pink/60 to-manifest-celeste/60 text-manifest-ink border border-white">
-                          ✨ Juntos
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/80 text-manifest-inkMuted">
-                          {item.author || (item.userId === 'facu' ? 'Facu' : 'Maia')}
-                        </span>
-                      )}
-                      <span className="text-[10px] text-manifest-inkMuted flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {formattedDate}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleRepeat(item.id)}
-                        className={`flex items-center gap-1.5 px-3 py-1 rounded-2xl transition-all shadow-sm ${
-                          isPulsing
-                            ? 'bg-manifest-lavender text-manifest-ink scale-105 shadow-md ring-2 ring-manifest-auraPurple'
-                            : 'bg-white/90 hover:bg-white text-manifest-ink border border-white'
-                        }`}
-                        title="Pulsar para sumar una repetición"
-                      >
-                        <Flame
-                          className={`w-3.5 h-3.5 transition-colors ${
-                            item.repeatCount > 0 ? 'text-amber-500 fill-amber-400' : 'text-manifest-inkMuted'
-                          }`}
-                        />
-                        <span className="text-xs font-bold font-mono text-manifest-ink">
-                          {item.repeatCount}
-                        </span>
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-manifest-lavender/50 text-manifest-auraPurple">
-                          +1
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => deleteAffirmation(item.id)}
-                        className="p-1.5 rounded-full hover:bg-white/80 text-manifest-inkMuted hover:text-rose-500 transition-colors"
-                        title="Eliminar manifestación"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <p className="text-sm sm:text-base font-semibold text-manifest-ink leading-relaxed">
-                    {item.text}
-                  </p>
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
       </div>
+
+      {/* VIEW MODE 1: LISTA Y FIJADOS */}
+      {viewMode === 'list' && (
+        <div className="space-y-4">
+          {/* Quick Manifestation Writer */}
+          <form
+            onSubmit={handleSave}
+            className="p-4 sm:p-5 rounded-3xl glass-card border border-white/95 shadow-sm space-y-3"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-xs font-semibold text-manifest-ink">
+                Nueva Manifestación
+              </label>
+              <div className="flex items-center gap-1">
+                {[
+                  { key: 'facu' as UserScope, label: 'Facu' },
+                  { key: 'maia' as UserScope, label: 'Maia' },
+                  { key: 'shared' as UserScope, label: '✨ Juntos' },
+                ].map((sc) => (
+                  <button
+                    key={sc.key}
+                    type="button"
+                    onClick={() => setScope(sc.key)}
+                    className={`py-1 px-2.5 rounded-xl text-[11px] font-semibold transition-all border ${
+                      scope === sc.key
+                        ? 'bg-manifest-ink text-white border-manifest-ink shadow-sm'
+                        : 'bg-white/70 hover:bg-white text-manifest-inkMuted border-white/80'
+                    }`}
+                  >
+                    {sc.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative">
+              <AutoResizeTextarea
+                minRows={2}
+                value={manifestationText}
+                onChange={(e) => setManifestationText(e.target.value)}
+                placeholder="Escribe en tiempo presente tu deseo o afirmación... (Ej: Atraigo abundancia, tranquilidad y felicidad cada día)"
+                className="w-full p-3.5 pr-11 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight"
+                required
+              />
+              <div className="absolute right-2.5 bottom-2.5">
+                <VoiceDictationButton
+                  size="sm"
+                  onTranscript={(trans) =>
+                    setManifestationText((prev) => (prev ? `${prev} ${trans}` : trans))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-0.5">
+              <button
+                type="submit"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Guardar Manifestación</span>
+              </button>
+            </div>
+          </form>
+
+          {/* SECTION: PINNED MANIFESTATIONS (DRAG & DROP RESTRICTED) */}
+          {pinnedAffirmations.length > 0 && (
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
+                  <Pin className="w-3.5 h-3.5 text-manifest-auraPurple fill-manifest-auraPurple" />
+                  Manifestaciones Fijadas ({pinnedAffirmations.length})
+                </h3>
+                <span className="text-[10px] text-manifest-inkMuted">
+                  Arrastra desde (=) para reordenar
+                </span>
+              </div>
+
+              {/* CRITICAL CONTAINER RESTRICTION: overflow-hidden & contain-layout */}
+              <div
+                ref={pinnedContainerRef}
+                style={{ contain: 'layout' }}
+                className="relative overflow-hidden w-full rounded-3xl"
+              >
+                <Reorder.Group
+                  axis="y"
+                  values={pinnedAffirmations}
+                  onReorder={handleReorderPinned}
+                  className="space-y-2.5 list-none m-0 p-0"
+                >
+                  {pinnedAffirmations.map((item) => (
+                    <ManifestationCard
+                      key={item.id}
+                      affirmation={item}
+                      isPinnedMode={true}
+                      containerRef={pinnedContainerRef}
+                    />
+                  ))}
+                </Reorder.Group>
+              </div>
+            </div>
+          )}
+
+          {/* SECTION: ALL / UNPINNED MANIFESTATIONS */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-manifest-ink">
+                {pinnedAffirmations.length > 0
+                  ? `Otras Manifestaciones (${unpinnedAffirmations.length})`
+                  : `Todas tus Manifestaciones (${affirmations.length})`}
+              </h3>
+            </div>
+
+            {affirmations.length === 0 ? (
+              <div className="p-8 rounded-3xl glass-card text-center space-y-2.5 border border-white/80">
+                <div className="w-12 h-12 mx-auto rounded-full bg-manifest-lavender/40 flex items-center justify-center text-manifest-ink">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <h4 className="font-serif text-base font-bold text-manifest-ink">
+                  Sin manifestaciones aún
+                </h4>
+                <p className="text-xs text-manifest-inkMuted max-w-xs mx-auto">
+                  Escribe arriba tu primera manifestación o afirmación para comenzar a proyectar tu realidad.
+                </p>
+              </div>
+            ) : unpinnedAffirmations.length === 0 && pinnedAffirmations.length > 0 ? (
+              <p className="text-xs text-manifest-inkMuted text-center py-2">
+                Todas tus manifestaciones están fijadas como prioritarias arriba.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 gap-2.5">
+                {unpinnedAffirmations.map((item) => (
+                  <ManifestationCard
+                    key={item.id}
+                    affirmation={item}
+                    isPinnedMode={false}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* VIEW MODE 2: SETS DE RAMPAGE */}
+      {viewMode === 'rampage' && <RampageSetView />}
     </div>
   );
 };

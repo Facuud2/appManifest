@@ -7,6 +7,7 @@ import { BottomNavigation } from '@/components/layout/BottomNavigation';
 import { DesktopSidebar } from '@/components/layout/DesktopSidebar';
 import { ToastContainer } from '@/components/ui/ToastContainer';
 import { JournalEditorModal } from '@/components/journal/JournalEditorModal';
+import { AffirmationEditorModal } from '@/components/goals/AffirmationEditorModal';
 import { PwaInstallGuide } from '@/components/pwa/PwaInstallGuide';
 import { InteractiveTour } from '@/components/onboarding/InteractiveTour';
 import { DashboardView } from '@/features/dashboard/DashboardView';
@@ -64,6 +65,9 @@ export default function Home() {
 
       {/* Global Journal Editor Modal */}
       <JournalEditorModal />
+
+      {/* Global Affirmation Editor Modal */}
+      <AffirmationEditorModal />
 
       {/* Desktop Left Sidebar (>= 1024px) */}
       <DesktopSidebar onOpenInstallGuide={() => setIsInstallGuideOpen(true)} />

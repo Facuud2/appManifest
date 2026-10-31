@@ -138,6 +138,25 @@ export const AffirmationSchema = z.object({
   category: z.string().optional(),
   createdAt: z.string(),
   lastRepeatedAt: z.string().optional(),
+  pinned: z.boolean().default(false),
+  order: z.number().optional(),
+});
+
+export const RampageAffirmationSchema = z.object({
+  id: z.string().min(1),
+  text: z.string().min(1, 'La afirmación no puede estar vacía'),
+  repeatCount: z.number().int().nonnegative().default(0),
+});
+
+export const RampageSetSchema = z.object({
+  id: z.string().min(1),
+  userId: UserScopeEnum.default('facu'),
+  author: z.string().default('Facu'),
+  title: z.string().min(1, 'El título del set es requerido'),
+  category: z.string().optional(),
+  affirmations: z.array(RampageAffirmationSchema).min(1, 'El set debe tener al menos una afirmación'),
+  createdAt: z.string(),
+  updatedAt: z.string().optional(),
 });
 
 export const UserSettingsSchema = z.object({
@@ -170,5 +189,6 @@ export const BackupDataSchema = z.object({
   successStories: z.array(SuccessStorySchema).optional(),
   futureManifestations: z.array(FutureManifestationSchema).optional(),
   affirmations: z.array(AffirmationSchema).optional(),
+  rampageSets: z.array(RampageSetSchema).optional(),
   settings: UserSettingsSchema,
 });

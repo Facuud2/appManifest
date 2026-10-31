@@ -13,6 +13,25 @@ export interface Affirmation {
   category?: string;
   createdAt: string;
   lastRepeatedAt?: string;
+  pinned?: boolean;
+  order?: number;
+}
+
+export interface RampageAffirmation {
+  id: string;
+  text: string;
+  repeatCount: number;
+}
+
+export interface RampageSet {
+  id: string;
+  userId: UserScope;
+  author: string;
+  title: string;
+  category?: string;
+  affirmations: RampageAffirmation[];
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export type GoalCategory = 'crecimiento' | 'carrera' | 'bienestar' | 'relaciones' | 'abundancia' | 'creatividad';
@@ -176,6 +195,7 @@ export interface BackupData {
   successStories?: SuccessStory[];
   futureManifestations?: FutureManifestation[];
   affirmations?: Affirmation[];
+  rampageSets?: RampageSet[];
   settings: UserSettings;
 }
 
