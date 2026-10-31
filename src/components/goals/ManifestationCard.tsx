@@ -8,11 +8,8 @@ import {
   Flame,
   Trash2,
   Edit3,
-  Calendar,
   Sparkles,
 } from 'lucide-react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { motion, Reorder, useDragControls } from 'framer-motion';
 
 interface ManifestationCardProps {
@@ -38,9 +35,6 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
   } = useAppStore();
 
   const dragControls = useDragControls();
-  const formattedDate = affirmation.createdAt
-    ? format(new Date(affirmation.createdAt), "d 'de' MMMM", { locale: es })
-    : '';
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -103,13 +97,6 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
           ) : (
             <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/80 text-manifest-inkMuted">
               {affirmation.author || (affirmation.userId === 'facu' ? 'Facu' : 'Maia')}
-            </span>
-          )}
-
-          {formattedDate && (
-            <span className="text-[10px] text-manifest-inkMuted flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              {formattedDate}
             </span>
           )}
         </div>
