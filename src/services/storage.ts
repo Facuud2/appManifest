@@ -43,330 +43,34 @@ const STORAGE_KEYS = {
   SCHEMA_VERSION: 'manifest_schema_version',
 } as const;
 
-export const CURRENT_SCHEMA_VERSION = 3;
+export const CURRENT_SCHEMA_VERSION = 4;
 
 export const DEFAULT_SETTINGS: UserSettings = {
   userName: 'Facu',
   greetingPreference: 'intimate',
   theme: 'pastel-rainbow',
   reducedMotion: false,
-  favoriteAffirmations: [
-    'Todo lo que anhelo con el corazón ya está buscando el camino hacia mí.',
-    'Confío en el ritmo natural de mi vida y en mis pasos conscientes.',
-    'Merezco vivir en paz, belleza y profunda realización.',
-    'Doy gracias por este nuevo día y por mi capacidad de crear mi realidad.',
-  ],
+  favoriteAffirmations: [],
   firstLaunchCompleted: true,
-  tutorialCompleted: false,
+  tutorialCompleted: true,
   activeScope: 'facu',
   dailyStreak: 1,
   lastActiveDate: new Date().toISOString().split('T')[0],
-  totalJournalEntries: 1,
-  totalActionsCompleted: 1,
+  totalJournalEntries: 0,
+  totalActionsCompleted: 0,
   totalReleases: 0,
-  unlockedMilestones: ['first_step', 'welcome_manifest'],
+  unlockedMilestones: [],
 };
 
-// Seed sample data for Facu, Maia, and Shared
-const SEED_JOURNAL: JournalEntry[] = [
-  // Facu
-  {
-    id: 'seed-facu-1',
-    userId: 'facu',
-    author: 'Facu',
-    title: 'Mi espacio de quietud y claridad',
-    content: 'Hoy abro este santuario para conectar con lo que realmente deseo. No desde la prisa ni la exigencia, sino desde la presencia y el cariño hacia mi camino.',
-    entryType: 'manifestation',
-    mood: 'radiant',
-    gratitudeItems: ['El aire fresco de la mañana', 'Este momento para ordenar mis ideas'],
-    affirmations: ['Elijo vivir con intención, calma y gratitud.'],
-    tags: ['Comienzo', 'Intención', 'Paz'],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  // Maia
-  {
-    id: 'seed-maia-1',
-    userId: 'maia',
-    author: 'Maia',
-    title: 'Santuario de intuición y proyectos del corazón',
-    content: 'Comienzo este espacio íntimo para escuchar mi voz interior, honrar mi sensibilidad y permitirme manifestar con ligereza y amor propio.',
-    entryType: 'manifestation',
-    mood: 'inspired',
-    gratitudeItems: ['La belleza de los nuevos comienzos', 'Confianza en mi intuición'],
-    affirmations: ['Todo fluye en el momento perfecto para mí.'],
-    tags: ['Magia', 'Intuición', 'Creación'],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  // Shared (Facu & Maia)
-  {
-    id: 'seed-shared-1',
-    userId: 'shared',
-    author: 'Facu & Maia',
-    title: 'Nuestra visión compartida y sueños juntos',
-    content: 'Este es nuestro espacio compartido para co-crear, registrar viajes deseados, momentos mágicos y manifestar en equipo la vida luminosa que queremos construir.',
-    entryType: 'manifestation',
-    mood: 'radiant',
-    gratitudeItems: ['Caminar juntos con complicidad y amor', 'Nuestros sueños mutuos'],
-    affirmations: ['Juntos multiplicamos la alegría, la abundancia y la paz.'],
-    tags: ['Nosotros', 'Amor', 'Co-Creación'],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
-
-const SEED_GOALS: Goal[] = [
-  // Facu
-  {
-    id: 'goal-facu-1',
-    userId: 'facu',
-    author: 'Facu',
-    title: 'Cultivar mi paz mental y coherencia diaria',
-    description: 'Crear una rutina suave matutina que me conecte con mi centro antes de entrar al ruido del mundo.',
-    category: 'bienestar',
-    motivation: 'Quiero vivir sintiendo que dirijo mi vida desde la serenidad y no desde la reacción automática.',
-    status: 'active',
-    targetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    createdAt: new Date().toISOString(),
-  },
-  // Maia
-  {
-    id: 'goal-maia-1',
-    userId: 'maia',
-    author: 'Maia',
-    title: 'Expandir mi creatividad y proyectos personales',
-    description: 'Dedicar tiempo sagrado a mis expresiones artísticas y proyectos con plena confianza.',
-    category: 'creatividad',
-    motivation: 'Dar luz a lo que llevo dentro me llena de alegría y autenticidad.',
-    status: 'active',
-    targetDate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    createdAt: new Date().toISOString(),
-  },
-  // Shared
-  {
-    id: 'goal-shared-1',
-    userId: 'shared',
-    author: 'Facu & Maia',
-    title: 'Nuestro viaje soñado a la naturaleza',
-    description: 'Planear nuestra escapada a las montañas con tiempo libre y desconexión total.',
-    category: 'relaciones',
-    motivation: 'Celebrar nuestro amor y recargar energías en un rincón mágico.',
-    status: 'active',
-    targetDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    createdAt: new Date().toISOString(),
-  },
-];
-
-const SEED_GOAL_STEPS: GoalStep[] = [
-  {
-    id: 'step-facu-1',
-    goalId: 'goal-facu-1',
-    userId: 'facu',
-    title: 'Dedicar 10 minutos a escribir en mi diario al despertar',
-    completed: true,
-    completedAt: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'step-facu-2',
-    goalId: 'goal-facu-1',
-    userId: 'facu',
-    title: 'Hacer una pausa al mediodía para respirar hondo',
-    completed: false,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'step-maia-1',
-    goalId: 'goal-maia-1',
-    userId: 'maia',
-    title: 'Crear un tablero de inspiración visual para mi proyecto',
-    completed: true,
-    completedAt: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'step-shared-1',
-    goalId: 'goal-shared-1',
-    userId: 'shared',
-    title: 'Investigar cabañas con ventanales y vistas al bosque',
-    completed: false,
-    createdAt: new Date().toISOString(),
-  },
-];
-
-const SEED_AGENDA: AgendaEvent[] = [
-  {
-    id: 'agenda-facu-1',
-    userId: 'facu',
-    author: 'Facu',
-    title: 'Momento de enfoque y planificación personal',
-    description: 'Ordenar prioridades de la semana.',
-    date: new Date().toISOString().split('T')[0],
-    time: '19:00',
-    completed: false,
-    goalId: 'goal-facu-1',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'agenda-shared-1',
-    userId: 'shared',
-    author: 'Facu & Maia',
-    title: 'Cena & charla de intenciones juntos',
-    description: 'Cocinar algo rico y revisar nuestras visiones compartidas.',
-    date: new Date().toISOString().split('T')[0],
-    time: '21:00',
-    completed: false,
-    goalId: 'goal-shared-1',
-    createdAt: new Date().toISOString(),
-  },
-];
-
-const SEED_SUCCESS_STORIES: SuccessStory[] = [
-  {
-    id: 'success-shared-1',
-    userId: 'shared',
-    author: 'Facu & Maia',
-    title: 'Nuestra primera gran sincronía juntos',
-    goalId: 'goal-shared-1',
-    manifestedDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    story: 'Teníamos la intención de encontrar un fin de semana libre sin obligaciones. Sin planearlo, ambos tuvimos los días libres exactamente en la misma fecha y encontramos un lugar perfecto.',
-    signsEncountered: [
-      'Ambos vimos la secuencia 11:11 el mismo día',
-      'Una recomendación casual que nos llegó por separado',
-    ],
-    mindsetShift: 'Soltamos la exigencia y confiamos en que el universo organiza los tiempos perfectos.',
-    gratitudeNote: 'Gracias por la complicidad y la magia compartida.',
-    createdAt: new Date().toISOString(),
-  },
-];
-
-const SEED_SIGNS: ManifestationSign[] = [
-  {
-    id: 'sign-facu-1',
-    userId: 'facu',
-    author: 'Facu',
-    title: 'Sincronía 11:11 y conversación inspiradora',
-    signType: 'angel_number',
-    description: 'Al mirar el reloj eran las 11:11 en el preciso instante en que recibí una propuesta creativa.',
-    date: new Date().toISOString().split('T')[0],
-    feeling: 'Sensación de calidez en el pecho y certeza.',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'sign-shared-1',
-    userId: 'shared',
-    author: 'Facu & Maia',
-    title: 'Mariposa brillante en nuestro camino',
-    signType: 'symbol',
-    description: 'Durante un paseo juntos, una mariposa se posó cerca de nosotros justo cuando hablábamos de nuestros planes.',
-    date: new Date().toISOString().split('T')[0],
-    feeling: 'Confirmación y alegría compartida.',
-    createdAt: new Date().toISOString(),
-  },
-];
-
-const SEED_FUTURE_MANIFESTATIONS: FutureManifestation[] = [
-  {
-    id: 'future-shared-1',
-    userId: 'shared',
-    author: 'Facu & Maia',
-    title: 'Nuestra cabaña cerca de las montañas',
-    horizon: '1_year',
-    targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    visionText: 'Nos vemos desayunando café caliente con el aroma a madera y lluvia en el jardín. Sentimos profunda paz, abundancia y complicidad en nuestro propio hogar.',
-    letterToFutureSelf: 'A nuestro Yo del futuro: Que nunca olvidemos cómo empezó este sueño, con amor y certeza.',
-    isSealed: false,
-    createdAt: new Date().toISOString(),
-  },
-];
-
-const SEED_AFFIRMATIONS: Affirmation[] = [
-  // Facu
-  {
-    id: 'aff-facu-1',
-    userId: 'facu',
-    author: 'Facu',
-    text: 'Todo lo que busco con serenidad ya habita en mi interior esperando expandirse.',
-    repeatCount: 5,
-    category: 'Paz Interior',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'aff-facu-2',
-    userId: 'facu',
-    author: 'Facu',
-    text: 'Actúo desde la certeza de que mis pasos conscientes crean mi realidad.',
-    repeatCount: 3,
-    category: 'Certeza',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'aff-facu-3',
-    userId: 'facu',
-    author: 'Facu',
-    text: 'Merezco recibir la abundancia y la armonía que con tanto cariño entrego.',
-    repeatCount: 7,
-    category: 'Abundancia',
-    createdAt: new Date().toISOString(),
-  },
-  // Maia
-  {
-    id: 'aff-maia-1',
-    userId: 'maia',
-    author: 'Maia',
-    text: 'Honro mi intuición y confío en que el universo organiza los tiempos perfectos para mí.',
-    repeatCount: 4,
-    category: 'Intuición',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'aff-maia-2',
-    userId: 'maia',
-    author: 'Maia',
-    text: 'Mi sensibilidad es mi mayor poder creador y manifiesto con dulzura y alegría.',
-    repeatCount: 6,
-    category: 'Creación',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'aff-maia-3',
-    userId: 'maia',
-    author: 'Maia',
-    text: 'Me abro a recibir bendiciones inesperadas y milagros en mi día a día.',
-    repeatCount: 2,
-    category: 'Gratitud',
-    createdAt: new Date().toISOString(),
-  },
-  // Shared
-  {
-    id: 'aff-shared-1',
-    userId: 'shared',
-    author: 'Facu & Maia',
-    text: 'Juntos multiplicamos la alegría, la complicidad, el amor y la abundancia en nuestras vidas.',
-    repeatCount: 8,
-    category: 'Unión',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'aff-shared-2',
-    userId: 'shared',
-    author: 'Facu & Maia',
-    text: 'Nuestros sueños compartidos se materializan con gracia, ligereza y armonía mutua.',
-    repeatCount: 5,
-    category: 'Co-Creación',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'aff-shared-3',
-    userId: 'shared',
-    author: 'Facu & Maia',
-    text: 'Cada día celebramos nuestro camino juntos y la magia que creamos como equipo.',
-    repeatCount: 4,
-    category: 'Amor',
-    createdAt: new Date().toISOString(),
-  },
-];
+// Clean empty seed collections (no mock / test data)
+const SEED_JOURNAL: JournalEntry[] = [];
+const SEED_GOALS: Goal[] = [];
+const SEED_GOAL_STEPS: GoalStep[] = [];
+const SEED_AGENDA: AgendaEvent[] = [];
+const SEED_SUCCESS_STORIES: SuccessStory[] = [];
+const SEED_SIGNS: ManifestationSign[] = [];
+const SEED_FUTURE_MANIFESTATIONS: FutureManifestation[] = [];
+const SEED_AFFIRMATIONS: Affirmation[] = [];
 
 export interface IStorageService {
   getJournalEntries(): JournalEntry[];
@@ -449,28 +153,39 @@ class LocalStorageService implements IStorageService {
     if (!this.isBrowser()) return;
     const version = window.localStorage.getItem(STORAGE_KEYS.SCHEMA_VERSION);
     if (!version || parseInt(version) < CURRENT_SCHEMA_VERSION) {
-      this.safeSet(STORAGE_KEYS.JOURNAL, SEED_JOURNAL);
-      this.safeSet(STORAGE_KEYS.GOALS, SEED_GOALS);
-      this.safeSet(STORAGE_KEYS.GOAL_STEPS, SEED_GOAL_STEPS);
-      this.safeSet(STORAGE_KEYS.AGENDA, SEED_AGENDA);
+      // Clean out any legacy mock/seed items from previous versions
+      const currentJournals = this.getJournalEntries();
+      this.safeSet(
+        STORAGE_KEYS.JOURNAL,
+        currentJournals.filter((j) => !j.id.startsWith('seed-'))
+      );
+      this.safeSet(STORAGE_KEYS.GOALS, []);
+      this.safeSet(STORAGE_KEYS.GOAL_STEPS, []);
+      this.safeSet(STORAGE_KEYS.AGENDA, []);
       this.safeSet(STORAGE_KEYS.RELEASES, []);
       this.safeSet(STORAGE_KEYS.REFLECTIONS, []);
-      this.safeSet(STORAGE_KEYS.SIGNS, SEED_SIGNS);
-      this.safeSet(STORAGE_KEYS.SUCCESS_STORIES, SEED_SUCCESS_STORIES);
-      this.safeSet(STORAGE_KEYS.FUTURE_MANIFESTATIONS, SEED_FUTURE_MANIFESTATIONS);
-      this.safeSet(STORAGE_KEYS.AFFIRMATIONS, SEED_AFFIRMATIONS);
+      this.safeSet(STORAGE_KEYS.SIGNS, []);
+      this.safeSet(STORAGE_KEYS.SUCCESS_STORIES, []);
+      this.safeSet(STORAGE_KEYS.FUTURE_MANIFESTATIONS, []);
+
+      const currentAffs = this.getAffirmations();
+      this.safeSet(
+        STORAGE_KEYS.AFFIRMATIONS,
+        currentAffs.filter(
+          (a) =>
+            !a.id.startsWith('aff-facu-') &&
+            !a.id.startsWith('aff-maia-') &&
+            !a.id.startsWith('aff-shared-')
+        )
+      );
       this.safeSet(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
       window.localStorage.setItem(STORAGE_KEYS.SCHEMA_VERSION, String(CURRENT_SCHEMA_VERSION));
-    } else {
-      if (!this.safeGet(STORAGE_KEYS.AFFIRMATIONS, null)) {
-        this.safeSet(STORAGE_KEYS.AFFIRMATIONS, SEED_AFFIRMATIONS);
-      }
     }
   }
 
   public bulkReplaceFromRemote(data: any): void {
     if (!data) return;
-    if (data.journalEntries) this.safeSet(STORAGE_KEYS.JOURNAL, data.journalEntries);
+    if (data.journalEntries) this.safeSet(STORAGE_KEYS.JOURNAL, data.journalEntries.filter((j: any) => !j.id?.startsWith('seed-')));
     if (data.goals) this.safeSet(STORAGE_KEYS.GOALS, data.goals);
     if (data.goalSteps) this.safeSet(STORAGE_KEYS.GOAL_STEPS, data.goalSteps);
     if (data.agendaEvents) this.safeSet(STORAGE_KEYS.AGENDA, data.agendaEvents);
@@ -478,7 +193,17 @@ class LocalStorageService implements IStorageService {
     if (data.successStories) this.safeSet(STORAGE_KEYS.SUCCESS_STORIES, data.successStories);
     if (data.futureManifestations) this.safeSet(STORAGE_KEYS.FUTURE_MANIFESTATIONS, data.futureManifestations);
     if (data.releaseEntries) this.safeSet(STORAGE_KEYS.RELEASES, data.releaseEntries);
-    if (data.affirmations) this.safeSet(STORAGE_KEYS.AFFIRMATIONS, data.affirmations);
+    if (data.affirmations) {
+      this.safeSet(
+        STORAGE_KEYS.AFFIRMATIONS,
+        data.affirmations.filter(
+          (a: any) =>
+            !a.id?.startsWith('aff-facu-') &&
+            !a.id?.startsWith('aff-maia-') &&
+            !a.id?.startsWith('aff-shared-')
+        )
+      );
+    }
   }
 
   // Journal
@@ -487,7 +212,9 @@ class LocalStorageService implements IStorageService {
     const valid: JournalEntry[] = [];
     for (const item of raw) {
       const parsed = JournalEntrySchema.safeParse(item);
-      if (parsed.success) valid.push(parsed.data as JournalEntry);
+      if (parsed.success && !parsed.data.id.startsWith('seed-')) {
+        valid.push(parsed.data as JournalEntry);
+      }
     }
     return valid.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
@@ -518,9 +245,16 @@ class LocalStorageService implements IStorageService {
     const valid: Affirmation[] = [];
     for (const item of raw) {
       const parsed = AffirmationSchema.safeParse(item);
-      if (parsed.success) valid.push(parsed.data as Affirmation);
+      if (
+        parsed.success &&
+        !parsed.data.id.startsWith('aff-facu-') &&
+        !parsed.data.id.startsWith('aff-maia-') &&
+        !parsed.data.id.startsWith('aff-shared-')
+      ) {
+        valid.push(parsed.data as Affirmation);
+      }
     }
-    return valid.sort((a, b) => (b.repeatCount || 0) - (a.repeatCount || 0) || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return valid.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
   public saveAffirmation(affirmation: Affirmation): void {

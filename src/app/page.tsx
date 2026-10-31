@@ -9,7 +9,6 @@ import { ToastContainer } from '@/components/ui/ToastContainer';
 import { PwaInstallGuide } from '@/components/pwa/PwaInstallGuide';
 import { InteractiveTour } from '@/components/onboarding/InteractiveTour';
 import { DashboardView } from '@/features/dashboard/DashboardView';
-import { AgendaView } from '@/features/agenda/AgendaView';
 import { JournalView } from '@/features/journal/JournalView';
 import { GoalsView } from '@/features/goals/GoalsView';
 import { MySpaceView } from '@/features/space/MySpaceView';
@@ -83,18 +82,6 @@ export default function Home() {
                 transition={{ duration: 0.2 }}
               >
                 <DashboardView />
-              </motion.div>
-            )}
-
-            {activeTab === 'agenda' && (
-              <motion.div
-                key="agenda"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.2 }}
-              >
-                <AgendaView />
               </motion.div>
             )}
 

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useAppStore, AppTab } from '@/store';
-import { Sparkles, Calendar, BookOpen, Target, Compass } from 'lucide-react';
+import { Sparkles, BookOpen, Target, Compass } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface NavItem {
@@ -13,9 +13,8 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { key: 'inicio', label: 'Inicio', icon: Sparkles },
-  { key: 'agenda', label: 'Agenda', icon: Calendar },
+  { key: 'objetivos', label: 'Manifestaciones', icon: Target },
   { key: 'diario', label: 'Diario', icon: BookOpen },
-  { key: 'objetivos', label: 'Intenciones', icon: Target },
   { key: 'espacio', label: 'Mi Espacio', icon: Compass },
 ];
 

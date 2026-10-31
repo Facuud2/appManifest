@@ -4,7 +4,6 @@ import React from 'react';
 import { useAppStore, AppTab } from '@/store';
 import {
   Sparkles,
-  Calendar,
   BookOpen,
   Target,
   Compass,
@@ -24,11 +23,10 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { key: 'inicio', label: 'Inicio', subtitle: 'Tu santuario y presencia', icon: Sparkles },
-  { key: 'diario', label: 'Diario', subtitle: 'Cuaderno y sincronías', icon: BookOpen },
-  { key: 'agenda', label: 'Agenda', subtitle: 'Compromisos conscientes', icon: Calendar },
-  { key: 'objetivos', label: 'Intenciones', subtitle: 'Metas, historias y futuro', icon: Target },
-  { key: 'espacio', label: 'Mi Espacio', subtitle: 'Progreso y liberación', icon: Compass },
+  { key: 'inicio', label: 'Inicio', subtitle: 'Tu santuario de manifestación', icon: Sparkles },
+  { key: 'objetivos', label: 'Manifestaciones', subtitle: 'Tus afirmaciones y decretos', icon: Target },
+  { key: 'diario', label: 'Diario', subtitle: 'Notas y avances', icon: BookOpen },
+  { key: 'espacio', label: 'Mi Espacio', subtitle: 'Progreso y santuario', icon: Compass },
 ];
 
 interface DesktopSidebarProps {

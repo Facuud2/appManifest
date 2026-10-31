@@ -4,7 +4,7 @@ import React from 'react';
 import { useAppStore } from '@/store';
 import { UserScope } from '@/types';
 import { motion } from 'framer-motion';
-import { Moon, Sparkles, Heart, Cloud, RefreshCw } from 'lucide-react';
+import { Moon, Sparkles, Heart } from 'lucide-react';
 
 interface ScopeOption {
   key: UserScope;
@@ -46,18 +46,16 @@ interface UserScopeSwitcherProps {
 export const UserScopeSwitcher: React.FC<UserScopeSwitcherProps> = ({
   className = '',
   compact = false,
-  fullWidth = false,
+  fullWidth = true,
   idPrefix = 'scope',
 }) => {
-  const { activeScope, setActiveScope, isSyncing, lastSyncTime } = useAppStore();
+  const { activeScope, setActiveScope } = useAppStore();
 
   return (
-    <div className={`flex items-center gap-1.5 sm:gap-2 ${className}`}>
+    <div className={`w-full flex items-center ${className}`}>
       {/* Switcher Pill */}
       <div
-        className={`relative p-1 rounded-2xl backdrop-blur-xl bg-white/70 border border-white/90 shadow-glass ${
-          fullWidth ? 'flex-1 flex items-center justify-between' : 'inline-flex'
-        }`}
+        className="w-full relative p-1 rounded-2xl backdrop-blur-xl bg-white/75 border border-white/95 shadow-glass flex items-center justify-between"
         role="tablist"
         aria-label="Selector de Santuario Personal o Compartido"
       >
@@ -71,13 +69,7 @@ export const UserScopeSwitcher: React.FC<UserScopeSwitcherProps> = ({
               role="tab"
               aria-selected={isActive}
               onClick={() => setActiveScope(scope.key)}
-              className={`relative z-10 flex items-center justify-center gap-1.5 rounded-xl font-medium transition-all duration-200 select-none ${
-                fullWidth
-                  ? 'flex-1 py-1.5 px-2 text-xs'
-                  : compact
-                  ? 'px-2.5 py-1 text-xs'
-                  : 'px-3.5 py-1.5 text-xs'
-              } ${
+              className={`relative z-10 flex-1 flex items-center justify-center gap-1.5 rounded-xl font-medium transition-all duration-200 select-none py-2 px-2 text-xs sm:text-sm ${
                 isActive
                   ? 'text-manifest-ink font-semibold shadow-sm'
                   : 'text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/40'
@@ -103,29 +95,6 @@ export const UserScopeSwitcher: React.FC<UserScopeSwitcherProps> = ({
           );
         })}
       </div>
-
-      {/* Cloud Sync Status Indicator */}
-      {!compact && (
-        <div
-          className="flex items-center gap-1 text-[11px] text-manifest-inkMuted px-1.5 py-1 rounded-xl bg-white/40 border border-white/60 hover:bg-white/70 transition-colors shrink-0"
-          title={
-            isSyncing
-              ? 'Sincronizando con Turso Cloud en tiempo real...'
-              : lastSyncTime
-              ? `Sincronizado con Turso a las ${lastSyncTime}`
-              : 'Conectado a Turso Cloud'
-          }
-        >
-          {isSyncing ? (
-            <RefreshCw className="w-3 h-3 text-manifest-auraPurple animate-spin" />
-          ) : (
-            <div className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-sm" />
-              <Cloud className="w-3 h-3 text-manifest-inkMuted/70" />
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };

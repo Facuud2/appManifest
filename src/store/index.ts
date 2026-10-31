@@ -275,15 +275,6 @@ export const useAppStore = create<AppState>((set, get) => {
         ...scoped,
       });
 
-      const toastMessage =
-        scope === 'facu'
-          ? 'Santuario de Facu conectado 🌙'
-          : scope === 'maia'
-          ? 'Santuario de Maia conectado 🌸'
-          : 'Espacio Compartido de Facu & Maia ✨';
-
-      get().showToast(toastMessage, 'gentle');
-
       // Sync with Turso for this scope
       get().syncFromRemote();
     },
