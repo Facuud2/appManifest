@@ -6,6 +6,7 @@ import { AppHeader } from '@/components/layout/AppHeader';
 import { BottomNavigation } from '@/components/layout/BottomNavigation';
 import { DesktopSidebar } from '@/components/layout/DesktopSidebar';
 import { ToastContainer } from '@/components/ui/ToastContainer';
+import { JournalEditorModal } from '@/components/journal/JournalEditorModal';
 import { PwaInstallGuide } from '@/components/pwa/PwaInstallGuide';
 import { InteractiveTour } from '@/components/onboarding/InteractiveTour';
 import { DashboardView } from '@/features/dashboard/DashboardView';
@@ -61,17 +62,20 @@ export default function Home() {
       {/* Toast Feedback */}
       <ToastContainer />
 
+      {/* Global Journal Editor Modal */}
+      <JournalEditorModal />
+
       {/* Desktop Left Sidebar (>= 1024px) */}
       <DesktopSidebar onOpenInstallGuide={() => setIsInstallGuideOpen(true)} />
 
       {/* Main Responsive Content Shell */}
-      <div className="flex-1 flex flex-col min-h-screen w-full min-w-0">
+      <div className="flex-1 flex flex-col w-full min-w-0">
         {/* Mobile Header (< 1024px) */}
         <AppHeader onOpenInstallGuide={() => setIsInstallGuideOpen(true)} />
 
         <main className="flex-1 flex flex-col w-full max-w-full lg:max-w-6xl xl:max-w-7xl mx-auto px-3 sm:px-6 lg:px-10">
           {/* Dynamic Content Canvas with View Crossfading */}
-          <div className="flex-1 pt-2 sm:pt-4 lg:pt-6 pb-24 lg:pb-12">
+          <div className="flex-1 pt-1.5 sm:pt-3 lg:pt-6 pb-[calc(env(safe-area-inset-bottom,0px)+4.5rem)] lg:pb-8">
           <AnimatePresence mode="wait">
             {activeTab === 'inicio' && (
               <motion.div

@@ -54,7 +54,7 @@ export const GoalsView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 pb-24 pt-2">
+    <div className="max-w-2xl mx-auto space-y-5 pt-1">
       {/* Header */}
       <div className="px-1">
         <h2 className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink flex items-center gap-2">

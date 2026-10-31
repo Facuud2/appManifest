@@ -52,9 +52,13 @@ export const PwaInstallGuide: React.FC<PwaInstallGuideProps> = ({ isOpen, onClos
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-manifest-ink/30 backdrop-blur-sm">
+      <div
+        onClick={onClose}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-manifest-ink/30 backdrop-blur-sm"
+      >
         <motion.div
-          initial={{ opacity: 0, y: 30, scale: 0.95 }}
+          onClick={(e) => e.stopPropagation()}
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.95 }}
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}

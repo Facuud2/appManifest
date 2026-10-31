@@ -89,7 +89,7 @@ export const DashboardView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5 sm:space-y-6 pb-20 pt-1">
+    <div className="max-w-2xl mx-auto space-y-3.5 sm:space-y-5 pt-0.5">
       {/* 1. Date & Warm Greeting */}
       <div className="px-1 flex items-center justify-between">
         <div>
@@ -148,7 +148,7 @@ export const DashboardView: React.FC = () => {
         </div>
 
         {topAffirmations.length === 0 ? (
-          <div className="p-6 rounded-3xl glass-card text-center space-y-2.5 border border-white/80">
+          <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl glass-card text-center space-y-2 border border-white/80">
             <p className="text-xs text-manifest-inkMuted">
               Aún no tienes afirmaciones registradas en este espacio.
             </p>
@@ -250,7 +250,7 @@ export const DashboardView: React.FC = () => {
       {/* 3. SECCIÓN: Diario de Manifestación (Justo debajo de las afirmaciones) */}
       <section className="space-y-3">
         {/* Quick Action: Start Journal Entry */}
-        <div className="p-4 sm:p-5 rounded-3xl glass-card flex items-center justify-between gap-3 border border-white/90 shadow-sm">
+        <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl glass-card flex items-center justify-between gap-3 border border-white/90 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-manifest-peach via-manifest-pink to-manifest-lavender flex items-center justify-center shrink-0 shadow-sm">
               <PenLine className="w-5 h-5 text-manifest-ink" />
@@ -360,11 +360,15 @@ export const DashboardView: React.FC = () => {
       {/* MODAL: Nueva Afirmación Consciente */}
       <AnimatePresence>
         {isNewAffirmationModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4 bg-manifest-ink/35 backdrop-blur-sm pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div
+            onClick={() => setIsNewAffirmationModalOpen(false)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-manifest-ink/35 backdrop-blur-sm"
+          >
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 16 }}
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 16 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
               className="w-full max-w-lg rounded-3xl glass-card p-5 sm:p-6 border border-white shadow-liquid space-y-4 max-h-[85dvh] overflow-y-auto"
             >
               <div className="flex items-center justify-between pb-3 border-b border-white/70">

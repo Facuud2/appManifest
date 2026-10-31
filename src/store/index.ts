@@ -62,7 +62,8 @@ interface AppState {
   // Journal Editor direct trigger
   isJournalEditorOpen: boolean;
   journalEditorInitialMode?: EntryType;
-  openJournalEditor: (mode?: EntryType) => void;
+  editingJournalEntry?: JournalEntry | null;
+  openJournalEditor: (mode?: EntryType, entryToEdit?: JournalEntry | null) => void;
   closeJournalEditor: () => void;
 
   // Active User / Space Scope
@@ -169,16 +170,17 @@ export const useAppStore = create<AppState>((set, get) => {
     setActiveTab: (tab) => set({ activeTab: tab }),
 
     isJournalEditorOpen: false,
-    journalEditorInitialMode: 'progress',
-    openJournalEditor: (mode = 'progress') => {
+    journalEditorInitialMode: 'manifestation',
+    editingJournalEntry: null,
+    openJournalEditor: (mode = 'manifestation', entryToEdit = null) => {
       set({
-        activeTab: 'diario',
         isJournalEditorOpen: true,
         journalEditorInitialMode: mode,
+        editingJournalEntry: entryToEdit,
       });
     },
     closeJournalEditor: () => {
-      set({ isJournalEditorOpen: false });
+      set({ isJournalEditorOpen: false, editingJournalEntry: null });
     },
 
     activeScope: initialScope,

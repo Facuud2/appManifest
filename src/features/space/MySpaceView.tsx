@@ -15,7 +15,7 @@ export const MySpaceView: React.FC = () => {
   const { manifestationSigns } = useAppStore();
 
   return (
-    <div className="space-y-6 pb-28 pt-2">
+    <div className="space-y-6 pt-1">
       {/* Top Header */}
       <div className="px-1">
         <h2 className="text-xl font-serif font-bold text-manifest-ink flex items-center gap-2">
