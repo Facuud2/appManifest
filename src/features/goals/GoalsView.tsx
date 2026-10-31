@@ -885,12 +885,12 @@ export const GoalsView: React.FC = () => {
       {/* MODAL: ADD / EDIT GOAL */}
       <AnimatePresence>
         {isGoalModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-manifest-ink/35 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4 bg-manifest-ink/35 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="w-full max-w-sm rounded-3xl glass-card p-5 border border-white shadow-liquid space-y-4 max-h-[90vh] overflow-y-auto"
+              className="w-full max-w-sm rounded-t-3xl sm:rounded-3xl glass-card p-4 sm:p-5 border border-white shadow-liquid space-y-4 max-h-[85vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between pb-2 border-b border-white/70">
                 <h3 className="font-serif text-sm font-bold text-manifest-ink">
@@ -1029,12 +1029,12 @@ export const GoalsView: React.FC = () => {
       {/* MODAL: ADD / EDIT SUCCESS STORY */}
       <AnimatePresence>
         {isSuccessModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-manifest-ink/35 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4 bg-manifest-ink/35 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="w-full max-w-sm rounded-3xl glass-card p-5 border border-white shadow-liquid space-y-4 max-h-[90vh] overflow-y-auto"
+              className="w-full max-w-sm rounded-t-3xl sm:rounded-3xl glass-card p-4 sm:p-5 border border-white shadow-liquid space-y-4 max-h-[85vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between pb-2 border-b border-white/70">
                 <h3 className="font-serif text-sm font-bold text-manifest-ink flex items-center gap-1.5">
@@ -1215,12 +1215,12 @@ export const GoalsView: React.FC = () => {
       {/* MODAL: ADD / EDIT FUTURE MANIFESTATION */}
       <AnimatePresence>
         {isFutureModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-manifest-ink/35 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4 bg-manifest-ink/35 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="w-full max-w-sm rounded-3xl glass-card p-5 border border-white shadow-liquid space-y-4 max-h-[90vh] overflow-y-auto"
+              className="w-full max-w-sm rounded-t-3xl sm:rounded-3xl glass-card p-4 sm:p-5 border border-white shadow-liquid space-y-4 max-h-[85vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between pb-2 border-b border-white/70">
                 <h3 className="font-serif text-sm font-bold text-manifest-ink flex items-center gap-1.5">

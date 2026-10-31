@@ -70,9 +70,9 @@ export default function Home() {
         {/* Mobile Header (< 1024px) */}
         <AppHeader onOpenInstallGuide={() => setIsInstallGuideOpen(true)} />
 
-        <main className="flex-1 flex flex-col w-full max-w-full lg:max-w-6xl xl:max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-10">
+        <main className="flex-1 flex flex-col w-full max-w-full lg:max-w-6xl xl:max-w-7xl mx-auto px-3 sm:px-6 lg:px-10">
           {/* Dynamic Content Canvas with View Crossfading */}
-          <div className="flex-1 pt-2 sm:pt-4 lg:pt-6 pb-28 lg:pb-12">
+          <div className="flex-1 pt-2 sm:pt-4 lg:pt-6 pb-24 lg:pb-12">
           <AnimatePresence mode="wait">
             {activeTab === 'inicio' && (
               <motion.div

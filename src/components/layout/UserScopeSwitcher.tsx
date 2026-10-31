@@ -105,25 +105,27 @@ export const UserScopeSwitcher: React.FC<UserScopeSwitcherProps> = ({
       </div>
 
       {/* Cloud Sync Status Indicator */}
-      <div
-        className="flex items-center gap-1 text-[11px] text-manifest-inkMuted px-1.5 py-1 rounded-xl bg-white/40 border border-white/60 hover:bg-white/70 transition-colors shrink-0"
-        title={
-          isSyncing
-            ? 'Sincronizando con Turso Cloud en tiempo real...'
-            : lastSyncTime
-            ? `Sincronizado con Turso a las ${lastSyncTime}`
-            : 'Conectado a Turso Cloud'
-        }
-      >
-        {isSyncing ? (
-          <RefreshCw className="w-3 h-3 text-manifest-auraPurple animate-spin" />
-        ) : (
-          <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-sm" />
-            <Cloud className="w-3 h-3 text-manifest-inkMuted/70" />
-          </div>
-        )}
-      </div>
+      {!compact && (
+        <div
+          className="flex items-center gap-1 text-[11px] text-manifest-inkMuted px-1.5 py-1 rounded-xl bg-white/40 border border-white/60 hover:bg-white/70 transition-colors shrink-0"
+          title={
+            isSyncing
+              ? 'Sincronizando con Turso Cloud en tiempo real...'
+              : lastSyncTime
+              ? `Sincronizado con Turso a las ${lastSyncTime}`
+              : 'Conectado a Turso Cloud'
+          }
+        >
+          {isSyncing ? (
+            <RefreshCw className="w-3 h-3 text-manifest-auraPurple animate-spin" />
+          ) : (
+            <div className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-sm" />
+              <Cloud className="w-3 h-3 text-manifest-inkMuted/70" />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

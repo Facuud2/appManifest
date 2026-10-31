@@ -473,12 +473,12 @@ export const JournalView: React.FC = () => {
       {/* Editor Modal */}
       <AnimatePresence>
         {isJournalEditorOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-manifest-ink/35 backdrop-blur-sm overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-6 bg-manifest-ink/35 backdrop-blur-sm overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="w-full max-w-2xl rounded-3xl glass-card p-5 sm:p-7 border border-white shadow-liquid max-h-[92vh] flex flex-col my-auto"
+              className="w-full max-w-2xl rounded-t-3xl sm:rounded-3xl glass-card p-4 sm:p-6 border border-white shadow-liquid max-h-[88vh] flex flex-col"
             >
               {/* Header */}
               <div className="flex items-center justify-between pb-3 border-b border-white/70">

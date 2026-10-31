@@ -127,65 +127,59 @@ export const DashboardView: React.FC = () => {
     setIsNewAffirmationModalOpen(false);
   };
 
+  const currentMoodConfig = MOODS.find((m) => m.type === selectedMood);
+  const SelectedMoodIcon = currentMoodConfig?.icon || SparklesIcon;
+
   return (
-    <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-12 lg:gap-8 pb-20 pt-1 sm:pt-2">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-0 lg:grid lg:grid-cols-12 lg:gap-8 pb-16 sm:pb-20 pt-1">
       {/* Left Column (Primary Focus: Affirmations, Journal Entries, Intentions) */}
-      <div className="lg:col-span-7 space-y-6">
+      <div className="lg:col-span-7 space-y-4 sm:space-y-6">
         {/* Date & Welcoming Context */}
         <div className="flex items-center justify-between px-1">
           <div>
-            <p className="text-xs font-medium text-manifest-inkMuted capitalize">
+            <p className="text-[11px] sm:text-xs font-medium text-manifest-inkMuted capitalize">
               {formattedDate}
             </p>
-            <h2 className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink flex items-center gap-2 mt-0.5">
+            <h2 className="text-lg sm:text-2xl font-serif font-bold text-manifest-ink flex items-center gap-2 mt-0.5">
               {hour < 12 ? (
-                <CloudSun className="w-5 h-5 text-amber-500 inline" />
+                <CloudSun className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 inline" />
               ) : hour < 20 ? (
-                <Sun className="w-5 h-5 text-amber-500 inline" />
+                <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 inline" />
               ) : (
-                <Moon className="w-5 h-5 text-manifest-lavender inline" />
+                <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-manifest-lavender inline" />
               )}
-              {activeScope === 'facu'
-                ? 'Santuario de Facu'
-                : activeScope === 'maia'
-                ? 'Santuario de Maia'
-                : 'Espacio de Facu & Maia'}
+              <span>
+                {hour < 12 ? 'Buenos días' : hour < 20 ? 'Buenas tardes' : 'Buenas noches'},{' '}
+                {activeScope === 'facu' ? 'Facu' : activeScope === 'maia' ? 'Maia' : 'Facu & Maia'}
+              </span>
             </h2>
           </div>
 
-          {/* Energy mood picker button */}
-          <div className="flex items-center gap-1 p-1 rounded-2xl glass-pill">
-            {MOODS.map((m) => {
-              const Icon = m.icon;
-              const isSelected = selectedMood === m.type;
-              return (
-                <button
-                  key={m.type}
-                  onClick={() => setSelectedMood(m.type)}
-                  title={m.label}
-                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center transition-transform ${
-                    isSelected
-                      ? 'scale-110 bg-white text-manifest-ink shadow-sm'
-                      : 'opacity-60 hover:opacity-100 text-manifest-inkMuted'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                </button>
-              );
-            })}
-          </div>
+          {/* Energy mood capsule button */}
+          <button
+            onClick={() => {
+              const idx = MOODS.findIndex((m) => m.type === selectedMood);
+              const next = MOODS[(idx + 1) % MOODS.length];
+              setSelectedMood(next.type);
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-2xl glass-pill text-xs font-medium text-manifest-ink shadow-sm active:scale-95 transition-all"
+            title="Pulsar para cambiar estado de presencia"
+          >
+            <SelectedMoodIcon className="w-3.5 h-3.5 text-manifest-auraPurple" />
+            <span className="hidden xs:inline">{currentMoodConfig?.label || 'Serena'}</span>
+          </button>
         </div>
 
         {/* SECCIÓN 1: Afirmaciones Conscientes (Primeras 3 con Contador Táctil de Repetición) */}
-        <div className="space-y-3">
+        <div className="space-y-2.5 sm:space-y-3">
           <div className="flex items-center justify-between px-1">
             <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-manifest-auraPurple" />
+              <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-manifest-auraPurple" />
                 Afirmaciones de Poder
               </h3>
-              <p className="text-[11px] text-manifest-inkMuted">
-                Pulsa en la afirmación cada vez que la repitas para registrar tu energía viva (+1)
+              <p className="text-[10px] sm:text-[11px] text-manifest-inkMuted">
+                Toca para sumar repeticiones a tu mantra vivo (+1)
               </p>
             </div>
             <button
@@ -193,7 +187,7 @@ export const DashboardView: React.FC = () => {
                 setNewAffirmationScope(activeScope);
                 setIsNewAffirmationModalOpen(true);
               }}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0"
+              className="flex items-center gap-1 px-3 py-1 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Nueva</span>
@@ -201,7 +195,7 @@ export const DashboardView: React.FC = () => {
           </div>
 
           {topAffirmations.length === 0 ? (
-            <div className="p-6 rounded-3xl glass-card text-center space-y-2 border border-white/80">
+            <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl glass-card text-center space-y-2 border border-white/80">
               <p className="text-xs text-manifest-inkMuted">
                 Aún no tienes afirmaciones registradas en este espacio.
               </p>
@@ -216,7 +210,7 @@ export const DashboardView: React.FC = () => {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-2.5 sm:gap-3">
               {topAffirmations.map((aff) => {
                 const isPulsing = pulsingAffirmationId === aff.id;
                 return (
@@ -225,8 +219,8 @@ export const DashboardView: React.FC = () => {
                     layout
                     whileTap={{ scale: 0.985 }}
                     onClick={() => handleRepeatAffirmation(aff.id)}
-                    className={`relative overflow-hidden p-5 rounded-3xl glass-card-interactive cursor-pointer border border-white/95 shadow-liquid space-y-3 transition-all ${
-                      isPulsing ? 'ring-2 ring-manifest-auraPurple/70 bg-white/95 scale-[1.015]' : ''
+                    className={`relative overflow-hidden p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl glass-card-interactive cursor-pointer border border-white/95 shadow-liquid space-y-2.5 sm:space-y-3 transition-all ${
+                      isPulsing ? 'ring-2 ring-manifest-auraPurple/70 bg-white/95 scale-[1.01]' : ''
                     }`}
                   >
                     {/* Background subtle glowing aura */}
@@ -235,16 +229,16 @@ export const DashboardView: React.FC = () => {
                     <div className="relative z-10 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5">
                         {aff.category && (
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-manifest-lavender/50 text-manifest-ink">
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-manifest-lavender/50 text-manifest-ink">
                             {aff.category}
                           </span>
                         )}
                         {aff.userId === 'shared' ? (
-                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-manifest-pink/60 to-manifest-celeste/60 text-manifest-ink border border-white">
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gradient-to-r from-manifest-pink/60 to-manifest-celeste/60 text-manifest-ink border border-white">
                             ✨ Juntos
                           </span>
                         ) : (
-                          <span className="text-[9px] font-medium px-2 py-0.5 rounded-full bg-white/70 text-manifest-inkMuted">
+                          <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-white/70 text-manifest-inkMuted">
                             {aff.author || (aff.userId === 'facu' ? 'Facu' : 'Maia')}
                           </span>
                         )}
@@ -254,10 +248,10 @@ export const DashboardView: React.FC = () => {
                       <button
                         type="button"
                         onClick={(e) => handleRepeatAffirmation(aff.id, e)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl transition-all shadow-sm ${
+                        className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-2xl transition-all shadow-sm ${
                           isPulsing
-                            ? 'bg-manifest-lavender text-manifest-ink scale-110 shadow-md ring-2 ring-manifest-auraPurple'
-                            : 'bg-white/85 hover:bg-white text-manifest-ink border border-white'
+                            ? 'bg-manifest-lavender text-manifest-ink scale-105 shadow-md ring-2 ring-manifest-auraPurple'
+                            : 'bg-white/90 hover:bg-white text-manifest-ink border border-white'
                         }`}
                         title="Pulsar para sumar una repetición"
                       >
@@ -269,24 +263,24 @@ export const DashboardView: React.FC = () => {
                         <span className="text-xs font-bold font-mono text-manifest-ink">
                           {aff.repeatCount}
                         </span>
-                        <span className="text-[10px] font-semibold text-manifest-inkMuted hidden sm:inline">
-                          {aff.repeatCount === 1 ? 'repetición' : 'repeticiones'}
+                        <span className="text-[10px] font-semibold text-manifest-inkMuted hidden min-[360px]:inline">
+                          {aff.repeatCount === 1 ? 'vez' : 'veces'}
                         </span>
-                        <span className="ml-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-manifest-lavender/50 text-manifest-auraPurple">
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-manifest-lavender/50 text-manifest-auraPurple">
                           +1
                         </span>
                       </button>
                     </div>
 
-                    <p className="relative z-10 font-serif text-base sm:text-xl font-medium text-manifest-ink leading-relaxed italic">
+                    <p className="relative z-10 font-serif text-sm sm:text-base font-medium text-manifest-ink leading-relaxed italic">
                       «{aff.text}»
                     </p>
 
-                    <div className="relative z-10 flex items-center justify-between pt-2.5 border-t border-white/60 text-[11px] text-manifest-inkMuted">
-                      <span>Toca la tarjeta al repetir tu mantra en voz alta o mentalmente</span>
-                      <span className="text-manifest-auraPurple font-medium flex items-center gap-1">
+                    <div className="relative z-10 flex items-center justify-between pt-2 border-t border-white/60 text-[10px] sm:text-[11px] text-manifest-inkMuted">
+                      <span>Toca la tarjeta al repetir tu mantra</span>
+                      <span className="text-manifest-auraPurple font-semibold flex items-center gap-1">
                         <Sparkles className="w-3 h-3" />
-                        Repetir
+                        +1 Repetir
                       </span>
                     </div>
                   </motion.div>
@@ -297,38 +291,38 @@ export const DashboardView: React.FC = () => {
         </div>
 
         {/* Quick Action: Start Journal Entry */}
-        <div className="p-4 sm:p-5 rounded-3xl glass-card flex items-center justify-between gap-4 border border-white/90">
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-manifest-peach via-manifest-pink to-manifest-lavender flex items-center justify-center shrink-0 shadow-sm">
-              <PenLine className="w-5 h-5 text-manifest-ink" />
+        <div className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl glass-card flex items-center justify-between gap-3 sm:gap-4 border border-white/90 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-manifest-peach via-manifest-pink to-manifest-lavender flex items-center justify-center shrink-0 shadow-sm">
+              <PenLine className="w-4 h-4 sm:w-5 sm:h-5 text-manifest-ink" />
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-manifest-ink">
+              <h4 className="text-xs sm:text-sm font-semibold text-manifest-ink">
                 Registrar en el Diario
               </h4>
-              <p className="text-xs text-manifest-inkMuted">
+              <p className="text-[10px] sm:text-xs text-manifest-inkMuted line-clamp-1">
                 Avances de manifestación, señales 11:11, gratitud o sincronías
               </p>
             </div>
           </div>
           <button
             onClick={() => openJournalEditor('progress')}
-            className="px-4 py-2 rounded-2xl primary-gradient-btn text-xs font-semibold shrink-0"
+            className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-2xl primary-gradient-btn text-xs font-semibold shrink-0"
           >
             Escribir
           </button>
         </div>
 
         {/* SECCIÓN 2: Entradas Recientes del Diario (3 primeras más recientes) */}
-        <div className="space-y-3">
+        <div className="space-y-2.5 sm:space-y-3">
           <div className="flex items-center justify-between px-1">
             <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
-                <BookOpen className="w-4 h-4 text-manifest-ink" />
+              <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-manifest-ink" />
                 Diario Reciente
               </h3>
-              <p className="text-[11px] text-manifest-inkMuted">
-                Últimos 3 avances, señales y vivencias plasmadas
+              <p className="text-[10px] sm:text-[11px] text-manifest-inkMuted">
+                Últimos avances, señales y vivencias plasmadas
               </p>
             </div>
             <button
@@ -341,7 +335,7 @@ export const DashboardView: React.FC = () => {
           </div>
 
           {recentEntries.length === 0 ? (
-            <div className="p-5 rounded-3xl glass-card text-center space-y-2 border border-white/80">
+            <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl glass-card text-center space-y-2 border border-white/80">
               <p className="text-xs text-manifest-inkMuted">
                 Aún no tienes entradas en este diario. Tómate un momento para volcar tus primeras palabras.
               </p>
@@ -353,7 +347,7 @@ export const DashboardView: React.FC = () => {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
               {recentEntries.map((entry) => {
                 const formattedEntryDate = format(new Date(entry.createdAt), "d 'de' MMMM", { locale: es });
                 const typeLabels: Record<string, { label: string; color: string }> = {
@@ -370,37 +364,30 @@ export const DashboardView: React.FC = () => {
                   <div
                     key={entry.id}
                     onClick={() => setActiveTab('diario')}
-                    className="p-4 rounded-2xl glass-card-interactive cursor-pointer border border-white/90 space-y-2 flex flex-col justify-between hover:scale-[1.01] transition-transform"
+                    className="p-3 sm:p-4 rounded-2xl glass-card-interactive cursor-pointer border border-white/90 space-y-1.5 flex flex-col justify-between hover:scale-[1.01] transition-transform"
                   >
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <div className="flex items-center justify-between gap-1">
-                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${config.color} text-manifest-ink`}>
+                        <span className={`text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${config.color} text-manifest-ink`}>
                           {config.label}
                         </span>
-                        {entry.userId === 'shared' ? (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gradient-to-r from-manifest-pink/60 to-manifest-celeste/60 text-manifest-ink border border-white">
-                            ✨ Juntos
-                          </span>
-                        ) : (
-                          <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-white/70 text-manifest-inkMuted">
-                            {entry.author || (entry.userId === 'facu' ? 'Facu' : 'Maia')}
-                          </span>
-                        )}
+                        <span className="text-[10px] text-manifest-inkMuted">
+                          {formattedEntryDate}
+                        </span>
                       </div>
 
-                      <h4 className="text-sm font-serif font-bold text-manifest-ink line-clamp-1">
+                      <h4 className="text-xs sm:text-sm font-serif font-bold text-manifest-ink line-clamp-1">
                         {entry.title}
                       </h4>
 
-                      <p className="text-xs text-manifest-inkMuted line-clamp-2 leading-relaxed">
+                      <p className="text-[11px] text-manifest-inkMuted line-clamp-1 sm:line-clamp-2 leading-relaxed">
                         {entry.content}
                       </p>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-white/50 text-[10px] text-manifest-inkMuted">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3 opacity-70" />
-                        {formattedEntryDate}
+                    <div className="flex items-center justify-between pt-1.5 border-t border-white/50 text-[10px] text-manifest-inkMuted">
+                      <span>
+                        {entry.userId === 'shared' ? '✨ Juntos' : entry.author || (entry.userId === 'facu' ? 'Facu' : 'Maia')}
                       </span>
                       <span className="text-manifest-auraPurple font-medium">Leer →</span>
                     </div>
@@ -585,12 +572,12 @@ export const DashboardView: React.FC = () => {
       {/* MODAL: Nueva Afirmación Consciente */}
       <AnimatePresence>
         {isNewAffirmationModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-manifest-ink/35 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4 bg-manifest-ink/35 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 16 }}
-              className="w-full max-w-lg rounded-3xl glass-card p-6 border border-white shadow-liquid space-y-4"
+              className="w-full max-w-lg rounded-3xl glass-card p-4 sm:p-6 border border-white shadow-liquid space-y-3 sm:space-y-4 max-h-[85vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between pb-3 border-b border-white/70">
                 <div className="flex items-center gap-2">
