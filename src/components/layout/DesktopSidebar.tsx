@@ -134,7 +134,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ onOpenInstallGui
       {/* Quick Journal Writing Action */}
       <div className="pt-3 pb-2">
         <button
-          onClick={() => openJournalEditor('progress')}
+          onClick={() => openJournalEditor('manifestation')}
           className="w-full py-2.5 px-3 rounded-2xl primary-gradient-btn text-xs font-semibold flex items-center justify-center gap-2 shadow-sm"
         >
           <PenLine className="w-3.5 h-3.5" />

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,14 +21,6 @@ const journalFormSchema = z.object({
 
 type JournalFormData = z.infer<typeof journalFormSchema>;
 
-const MANIFESTATION_CATEGORIES = [
-  { key: 'abundancia', label: '💰 Abundancia' },
-  { key: 'carrera', label: '💼 Carrera' },
-  { key: 'relaciones', label: '❤️ Relaciones' },
-  { key: 'bienestar', label: '🕊️ Paz & Salud' },
-  { key: 'crecimiento', label: '🌟 Crecimiento' },
-];
-
 export const JournalEditorModal: React.FC = () => {
   const {
     isJournalEditorOpen,
@@ -36,12 +28,8 @@ export const JournalEditorModal: React.FC = () => {
     editingJournalEntry,
     activeScope,
     saveJournalEntry,
-    saveAffirmation,
     closeJournalEditor,
   } = useAppStore();
-
-  const [createAffirmation, setCreateAffirmation] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<string>('abundancia');
 
   const {
     register,
@@ -83,11 +71,6 @@ export const JournalEditorModal: React.FC = () => {
           userId: editingJournalEntry.userId || activeScope,
           entryType: type,
         });
-
-        if (editingJournalEntry.tags && editingJournalEntry.tags.length > 0) {
-          setSelectedCategory(editingJournalEntry.tags[0]);
-        }
-        setCreateAffirmation(false);
       } else {
         const initialType: 'manifestation' | 'reflection' | 'progress' =
           journalEditorInitialMode === 'progress'
@@ -102,8 +85,6 @@ export const JournalEditorModal: React.FC = () => {
           userId: activeScope,
           entryType: initialType,
         });
-        setCreateAffirmation(true);
-        setSelectedCategory('abundancia');
       }
     }
   }, [isJournalEditorOpen, editingJournalEntry, journalEditorInitialMode, activeScope, reset]);
@@ -114,9 +95,7 @@ export const JournalEditorModal: React.FC = () => {
     const author =
       data.userId === 'facu' ? 'Facu' : data.userId === 'maia' ? 'Maia' : 'Facu & Maia';
 
-    const tags = data.entryType === 'manifestation' && selectedCategory
-      ? [selectedCategory]
-      : editingJournalEntry?.tags || [];
+    const tags = editingJournalEntry?.tags || [];
 
     const entryToSave: JournalEntry = {
       id: editingJournalEntry?.id || `journal-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
@@ -131,22 +110,6 @@ export const JournalEditorModal: React.FC = () => {
     };
 
     saveJournalEntry(entryToSave);
-
-    // Si es tipo Manifestación y tiene activado el anclaje a Afirmaciones, se crea automáticamente como afirmación activa
-    if (data.entryType === 'manifestation' && createAffirmation && !editingJournalEntry) {
-      saveAffirmation({
-        id: `aff-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        userId: data.userId,
-        author,
-        text: data.title.trim(),
-        category: selectedCategory,
-        repeatCount: 1,
-        pinned: true,
-        createdAt: new Date().toISOString(),
-        lastRepeatedAt: new Date().toISOString(),
-      });
-    }
-
     closeJournalEditor();
   };
 
@@ -298,48 +261,6 @@ export const JournalEditorModal: React.FC = () => {
               </div>
             </div>
 
-            {/* Opciones Concretas de Manifestación */}
-            {selectedEntryType === 'manifestation' && (
-              <div className="space-y-2 p-3 rounded-2xl bg-white/60 border border-white/90 shadow-sm">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold text-manifest-ink">
-                    Área o Categoría
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {MANIFESTATION_CATEGORIES.map((cat) => (
-                      <button
-                        key={cat.key}
-                        type="button"
-                        onClick={() => setSelectedCategory(cat.key)}
-                        className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold transition-all border cursor-pointer ${
-                          selectedCategory === cat.key
-                            ? 'bg-manifest-ink text-white border-manifest-ink shadow-sm'
-                            : 'bg-white/80 text-manifest-inkMuted border-white hover:bg-white'
-                        }`}
-                      >
-                        {cat.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {!editingJournalEntry && (
-                  <label className="flex items-center justify-between gap-2 pt-1 border-t border-white/80 cursor-pointer select-none">
-                    <span className="text-xs font-medium text-manifest-ink flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-manifest-auraPurple" />
-                      Anclar también en mis Afirmaciones
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={createAffirmation}
-                      onChange={(e) => setCreateAffirmation(e.target.checked)}
-                      className="w-4 h-4 rounded text-manifest-auraPurple accent-manifest-auraPurple cursor-pointer"
-                    />
-                  </label>
-                )}
-              </div>
-            )}
-
             {/* Título */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
@@ -432,7 +353,7 @@ export const JournalEditorModal: React.FC = () => {
                 {editingJournalEntry
                   ? 'Guardar Cambios'
                   : selectedEntryType === 'manifestation'
-                  ? 'Manifestar Intención ✨'
+                  ? 'Guardar Manifestación'
                   : selectedEntryType === 'progress'
                   ? 'Registrar Avance'
                   : 'Guardar en Cuaderno'}

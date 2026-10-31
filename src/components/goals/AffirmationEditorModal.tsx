@@ -111,7 +111,7 @@ export const AffirmationEditorModal: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-serif text-sm font-bold text-manifest-ink">
-                  {editingAffirmation ? 'Editar Manifestación' : 'Nueva Manifestación'}
+                  {editingAffirmation ? 'Editar Afirmación' : 'Nueva Afirmación'}
                 </h3>
                 <p className="text-[11px] text-manifest-inkMuted">
                   Decretos conscientes y afirmaciones en tiempo presente
@@ -199,7 +199,7 @@ export const AffirmationEditorModal: React.FC = () => {
                 type="submit"
                 className="px-5 py-2.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm cursor-pointer"
               >
-                {editingAffirmation ? 'Guardar Cambios' : 'Guardar Manifestación'}
+                {editingAffirmation ? 'Guardar Cambios' : 'Guardar Afirmación'}
               </button>
             </div>
           </form>
