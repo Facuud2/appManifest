@@ -57,6 +57,7 @@ const MOODS: MoodConfig[] = [
 export const DashboardView: React.FC = () => {
   const {
     settings,
+    activeScope,
     setActiveTab,
     goals,
     getGoalProgress,
@@ -100,7 +101,11 @@ export const DashboardView: React.FC = () => {
               ) : (
                 <Moon className="w-5 h-5 text-manifest-lavender inline" />
               )}
-              Tu Espacio Sagrado
+              {activeScope === 'facu'
+                ? 'Santuario de Facu'
+                : activeScope === 'maia'
+                ? 'Santuario de Maia'
+                : 'Espacio de Facu & Maia'}
             </h2>
           </div>
 

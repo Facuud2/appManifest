@@ -14,6 +14,7 @@ import {
   PenLine,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { UserScopeSwitcher } from './UserScopeSwitcher';
 
 interface NavItem {
   key: AppTab;
@@ -35,12 +36,25 @@ interface DesktopSidebarProps {
 }
 
 export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ onOpenInstallGuide }) => {
-  const { activeTab, setActiveTab, settings } = useAppStore();
+  const { activeTab, setActiveTab, settings, activeScope } = useAppStore();
+
+  const getScopeSubtitle = () => {
+    switch (activeScope) {
+      case 'facu':
+        return 'Santuario de Facu';
+      case 'maia':
+        return 'Santuario de Maia';
+      case 'shared':
+        return 'Espacio de Facu & Maia';
+      default:
+        return 'Santuario Personal';
+    }
+  };
 
   return (
     <aside className="hidden lg:flex flex-col w-72 shrink-0 sticky top-0 h-screen p-5 border-r border-white/70 bg-white/45 backdrop-blur-2xl z-20">
       {/* Brand Header */}
-      <div className="flex items-center gap-3 pb-6 border-b border-white/60">
+      <div className="flex items-center gap-3 pb-4 border-b border-white/60">
         <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-manifest-pink via-manifest-lavender to-manifest-celeste flex items-center justify-center shadow-glass border border-white">
           <Sparkles className="w-6 h-6 text-manifest-ink" />
         </div>
@@ -49,13 +63,18 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ onOpenInstallGui
             Manifest
           </h1>
           <p className="text-[11px] text-manifest-inkMuted tracking-wide font-medium">
-            Santuario Personal
+            {getScopeSubtitle()}
           </p>
         </div>
       </div>
 
+      {/* User Scope Switcher (Facu / Maia / Juntos) */}
+      <div className="pt-4 pb-2">
+        <UserScopeSwitcher className="w-full justify-between" />
+      </div>
+
       {/* User & Streak Banner */}
-      <div className="my-5 p-3.5 rounded-2xl glass-card border border-white/80 space-y-2">
+      <div className="my-3 p-3.5 rounded-2xl glass-card border border-white/80 space-y-1.5">
         <div className="flex items-center justify-between text-xs">
           <span className="font-serif font-semibold text-manifest-ink truncate max-w-[140px]">
             {settings.userName}
@@ -66,7 +85,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ onOpenInstallGui
           </div>
         </div>
         <p className="text-[11px] text-manifest-inkMuted leading-tight">
-          Presencia activa y consciente
+          {activeScope === 'shared' ? 'Co-creación y sincronía en equipo' : 'Presencia activa y consciente'}
         </p>
       </div>
 
@@ -126,7 +145,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ onOpenInstallGui
       </div>
 
       {/* Footer Info & PWA Trigger */}
-      <div className="pt-4 border-t border-white/60 space-y-2">
+      <div className="pt-3 border-t border-white/60 space-y-2">
         <button
           onClick={onOpenInstallGuide}
           className="w-full flex items-center justify-between p-2.5 rounded-xl glass-pill hover:bg-white text-xs text-manifest-inkMuted hover:text-manifest-ink transition-colors"
@@ -141,9 +160,9 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ onOpenInstallGui
         <div className="flex items-center justify-between text-[10px] text-manifest-inkMuted/80 px-1 pt-1">
           <span className="flex items-center gap-1">
             <Shield className="w-3 h-3 text-emerald-600" />
-            100% Local & Privado
+            Turso Cloud Replicado
           </span>
-          <span>v2.0</span>
+          <span>v2.2</span>
         </div>
       </div>
     </aside>

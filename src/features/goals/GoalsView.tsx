@@ -33,6 +33,7 @@ import {
   SuccessStory,
   FutureManifestation,
   FutureHorizon,
+  UserScope,
 } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -74,6 +75,7 @@ export const GoalsView: React.FC = () => {
     futureManifestations,
     saveFutureManifestation,
     deleteFutureManifestation,
+    activeScope,
   } = useAppStore();
 
   const [mainSection, setMainSection] = useState<MainGoalsSection>('active_goals');
@@ -83,6 +85,7 @@ export const GoalsView: React.FC = () => {
   // Goal Modal State
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
+  const [goalScope, setGoalScope] = useState<UserScope>(activeScope);
   const [goalTitle, setGoalTitle] = useState('');
   const [goalDescription, setGoalDescription] = useState('');
   const [goalCategory, setGoalCategory] = useState<GoalCategory>('bienestar');
@@ -95,6 +98,7 @@ export const GoalsView: React.FC = () => {
   // Success Story Modal State
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [editingSuccessId, setEditingSuccessId] = useState<string | null>(null);
+  const [successScope, setSuccessScope] = useState<UserScope>(activeScope);
   const [successTitle, setSuccessTitle] = useState('');
   const [successStory, setSuccessStory] = useState('');
   const [successSignsInput, setSuccessSignsInput] = useState('');
@@ -106,6 +110,7 @@ export const GoalsView: React.FC = () => {
   // Future Manifestation Modal State
   const [isFutureModalOpen, setIsFutureModalOpen] = useState(false);
   const [editingFutureId, setEditingFutureId] = useState<string | null>(null);
+  const [futureScope, setFutureScope] = useState<UserScope>(activeScope);
   const [futureTitle, setFutureTitle] = useState('');
   const [futureHorizon, setFutureHorizon] = useState<FutureHorizon>('6_months');
   const [futureExactDate, setFutureExactDate] = useState('');
@@ -116,6 +121,7 @@ export const GoalsView: React.FC = () => {
   // Handlers for Goals
   const handleOpenNewGoal = () => {
     setEditingGoalId(null);
+    setGoalScope(activeScope);
     setGoalTitle('');
     setGoalDescription('');
     setGoalCategory('bienestar');
@@ -126,6 +132,7 @@ export const GoalsView: React.FC = () => {
 
   const handleEditGoal = (goal: Goal) => {
     setEditingGoalId(goal.id);
+    setGoalScope(goal.userId || activeScope);
     setGoalTitle(goal.title);
     setGoalDescription(goal.description);
     setGoalCategory(goal.category);
@@ -137,8 +144,13 @@ export const GoalsView: React.FC = () => {
   const handleSaveGoal = () => {
     if (!goalTitle.trim() || !goalMotivation.trim()) return;
 
+    const author =
+      goalScope === 'facu' ? 'Facu' : goalScope === 'maia' ? 'Maia' : 'Facu & Maia';
+
     const goal: Goal = {
       id: editingGoalId || `goal-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      userId: goalScope,
+      author,
       title: goalTitle.trim(),
       description: goalDescription.trim(),
       category: goalCategory,
@@ -175,9 +187,11 @@ export const GoalsView: React.FC = () => {
     const title = newStepTitles[goalId]?.trim();
     if (!title) return;
 
+    const parentGoal = goals.find((g) => g.id === goalId);
     const step: GoalStep = {
       id: `step-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
       goalId,
+      userId: parentGoal?.userId || activeScope,
       title,
       completed: false,
       createdAt: new Date().toISOString(),
@@ -206,6 +220,7 @@ export const GoalsView: React.FC = () => {
   // Handlers for Success Stories
   const handleOpenNewSuccess = (goalSeed?: Goal) => {
     setEditingSuccessId(null);
+    setSuccessScope(goalSeed?.userId || activeScope);
     setSuccessTitle(goalSeed ? `Manifesté: ${goalSeed.title}` : '');
     setSuccessStory('');
     setSuccessSigns([]);
@@ -232,8 +247,13 @@ export const GoalsView: React.FC = () => {
   const handleSaveSuccessStory = () => {
     if (!successTitle.trim() || !successStory.trim()) return;
 
+    const author =
+      successScope === 'facu' ? 'Facu' : successScope === 'maia' ? 'Maia' : 'Facu & Maia';
+
     const story: SuccessStory = {
       id: editingSuccessId || `success-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      userId: successScope,
+      author,
       title: successTitle.trim(),
       manifestedDate: successDate,
       story: successStory.trim(),
@@ -256,6 +276,7 @@ export const GoalsView: React.FC = () => {
   // Handlers for Future Manifestations
   const handleOpenNewFuture = () => {
     setEditingFutureId(null);
+    setFutureScope(activeScope);
     setFutureTitle('');
     setFutureHorizon('6_months');
     setFutureExactDate('');
@@ -268,8 +289,13 @@ export const GoalsView: React.FC = () => {
   const handleSaveFutureManifestation = () => {
     if (!futureTitle.trim() || !futureVisionText.trim()) return;
 
+    const author =
+      futureScope === 'facu' ? 'Facu' : futureScope === 'maia' ? 'Maia' : 'Facu & Maia';
+
     const future: FutureManifestation = {
       id: editingFutureId || `future-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      userId: futureScope,
+      author,
       title: futureTitle.trim(),
       horizon: futureHorizon,
       targetDate: futureHorizon === 'exact_date' ? futureExactDate : undefined,
@@ -436,13 +462,24 @@ export const GoalsView: React.FC = () => {
                   >
                     <div className="p-5 space-y-3">
                       <div className="flex items-center justify-between">
-                        <span
-                          className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
-                            catConfig?.color || 'bg-white/80'
-                          } text-manifest-ink`}
-                        >
-                          {catConfig?.label || goal.category}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                              catConfig?.color || 'bg-white/80'
+                            } text-manifest-ink`}
+                          >
+                            {catConfig?.label || goal.category}
+                          </span>
+                          {goal.userId === 'shared' ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-manifest-pink/60 to-manifest-celeste/60 text-manifest-ink border border-white">
+                              ✨ Juntos
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/70 text-manifest-inkMuted">
+                              {goal.author || (goal.userId === 'facu' ? 'Facu' : 'Maia')}
+                            </span>
+                          )}
+                        </div>
 
                         <div className="flex items-center gap-1">
                           {goal.status === 'active' ? (
@@ -870,6 +907,36 @@ export const GoalsView: React.FC = () => {
               <div className="space-y-3 text-xs">
                 <div>
                   <label className="font-semibold text-manifest-inkMuted block mb-1">
+                    Espacio de la intención
+                  </label>
+                  <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-white/60 border border-white/80">
+                    <button
+                      type="button"
+                      onClick={() => setGoalScope(activeScope === 'maia' ? 'maia' : 'facu')}
+                      className={`py-1 px-2 rounded-lg text-[11px] font-medium transition-all text-center ${
+                        goalScope !== 'shared'
+                          ? 'bg-white shadow-sm text-manifest-ink font-semibold'
+                          : 'text-manifest-inkMuted hover:bg-white/40'
+                      }`}
+                    >
+                      {activeScope === 'maia' ? '🌸 Intención de Maia' : '🌙 Intención de Facu'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGoalScope('shared')}
+                      className={`py-1 px-2 rounded-lg text-[11px] font-medium transition-all text-center ${
+                        goalScope === 'shared'
+                          ? 'bg-gradient-to-r from-manifest-pink/70 via-manifest-lavender/70 to-manifest-celeste/70 shadow-sm text-manifest-ink font-semibold'
+                          : 'text-manifest-inkMuted hover:bg-white/40'
+                      }`}
+                    >
+                      ✨ Juntos (Facu & Maia)
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="font-semibold text-manifest-inkMuted block mb-1">
                     Nombre de la intención *
                   </label>
                   <input
@@ -983,6 +1050,36 @@ export const GoalsView: React.FC = () => {
               </div>
 
               <div className="space-y-3 text-xs">
+                <div>
+                  <label className="font-semibold text-manifest-inkMuted block mb-1">
+                    Espacio de la manifestación
+                  </label>
+                  <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-white/60 border border-white/80">
+                    <button
+                      type="button"
+                      onClick={() => setSuccessScope(activeScope === 'maia' ? 'maia' : 'facu')}
+                      className={`py-1 px-2 rounded-lg text-[11px] font-medium transition-all text-center ${
+                        successScope !== 'shared'
+                          ? 'bg-white shadow-sm text-manifest-ink font-semibold'
+                          : 'text-manifest-inkMuted hover:bg-white/40'
+                      }`}
+                    >
+                      {activeScope === 'maia' ? '🌸 Éxito de Maia' : '🌙 Éxito de Facu'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSuccessScope('shared')}
+                      className={`py-1 px-2 rounded-lg text-[11px] font-medium transition-all text-center ${
+                        successScope === 'shared'
+                          ? 'bg-gradient-to-r from-manifest-pink/70 via-manifest-lavender/70 to-manifest-celeste/70 shadow-sm text-manifest-ink font-semibold'
+                          : 'text-manifest-inkMuted hover:bg-white/40'
+                      }`}
+                    >
+                      ✨ Juntos (Facu & Maia)
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <label className="font-semibold text-manifest-inkMuted block mb-1">
                     ¿Qué se materializó? *
@@ -1139,6 +1236,36 @@ export const GoalsView: React.FC = () => {
               </div>
 
               <div className="space-y-3 text-xs">
+                <div>
+                  <label className="font-semibold text-manifest-inkMuted block mb-1">
+                    Espacio de la visión futura
+                  </label>
+                  <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-white/60 border border-white/80">
+                    <button
+                      type="button"
+                      onClick={() => setFutureScope(activeScope === 'maia' ? 'maia' : 'facu')}
+                      className={`py-1 px-2 rounded-lg text-[11px] font-medium transition-all text-center ${
+                        futureScope !== 'shared'
+                          ? 'bg-white shadow-sm text-manifest-ink font-semibold'
+                          : 'text-manifest-inkMuted hover:bg-white/40'
+                      }`}
+                    >
+                      {activeScope === 'maia' ? '🌸 Visión de Maia' : '🌙 Visión de Facu'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFutureScope('shared')}
+                      className={`py-1 px-2 rounded-lg text-[11px] font-medium transition-all text-center ${
+                        futureScope === 'shared'
+                          ? 'bg-gradient-to-r from-manifest-pink/70 via-manifest-lavender/70 to-manifest-celeste/70 shadow-sm text-manifest-ink font-semibold'
+                          : 'text-manifest-inkMuted hover:bg-white/40'
+                      }`}
+                    >
+                      ✨ Juntos (Facu & Maia)
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <label className="font-semibold text-manifest-inkMuted block mb-1">
                     Título de la visión futura *

@@ -1,3 +1,5 @@
+export type UserScope = 'facu' | 'maia' | 'shared';
+
 export type EntryType = 'manifestation' | 'gratitude' | 'affirmation' | 'reflection' | 'free' | 'sign';
 
 export type MoodType = 'peaceful' | 'inspired' | 'grateful' | 'radiant' | 'contemplative';
@@ -12,6 +14,8 @@ export type FutureHorizon = '3_months' | '6_months' | '1_year' | '3_years' | 'ex
 
 export interface JournalEntry {
   id: string;
+  userId: UserScope;
+  author: string;
   title: string;
   content: string;
   entryType: EntryType;
@@ -27,6 +31,7 @@ export interface JournalEntry {
 export interface GoalStep {
   id: string;
   goalId: string;
+  userId: UserScope;
   title: string;
   description?: string;
   completed: boolean;
@@ -36,6 +41,8 @@ export interface GoalStep {
 
 export interface Goal {
   id: string;
+  userId: UserScope;
+  author: string;
   title: string;
   description: string;
   category: GoalCategory;
@@ -48,6 +55,8 @@ export interface Goal {
 
 export interface ManifestationSign {
   id: string;
+  userId: UserScope;
+  author: string;
   title: string;
   signType: SignType;
   description: string;
@@ -59,6 +68,8 @@ export interface ManifestationSign {
 
 export interface SuccessStory {
   id: string;
+  userId: UserScope;
+  author: string;
   title: string;
   goalId?: string;
   manifestedDate: string; // YYYY-MM-DD
@@ -71,6 +82,8 @@ export interface SuccessStory {
 
 export interface FutureManifestation {
   id: string;
+  userId: UserScope;
+  author: string;
   title: string;
   horizon: FutureHorizon;
   targetDate?: string;
@@ -82,6 +95,8 @@ export interface FutureManifestation {
 
 export interface AgendaEvent {
   id: string;
+  userId: UserScope;
+  author: string;
   title: string;
   description?: string;
   date: string; // YYYY-MM-DD
@@ -100,6 +115,7 @@ export interface ReleaseReflection {
 
 export interface ReleaseEntry {
   id: string;
+  userId: UserScope;
   content: string;
   reflection?: ReleaseReflection;
   createdAt: string;
@@ -109,6 +125,7 @@ export interface ReleaseEntry {
 
 export interface DailyReflection {
   id: string;
+  userId: UserScope;
   date: string; // YYYY-MM-DD
   mood: MoodType;
   highlights: string;
@@ -126,6 +143,7 @@ export interface UserSettings {
   favoriteAffirmations: string[];
   firstLaunchCompleted: boolean;
   tutorialCompleted: boolean;
+  activeScope: UserScope;
   dailyStreak: number;
   lastActiveDate: string;
   totalJournalEntries: number;

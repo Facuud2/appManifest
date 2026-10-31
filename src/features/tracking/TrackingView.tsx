@@ -25,6 +25,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 export const TrackingView: React.FC = () => {
   const {
     settings,
+    activeScope,
     journalEntries,
     goals,
     goalSteps,
@@ -50,6 +51,7 @@ export const TrackingView: React.FC = () => {
     const todayStr = new Date().toISOString().split('T')[0];
     const reflection: DailyReflection = {
       id: `reflection-${todayStr}`,
+      userId: activeScope,
       date: todayStr,
       mood: reflectionMood,
       highlights: highlights.trim(),

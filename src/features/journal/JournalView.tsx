@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { EntryType, JournalEntry, MoodType } from '@/types';
+import { EntryType, JournalEntry, MoodType, UserScope } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ENTRY_MODES: {
@@ -97,7 +97,16 @@ const MOODS: MoodOption[] = [
 ];
 
 export const JournalView: React.FC = () => {
-  const { journalEntries, saveJournalEntry, deleteJournalEntry, goals, saveManifestationSign } = useAppStore();
+  const {
+    journalEntries,
+    saveJournalEntry,
+    deleteJournalEntry,
+    goals,
+    saveManifestationSign,
+    activeScope,
+    includeSharedInPersonal,
+    toggleIncludeSharedInPersonal,
+  } = useAppStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<EntryType | 'all'>('all');
@@ -105,6 +114,7 @@ export const JournalView: React.FC = () => {
   // Editor Modal State
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  const [entryScope, setEntryScope] = useState<UserScope>(activeScope);
 
   // Form Fields
   const [title, setTitle] = useState('');
@@ -122,6 +132,7 @@ export const JournalView: React.FC = () => {
   // Open editor for new entry
   const handleOpenNew = (type: EntryType = 'manifestation') => {
     setEditingEntryId(null);
+    setEntryScope(activeScope);
     setTitle('');
     setContent('');
     setEntryType(type);
@@ -135,6 +146,7 @@ export const JournalView: React.FC = () => {
   // Open editor for existing entry
   const handleEditEntry = (entry: JournalEntry) => {
     setEditingEntryId(entry.id);
+    setEntryScope(entry.userId || activeScope);
     setTitle(entry.title);
     setContent(entry.content);
     setEntryType(entry.entryType);
@@ -175,8 +187,13 @@ export const JournalView: React.FC = () => {
   const handleSave = () => {
     if (!title.trim() || !content.trim()) return;
 
+    const author =
+      entryScope === 'facu' ? 'Facu' : entryScope === 'maia' ? 'Maia' : 'Facu & Maia';
+
     const entry: JournalEntry = {
       id: editingEntryId || `journal-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      userId: entryScope,
+      author,
       title: title.trim(),
       content: content.trim(),
       entryType,
@@ -194,6 +211,8 @@ export const JournalView: React.FC = () => {
     if (entryType === 'sign') {
       saveManifestationSign({
         id: `sign-${entry.id}`,
+        userId: entry.userId,
+        author: entry.author,
         title: entry.title,
         signType: 'intuitive',
         description: entry.content,
@@ -227,17 +246,36 @@ export const JournalView: React.FC = () => {
             Cuaderno de Manifestación
           </h2>
           <p className="text-xs text-manifest-inkMuted">
-            Plasma intenciones, gratitud y verdades interiores
+            {activeScope === 'shared'
+              ? 'Diario en conjunto: sueños y vivencias compartidas de Facu & Maia'
+              : `Santuario íntimo de ${activeScope === 'facu' ? 'Facu' : 'Maia'}`}
           </p>
         </div>
 
-        <button
-          onClick={() => handleOpenNew('manifestation')}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl primary-gradient-btn text-xs font-semibold shadow-glass"
-        >
-          <Plus className="w-4 h-4" />
-          Nueva
-        </button>
+        <div className="flex items-center gap-2">
+          {activeScope !== 'shared' && (
+            <button
+              onClick={toggleIncludeSharedInPersonal}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 ${
+                includeSharedInPersonal
+                  ? 'bg-manifest-lavender/50 text-manifest-ink font-semibold border border-manifest-auraPurple/30'
+                  : 'glass-pill text-manifest-inkMuted hover:text-manifest-ink'
+              }`}
+              title="Alternar inclusión de vivencias conjuntas en este diario"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-manifest-auraPurple" />
+              <span className="hidden sm:inline">{includeSharedInPersonal ? 'Mi diario + Compartido' : 'Solo diario propio'}</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => handleOpenNew('manifestation')}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl primary-gradient-btn text-xs font-semibold shadow-glass"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva
+          </button>
+        </div>
       </div>
 
       {/* Writing Modes Horizontal Selector */}
@@ -345,6 +383,15 @@ export const JournalView: React.FC = () => {
                         <Calendar className="w-3 h-3" />
                         {formattedEntryDate}
                       </span>
+                      {entry.userId === 'shared' ? (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-manifest-pink/60 to-manifest-celeste/60 text-manifest-ink border border-white">
+                          ✨ Juntos
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/70 text-manifest-inkMuted">
+                          {entry.author || (entry.userId === 'facu' ? 'Facu' : 'Maia')}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-1">
@@ -438,6 +485,37 @@ export const JournalView: React.FC = () => {
 
               {/* Form Content */}
               <div className="space-y-4 py-4 overflow-y-auto flex-1">
+                {/* Espacio de Guardado (Personal o Compartido) */}
+                <div>
+                  <label className="text-[11px] font-semibold text-manifest-inkMuted block mb-1.5">
+                    Espacio de Guardado
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-white/60 border border-white/80">
+                    <button
+                      type="button"
+                      onClick={() => setEntryScope(activeScope === 'maia' ? 'maia' : 'facu')}
+                      className={`py-1.5 px-3 rounded-xl text-xs font-medium transition-all text-center ${
+                        entryScope !== 'shared'
+                          ? 'bg-white shadow-sm text-manifest-ink font-semibold'
+                          : 'text-manifest-inkMuted hover:bg-white/40'
+                      }`}
+                    >
+                      {activeScope === 'maia' ? '🌸 Diario personal de Maia' : '🌙 Diario personal de Facu'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEntryScope('shared')}
+                      className={`py-1.5 px-3 rounded-xl text-xs font-medium transition-all text-center ${
+                        entryScope === 'shared'
+                          ? 'bg-gradient-to-r from-manifest-pink/70 via-manifest-lavender/70 to-manifest-celeste/70 shadow-sm text-manifest-ink font-semibold'
+                          : 'text-manifest-inkMuted hover:bg-white/40'
+                      }`}
+                    >
+                      ✨ En Conjunto (Facu & Maia)
+                    </button>
+                  </div>
+                </div>
+
                 {/* Entry Type Picker */}
                 <div>
                   <label className="text-[11px] font-semibold text-manifest-inkMuted block mb-1.5">

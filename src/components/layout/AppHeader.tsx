@@ -3,13 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from '@/store';
 import { Flame, Download, Sparkles } from 'lucide-react';
+import { UserScopeSwitcher } from './UserScopeSwitcher';
 
 interface AppHeaderProps {
   onOpenInstallGuide: () => void;
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({ onOpenInstallGuide }) => {
-  const { settings } = useAppStore();
+  const { settings, activeScope } = useAppStore();
   const [greeting, setGreeting] = useState('Hola');
   const [isStandalone, setIsStandalone] = useState(false);
 
@@ -31,44 +32,65 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onOpenInstallGuide }) => {
     }
   }, []);
 
+  const getSubtitle = () => {
+    switch (activeScope) {
+      case 'facu':
+        return 'Santuario de Facu';
+      case 'maia':
+        return 'Santuario de Maia';
+      case 'shared':
+        return 'Espacio de Facu & Maia';
+      default:
+        return 'Manifest Santuario';
+    }
+  };
+
   return (
-    <header className="lg:hidden sticky top-0 z-30 px-4 pt-3 pb-2 backdrop-blur-xl bg-white/40 border-b border-white/60">
-      <div className="max-w-md mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-manifest-pink via-manifest-lavender to-manifest-celeste flex items-center justify-center shadow-glass border border-white">
-            <Sparkles className="w-5 h-5 text-manifest-ink" />
+    <header className="lg:hidden sticky top-0 z-30 px-3.5 pt-2.5 pb-2 backdrop-blur-xl bg-white/50 border-b border-white/60 shadow-sm">
+      <div className="max-w-md mx-auto space-y-2">
+        {/* Top Row: Brand & Status */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-manifest-pink via-manifest-lavender to-manifest-celeste flex items-center justify-center shadow-glass border border-white">
+              <Sparkles className="w-4 h-4 text-manifest-ink" />
+            </div>
+            <div>
+              <h2 className="text-[11px] font-semibold tracking-wide uppercase text-manifest-inkMuted/80 leading-none">
+                {greeting}, {settings.userName}
+              </h2>
+              <h1 className="text-sm font-serif font-bold text-manifest-ink leading-tight">
+                {getSubtitle()}
+              </h1>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xs font-semibold tracking-wide uppercase text-manifest-inkMuted/80">
-              {greeting}, {settings.userName}
-            </h2>
-            <h1 className="text-base font-serif font-bold text-manifest-ink">
-              Manifest Santuario
-            </h1>
+
+          <div className="flex items-center gap-1.5">
+            {/* Streak pill */}
+            <div
+              className="flex items-center gap-1 px-2 py-0.5 rounded-full glass-pill text-[11px] font-medium text-manifest-ink shadow-sm"
+              title="Días consecutivos de conexión personal"
+            >
+              <Flame className="w-3 h-3 text-amber-500 fill-amber-400" />
+              <span>{settings.dailyStreak}d</span>
+            </div>
+
+            {/* PWA Install Button */}
+            {!isStandalone && (
+              <button
+                onClick={onOpenInstallGuide}
+                className="p-1 rounded-full glass-pill text-manifest-inkMuted hover:text-manifest-ink transition-colors"
+                title="Instalar en tu dispositivo"
+                aria-label="Instalar app"
+              >
+                <Download className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {/* Streak pill */}
-          <div
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full glass-pill text-xs font-medium text-manifest-ink shadow-sm"
-            title="Días consecutivos de conexión personal"
-          >
-            <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
-            <span>{settings.dailyStreak} {settings.dailyStreak === 1 ? 'día' : 'días'}</span>
-          </div>
-
-          {/* PWA Install Button (if not already running standalone) */}
-          {!isStandalone && (
-            <button
-              onClick={onOpenInstallGuide}
-              className="p-1.5 rounded-full glass-pill text-manifest-inkMuted hover:text-manifest-ink transition-colors"
-              title="Instalar en tu dispositivo"
-              aria-label="Instalar app"
-            >
-              <Download className="w-4 h-4" />
-            </button>
-          )}
+        {/* User Scope Switcher (Facu / Maia / Juntos) */}
+        <div className="flex justify-center pt-0.5">
+          <UserScopeSwitcher compact className="w-full justify-between max-w-sm" />
         </div>
       </div>
     </header>

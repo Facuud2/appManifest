@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+export const UserScopeEnum = z.enum(['facu', 'maia', 'shared']);
 export const EntryTypeEnum = z.enum(['manifestation', 'gratitude', 'affirmation', 'reflection', 'free', 'sign']);
 export const MoodTypeEnum = z.enum(['peaceful', 'inspired', 'grateful', 'radiant', 'contemplative']);
 export const GoalCategoryEnum = z.enum(['crecimiento', 'carrera', 'bienestar', 'relaciones', 'abundancia', 'creatividad']);
@@ -9,6 +10,8 @@ export const FutureHorizonEnum = z.enum(['3_months', '6_months', '1_year', '3_ye
 
 export const JournalEntrySchema = z.object({
   id: z.string().min(1),
+  userId: UserScopeEnum.default('facu'),
+  author: z.string().default('Facu'),
   title: z.string().min(1, 'El título o intención es requerido'),
   content: z.string().min(1, 'El contenido no puede estar vacío'),
   entryType: EntryTypeEnum,
@@ -24,6 +27,7 @@ export const JournalEntrySchema = z.object({
 export const GoalStepSchema = z.object({
   id: z.string().min(1),
   goalId: z.string().min(1),
+  userId: UserScopeEnum.default('facu'),
   title: z.string().min(1, 'La acción debe tener un nombre claro'),
   description: z.string().optional(),
   completed: z.boolean().default(false),
@@ -33,6 +37,8 @@ export const GoalStepSchema = z.object({
 
 export const GoalSchema = z.object({
   id: z.string().min(1),
+  userId: UserScopeEnum.default('facu'),
+  author: z.string().default('Facu'),
   title: z.string().min(1, 'La intención u objetivo es requerido'),
   description: z.string().default(''),
   category: GoalCategoryEnum,
@@ -45,6 +51,8 @@ export const GoalSchema = z.object({
 
 export const ManifestationSignSchema = z.object({
   id: z.string().min(1),
+  userId: UserScopeEnum.default('facu'),
+  author: z.string().default('Facu'),
   title: z.string().min(1, 'Escribe qué señal o sincronía percibiste'),
   signType: SignTypeEnum,
   description: z.string().default(''),
@@ -56,6 +64,8 @@ export const ManifestationSignSchema = z.object({
 
 export const SuccessStorySchema = z.object({
   id: z.string().min(1),
+  userId: UserScopeEnum.default('facu'),
+  author: z.string().default('Facu'),
   title: z.string().min(1, 'Nombra tu manifestación cumplida'),
   goalId: z.string().optional(),
   manifestedDate: z.string(),
@@ -68,6 +78,8 @@ export const SuccessStorySchema = z.object({
 
 export const FutureManifestationSchema = z.object({
   id: z.string().min(1),
+  userId: UserScopeEnum.default('facu'),
+  author: z.string().default('Facu'),
   title: z.string().min(1, 'Nombra esta visión futura'),
   horizon: FutureHorizonEnum,
   targetDate: z.string().optional(),
@@ -79,6 +91,8 @@ export const FutureManifestationSchema = z.object({
 
 export const AgendaEventSchema = z.object({
   id: z.string().min(1),
+  userId: UserScopeEnum.default('facu'),
+  author: z.string().default('Facu'),
   title: z.string().min(1, 'El compromiso o actividad es requerido'),
   description: z.string().optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (YYYY-MM-DD)'),
@@ -90,6 +104,7 @@ export const AgendaEventSchema = z.object({
 
 export const ReleaseEntrySchema = z.object({
   id: z.string().min(1),
+  userId: UserScopeEnum.default('facu'),
   content: z.string().min(1, 'Escribe aquello que deseas soltar'),
   reflection: z.object({
     whyAffects: z.string().optional(),
@@ -104,6 +119,7 @@ export const ReleaseEntrySchema = z.object({
 
 export const DailyReflectionSchema = z.object({
   id: z.string().min(1),
+  userId: UserScopeEnum.default('facu'),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   mood: MoodTypeEnum,
   highlights: z.string(),
@@ -114,13 +130,14 @@ export const DailyReflectionSchema = z.object({
 });
 
 export const UserSettingsSchema = z.object({
-  userName: z.string().default('Soñador'),
+  userName: z.string().default('Facu'),
   greetingPreference: z.enum(['morning_gentle', 'intimate', 'empowered']).default('intimate'),
   theme: z.enum(['pastel-rainbow', 'serene-lavender', 'mint-glow']).default('pastel-rainbow'),
   reducedMotion: z.boolean().default(false),
   favoriteAffirmations: z.array(z.string()).default([]),
   firstLaunchCompleted: z.boolean().default(false),
   tutorialCompleted: z.boolean().default(false),
+  activeScope: UserScopeEnum.default('facu'),
   dailyStreak: z.number().default(1),
   lastActiveDate: z.string().default(''),
   totalJournalEntries: z.number().default(0),

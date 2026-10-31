@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { format, addDays, subDays, isSameDay, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { AgendaEvent } from '@/types';
+import { AgendaEvent, UserScope } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const AgendaView: React.FC = () => {
@@ -28,6 +28,7 @@ export const AgendaView: React.FC = () => {
     toggleAgendaEvent,
     deleteAgendaEvent,
     goals,
+    activeScope,
   } = useAppStore();
 
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -36,6 +37,7 @@ export const AgendaView: React.FC = () => {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [agendaScope, setAgendaScope] = useState<UserScope>(activeScope);
 
   // Form
   const [title, setTitle] = useState('');
@@ -51,6 +53,7 @@ export const AgendaView: React.FC = () => {
 
   const handleOpenNew = (dateToUse?: string) => {
     setEditingId(null);
+    setAgendaScope(activeScope);
     setTitle('');
     setDescription('');
     setEventDate(dateToUse || selectedDateStr);
@@ -61,6 +64,7 @@ export const AgendaView: React.FC = () => {
 
   const handleEdit = (event: AgendaEvent) => {
     setEditingId(event.id);
+    setAgendaScope(event.userId || activeScope);
     setTitle(event.title);
     setDescription(event.description || '');
     setEventDate(event.date);
@@ -72,8 +76,13 @@ export const AgendaView: React.FC = () => {
   const handleSave = () => {
     if (!title.trim() || !eventDate) return;
 
+    const author =
+      agendaScope === 'facu' ? 'Facu' : agendaScope === 'maia' ? 'Maia' : 'Facu & Maia';
+
     const event: AgendaEvent = {
       id: editingId || `event-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      userId: agendaScope,
+      author,
       title: title.trim(),
       description: description.trim() || undefined,
       date: eventDate,
@@ -187,7 +196,7 @@ export const AgendaView: React.FC = () => {
 
           {/* View Toggle */}
           <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-semibold uppercase tracking-wider text-manifest-inkMuted">
+            <span className="text-xs font-semibold text-manifest-inkMuted">
               {viewMode === 'day' ? 'Compromisos del día' : 'Vista cronológica total'} ({filteredEvents.length})
             </span>
             <div className="flex gap-1 p-0.5 rounded-xl glass-pill">
@@ -334,6 +343,36 @@ export const AgendaView: React.FC = () => {
               </div>
 
               <div className="space-y-3 text-xs">
+                <div>
+                  <label className="font-semibold text-manifest-inkMuted block mb-1">
+                    Espacio de la actividad
+                  </label>
+                  <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-white/60 border border-white/80">
+                    <button
+                      type="button"
+                      onClick={() => setAgendaScope(activeScope === 'maia' ? 'maia' : 'facu')}
+                      className={`py-1 px-2 rounded-lg text-[11px] font-medium transition-all text-center ${
+                        agendaScope !== 'shared'
+                          ? 'bg-white shadow-sm text-manifest-ink font-semibold'
+                          : 'text-manifest-inkMuted hover:bg-white/40'
+                      }`}
+                    >
+                      {activeScope === 'maia' ? '🌸 Agenda de Maia' : '🌙 Agenda de Facu'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAgendaScope('shared')}
+                      className={`py-1 px-2 rounded-lg text-[11px] font-medium transition-all text-center ${
+                        agendaScope === 'shared'
+                          ? 'bg-gradient-to-r from-manifest-pink/70 via-manifest-lavender/70 to-manifest-celeste/70 shadow-sm text-manifest-ink font-semibold'
+                          : 'text-manifest-inkMuted hover:bg-white/40'
+                      }`}
+                    >
+                      ✨ Juntos (Facu & Maia)
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <label className="font-semibold text-manifest-inkMuted block mb-1">
                     Título o compromiso *

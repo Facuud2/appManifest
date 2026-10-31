@@ -10,6 +10,7 @@ import {
   ManifestationSign,
   SuccessStory,
   FutureManifestation,
+  UserScope,
 } from '@/types';
 import {
   BackupDataSchema,
@@ -39,10 +40,10 @@ const STORAGE_KEYS = {
   SCHEMA_VERSION: 'manifest_schema_version',
 } as const;
 
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 
 export const DEFAULT_SETTINGS: UserSettings = {
-  userName: 'Alma Creadora',
+  userName: 'Facu',
   greetingPreference: 'intimate',
   theme: 'pastel-rainbow',
   reducedMotion: false,
@@ -54,6 +55,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   ],
   firstLaunchCompleted: true,
   tutorialCompleted: false,
+  activeScope: 'facu',
   dailyStreak: 1,
   lastActiveDate: new Date().toISOString().split('T')[0],
   totalJournalEntries: 1,
@@ -62,31 +64,61 @@ export const DEFAULT_SETTINGS: UserSettings = {
   unlockedMilestones: ['first_step', 'welcome_manifest'],
 };
 
-// Seed sample data for an inviting first experience
+// Seed sample data for Facu, Maia, and Shared
 const SEED_JOURNAL: JournalEntry[] = [
+  // Facu
   {
-    id: 'seed-journal-1',
-    title: 'Mi primer día en mi santuario digital',
-    content: 'Hoy abro este espacio para conectar con lo que realmente deseo. No desde la prisa ni la exigencia, sino desde la presencia y el cariño hacia mi camino. Me permito soñar, escribir sin juicios y honrar cada paso que doy.',
+    id: 'seed-facu-1',
+    userId: 'facu',
+    author: 'Facu',
+    title: 'Mi espacio de quietud y claridad',
+    content: 'Hoy abro este santuario para conectar con lo que realmente deseo. No desde la prisa ni la exigencia, sino desde la presencia y el cariño hacia mi camino.',
     entryType: 'manifestation',
     mood: 'radiant',
-    gratitudeItems: [
-      'Este momento de quietud para mí',
-      'El aire fresco de la mañana',
-      'La certeza de que estoy aprendiendo a confiar',
-    ],
-    affirmations: [
-      'Elijo vivir con intención, calma y gratitud.',
-    ],
+    gratitudeItems: ['El aire fresco de la mañana', 'Este momento para ordenar mis ideas'],
+    affirmations: ['Elijo vivir con intención, calma y gratitud.'],
     tags: ['Comienzo', 'Intención', 'Paz'],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  // Maia
+  {
+    id: 'seed-maia-1',
+    userId: 'maia',
+    author: 'Maia',
+    title: 'Santuario de intuición y proyectos del corazón',
+    content: 'Comienzo este espacio íntimo para escuchar mi voz interior, honrar mi sensibilidad y permitirme manifestar con ligereza y amor propio.',
+    entryType: 'manifestation',
+    mood: 'inspired',
+    gratitudeItems: ['La belleza de los nuevos comienzos', 'Confianza en mi intuición'],
+    affirmations: ['Todo fluye en el momento perfecto para mí.'],
+    tags: ['Magia', 'Intuición', 'Creación'],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  // Shared (Facu & Maia)
+  {
+    id: 'seed-shared-1',
+    userId: 'shared',
+    author: 'Facu & Maia',
+    title: 'Nuestra visión compartida y sueños juntos',
+    content: 'Este es nuestro espacio compartido para co-crear, registrar viajes deseados, momentos mágicos y manifestar en equipo la vida luminosa que queremos construir.',
+    entryType: 'manifestation',
+    mood: 'radiant',
+    gratitudeItems: ['Caminar juntos con complicidad y amor', 'Nuestros sueños mutuos'],
+    affirmations: ['Juntos multiplicamos la alegría, la abundancia y la paz.'],
+    tags: ['Nosotros', 'Amor', 'Co-Creación'],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
 ];
 
 const SEED_GOALS: Goal[] = [
+  // Facu
   {
-    id: 'seed-goal-1',
+    id: 'goal-facu-1',
+    userId: 'facu',
+    author: 'Facu',
     title: 'Cultivar mi paz mental y coherencia diaria',
     description: 'Crear una rutina suave matutina que me conecte con mi centro antes de entrar al ruido del mundo.',
     category: 'bienestar',
@@ -95,28 +127,66 @@ const SEED_GOALS: Goal[] = [
     targetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     createdAt: new Date().toISOString(),
   },
+  // Maia
+  {
+    id: 'goal-maia-1',
+    userId: 'maia',
+    author: 'Maia',
+    title: 'Expandir mi creatividad y proyectos personales',
+    description: 'Dedicar tiempo sagrado a mis expresiones artísticas y proyectos con plena confianza.',
+    category: 'creatividad',
+    motivation: 'Dar luz a lo que llevo dentro me llena de alegría y autenticidad.',
+    status: 'active',
+    targetDate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    createdAt: new Date().toISOString(),
+  },
+  // Shared
+  {
+    id: 'goal-shared-1',
+    userId: 'shared',
+    author: 'Facu & Maia',
+    title: 'Nuestro viaje soñado a la naturaleza',
+    description: 'Planear nuestra escapada a las montañas con tiempo libre y desconexión total.',
+    category: 'relaciones',
+    motivation: 'Celebrar nuestro amor y recargar energías en un rincón mágico.',
+    status: 'active',
+    targetDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    createdAt: new Date().toISOString(),
+  },
 ];
 
 const SEED_GOAL_STEPS: GoalStep[] = [
   {
-    id: 'seed-step-1',
-    goalId: 'seed-goal-1',
+    id: 'step-facu-1',
+    goalId: 'goal-facu-1',
+    userId: 'facu',
     title: 'Dedicar 10 minutos a escribir en mi diario al despertar',
     completed: true,
     completedAt: new Date().toISOString(),
     createdAt: new Date().toISOString(),
   },
   {
-    id: 'seed-step-2',
-    goalId: 'seed-goal-1',
-    title: 'Beber un vaso de agua tibia con intención y presencia',
+    id: 'step-facu-2',
+    goalId: 'goal-facu-1',
+    userId: 'facu',
+    title: 'Hacer una pausa al mediodía para respirar hondo',
     completed: false,
     createdAt: new Date().toISOString(),
   },
   {
-    id: 'seed-step-3',
-    goalId: 'seed-goal-1',
-    title: 'Hacer una pausa al mediodía para respirar hondo 3 veces',
+    id: 'step-maia-1',
+    goalId: 'goal-maia-1',
+    userId: 'maia',
+    title: 'Crear un tablero de inspiración visual para mi proyecto',
+    completed: true,
+    completedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'step-shared-1',
+    goalId: 'goal-shared-1',
+    userId: 'shared',
+    title: 'Investigar cabañas con ventanales y vistas al bosque',
     completed: false,
     createdAt: new Date().toISOString(),
   },
@@ -124,56 +194,85 @@ const SEED_GOAL_STEPS: GoalStep[] = [
 
 const SEED_AGENDA: AgendaEvent[] = [
   {
-    id: 'seed-event-1',
-    title: 'Cita conmigo: Ritual de gratitud y manifestación',
-    description: 'Espacio íntimo para revisar mis anhelos de la semana.',
+    id: 'agenda-facu-1',
+    userId: 'facu',
+    author: 'Facu',
+    title: 'Momento de enfoque y planificación personal',
+    description: 'Ordenar prioridades de la semana.',
     date: new Date().toISOString().split('T')[0],
-    time: '20:30',
+    time: '19:00',
     completed: false,
-    goalId: 'seed-goal-1',
+    goalId: 'goal-facu-1',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'agenda-shared-1',
+    userId: 'shared',
+    author: 'Facu & Maia',
+    title: 'Cena & charla de intenciones juntos',
+    description: 'Cocinar algo rico y revisar nuestras visiones compartidas.',
+    date: new Date().toISOString().split('T')[0],
+    time: '21:00',
+    completed: false,
+    goalId: 'goal-shared-1',
     createdAt: new Date().toISOString(),
   },
 ];
 
 const SEED_SUCCESS_STORIES: SuccessStory[] = [
   {
-    id: 'seed-success-1',
-    title: 'El rincón de trabajo bañado de luz natural',
-    goalId: 'seed-goal-1',
+    id: 'success-shared-1',
+    userId: 'shared',
+    author: 'Facu & Maia',
+    title: 'Nuestra primera gran sincronía juntos',
+    goalId: 'goal-shared-1',
     manifestedDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    story: 'Durante meses visualicé un espacio silencioso con ventanales altos donde pudiera crear en calma. Cuando dejé de forzar la búsqueda y ordené mis intenciones, un amigo me comentó casualmente de un lugar disponible que superaba todo lo imaginado.',
+    story: 'Teníamos la intención de encontrar un fin de semana libre sin obligaciones. Sin planearlo, ambos tuvimos los días libres exactamente en la misma fecha y encontramos un lugar perfecto.',
     signsEncountered: [
-      'Repetición del número 444 durante 3 días seguidos',
-      'Una pluma blanca en el umbral de mi puerta',
-      'Un mensaje inesperado mencionando exactamente la palabra serenidad',
+      'Ambos vimos la secuencia 11:11 el mismo día',
+      'Una recomendación casual que nos llegó por separado',
     ],
-    mindsetShift: 'Solté el cómo y la urgencia; me enfoqué en habitar ya la paz antes de verla materializada físicamente.',
-    gratitudeNote: 'Gracias a la sincronicidad de la vida y a mi valentía de sostener la visión sin dudar.',
-    createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+    mindsetShift: 'Soltamos la exigencia y confiamos en que el universo organiza los tiempos perfectos.',
+    gratitudeNote: 'Gracias por la complicidad y la magia compartida.',
+    createdAt: new Date().toISOString(),
   },
 ];
 
 const SEED_SIGNS: ManifestationSign[] = [
   {
-    id: 'seed-sign-1',
+    id: 'sign-facu-1',
+    userId: 'facu',
+    author: 'Facu',
     title: 'Sincronía 11:11 y conversación inspiradora',
     signType: 'angel_number',
-    description: 'Al mirar el reloj eran las 11:11 en el preciso instante en que recibí una propuesta creativa que encaja con mi proyecto.',
+    description: 'Al mirar el reloj eran las 11:11 en el preciso instante en que recibí una propuesta creativa.',
     date: new Date().toISOString().split('T')[0],
-    linkedGoalId: 'seed-goal-1',
-    feeling: 'Sensación de calidez en el pecho, certeza y alineación total.',
+    feeling: 'Sensación de calidez en el pecho y certeza.',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'sign-shared-1',
+    userId: 'shared',
+    author: 'Facu & Maia',
+    title: 'Mariposa brillante en nuestro camino',
+    signType: 'symbol',
+    description: 'Durante un paseo juntos, una mariposa se posó cerca de nosotros justo cuando hablábamos de nuestros planes.',
+    date: new Date().toISOString().split('T')[0],
+    feeling: 'Confirmación y alegría compartida.',
     createdAt: new Date().toISOString(),
   },
 ];
 
 const SEED_FUTURE_MANIFESTATIONS: FutureManifestation[] = [
   {
-    id: 'seed-future-1',
-    title: 'Mi retiro creativo en la naturaleza serena',
-    horizon: '6_months',
-    targetDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    visionText: 'Me veo despertando con el sonido de los pájaros y el aroma a pino fresco. Tengo mi cuaderno sobre una mesa de madera maciza, bebiendo té caliente. Mi corazón está en completa gratitud, sintiendo abundancia y ligereza.',
-    letterToFutureSelf: 'Querido Yo del futuro: Recuerda que cuando sembraste esta semilla, confiaste plenamente en tu capacidad de florecer sin prisa.',
+    id: 'future-shared-1',
+    userId: 'shared',
+    author: 'Facu & Maia',
+    title: 'Nuestra cabaña cerca de las montañas',
+    horizon: '1_year',
+    targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    visionText: 'Nos vemos desayunando café caliente con el aroma a madera y lluvia en el jardín. Sentimos profunda paz, abundancia y complicidad en nuestro propio hogar.',
+    letterToFutureSelf: 'A nuestro Yo del futuro: Que nunca olvidemos cómo empezó este sueño, con amor y certeza.',
     isSealed: false,
     createdAt: new Date().toISOString(),
   },
@@ -221,6 +320,7 @@ export interface IStorageService {
   exportBackup(): BackupData;
   importBackup(jsonString: string): { success: boolean; message: string; error?: string };
   clearAllData(): void;
+  bulkReplaceFromRemote(data: any): void;
 }
 
 class LocalStorageService implements IStorageService {
@@ -253,7 +353,7 @@ class LocalStorageService implements IStorageService {
   public initSeedDataIfNeeded(): void {
     if (!this.isBrowser()) return;
     const version = window.localStorage.getItem(STORAGE_KEYS.SCHEMA_VERSION);
-    if (!version) {
+    if (!version || parseInt(version) < CURRENT_SCHEMA_VERSION) {
       this.safeSet(STORAGE_KEYS.JOURNAL, SEED_JOURNAL);
       this.safeSet(STORAGE_KEYS.GOALS, SEED_GOALS);
       this.safeSet(STORAGE_KEYS.GOAL_STEPS, SEED_GOAL_STEPS);
@@ -265,16 +365,19 @@ class LocalStorageService implements IStorageService {
       this.safeSet(STORAGE_KEYS.FUTURE_MANIFESTATIONS, SEED_FUTURE_MANIFESTATIONS);
       this.safeSet(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
       window.localStorage.setItem(STORAGE_KEYS.SCHEMA_VERSION, String(CURRENT_SCHEMA_VERSION));
-    } else {
-      // Migrate if older schema
-      const signs = window.localStorage.getItem(STORAGE_KEYS.SIGNS);
-      if (!signs) this.safeSet(STORAGE_KEYS.SIGNS, SEED_SIGNS);
-      const stories = window.localStorage.getItem(STORAGE_KEYS.SUCCESS_STORIES);
-      if (!stories) this.safeSet(STORAGE_KEYS.SUCCESS_STORIES, SEED_SUCCESS_STORIES);
-      const futures = window.localStorage.getItem(STORAGE_KEYS.FUTURE_MANIFESTATIONS);
-      if (!futures) this.safeSet(STORAGE_KEYS.FUTURE_MANIFESTATIONS, SEED_FUTURE_MANIFESTATIONS);
-      window.localStorage.setItem(STORAGE_KEYS.SCHEMA_VERSION, String(CURRENT_SCHEMA_VERSION));
     }
+  }
+
+  public bulkReplaceFromRemote(data: any): void {
+    if (!data) return;
+    if (data.journalEntries) this.safeSet(STORAGE_KEYS.JOURNAL, data.journalEntries);
+    if (data.goals) this.safeSet(STORAGE_KEYS.GOALS, data.goals);
+    if (data.goalSteps) this.safeSet(STORAGE_KEYS.GOAL_STEPS, data.goalSteps);
+    if (data.agendaEvents) this.safeSet(STORAGE_KEYS.AGENDA, data.agendaEvents);
+    if (data.manifestationSigns) this.safeSet(STORAGE_KEYS.SIGNS, data.manifestationSigns);
+    if (data.successStories) this.safeSet(STORAGE_KEYS.SUCCESS_STORIES, data.successStories);
+    if (data.futureManifestations) this.safeSet(STORAGE_KEYS.FUTURE_MANIFESTATIONS, data.futureManifestations);
+    if (data.releaseEntries) this.safeSet(STORAGE_KEYS.RELEASES, data.releaseEntries);
   }
 
   // Journal
@@ -376,7 +479,7 @@ class LocalStorageService implements IStorageService {
     this.safeSet(STORAGE_KEYS.GOAL_STEPS, current.filter((s) => s.id !== id));
   }
 
-  // Manifestation Signs & Synchronicities
+  // Signs & Synchronicities
   public getManifestationSigns(): ManifestationSign[] {
     const raw = this.safeGet<unknown[]>(STORAGE_KEYS.SIGNS, []);
     const valid: ManifestationSign[] = [];
@@ -482,7 +585,7 @@ class LocalStorageService implements IStorageService {
       updated = [...current];
       updated[index] = event;
     } else {
-      updated = [...current, event];
+      updated = [event, ...current];
     }
     this.safeSet(STORAGE_KEYS.AGENDA, updated);
   }
@@ -618,6 +721,55 @@ class LocalStorageService implements IStorageService {
         error: e instanceof Error ? e.message : String(e),
       };
     }
+  }
+
+  public mergeRemoteData(remoteData: {
+    journalEntries?: JournalEntry[];
+    goals?: Goal[];
+    goalSteps?: GoalStep[];
+    agendaEvents?: AgendaEvent[];
+    manifestationSigns?: ManifestationSign[];
+    successStories?: SuccessStory[];
+    futureManifestations?: FutureManifestation[];
+    releaseEntries?: ReleaseEntry[];
+  }): boolean {
+    if (!this.isBrowser()) return false;
+    let changed = false;
+
+    const mergeList = <T extends { id: string }>(
+      storageKey: string,
+      currentList: T[],
+      remoteList?: T[]
+    ) => {
+      if (!remoteList || !Array.isArray(remoteList) || remoteList.length === 0) return currentList;
+      const map = new Map<string, T>();
+      for (const item of currentList) {
+        map.set(item.id, item);
+      }
+      for (const rItem of remoteList) {
+        if (!map.has(rItem.id)) {
+          map.set(rItem.id, rItem);
+          changed = true;
+        } else {
+          // If remote item exists, keep whichever is updated or keep current
+          map.set(rItem.id, rItem);
+        }
+      }
+      const merged = Array.from(map.values());
+      this.safeSet(storageKey, merged);
+      return merged;
+    };
+
+    if (remoteData.journalEntries) mergeList(STORAGE_KEYS.JOURNAL, this.getJournalEntries(), remoteData.journalEntries);
+    if (remoteData.goals) mergeList(STORAGE_KEYS.GOALS, this.getGoals(), remoteData.goals);
+    if (remoteData.goalSteps) mergeList(STORAGE_KEYS.GOAL_STEPS, this.getGoalSteps(), remoteData.goalSteps);
+    if (remoteData.agendaEvents) mergeList(STORAGE_KEYS.AGENDA, this.getAgendaEvents(), remoteData.agendaEvents);
+    if (remoteData.manifestationSigns) mergeList(STORAGE_KEYS.SIGNS, this.getManifestationSigns(), remoteData.manifestationSigns);
+    if (remoteData.successStories) mergeList(STORAGE_KEYS.SUCCESS_STORIES, this.getSuccessStories(), remoteData.successStories);
+    if (remoteData.futureManifestations) mergeList(STORAGE_KEYS.FUTURE_MANIFESTATIONS, this.getFutureManifestations(), remoteData.futureManifestations);
+    if (remoteData.releaseEntries) mergeList(STORAGE_KEYS.RELEASES, this.getReleaseEntries(), remoteData.releaseEntries);
+
+    return changed;
   }
 
   public clearAllData(): void {

@@ -11,8 +11,10 @@ import {
   ManifestationSign,
   SuccessStory,
   FutureManifestation,
+  UserScope,
 } from '@/types';
 import { storage } from '@/services/storage';
+import { tursoSync } from '@/services/tursoSync';
 
 export type AppTab = 'inicio' | 'agenda' | 'diario' | 'objetivos' | 'espacio';
 
@@ -22,11 +24,51 @@ export interface ToastMessage {
   text: string;
 }
 
+// Helper to filter entities strictly based on scope
+function filterByScope<T extends { userId: UserScope }>(
+  items: T[],
+  scope: UserScope,
+  includeSharedInPersonal: boolean = false
+): T[] {
+  if (scope === 'shared') {
+    return items.filter((item) => item.userId === 'shared');
+  }
+  if (includeSharedInPersonal) {
+    return items.filter((item) => item.userId === scope || item.userId === 'shared');
+  }
+  return items.filter((item) => item.userId === scope);
+}
+
+function getAuthorForScope(scope: UserScope): string {
+  switch (scope) {
+    case 'facu':
+      return 'Facu';
+    case 'maia':
+      return 'Maia';
+    case 'shared':
+      return 'Facu & Maia';
+    default:
+      return 'Facu';
+  }
+}
+
 interface AppState {
   isInitialized: boolean;
   activeTab: AppTab;
   setActiveTab: (tab: AppTab) => void;
 
+  // Active User / Space Scope
+  activeScope: UserScope;
+  includeSharedInPersonal: boolean;
+  setActiveScope: (scope: UserScope) => void;
+  toggleIncludeSharedInPersonal: () => void;
+
+  // Turso Real-Time Sync Status
+  isSyncing: boolean;
+  lastSyncTime: string | null;
+  syncFromRemote: () => Promise<void>;
+
+  // Scoped Entity Lists (strictly filtered by activeScope)
   journalEntries: JournalEntry[];
   goals: Goal[];
   goalSteps: GoalStep[];
@@ -88,358 +130,554 @@ interface AppState {
   getAvailableMilestones: () => Milestone[];
 }
 
-export const useAppStore = create<AppState>((set, get) => ({
-  isInitialized: false,
-  activeTab: 'inicio',
-  setActiveTab: (tab) => set({ activeTab: tab }),
+export const useAppStore = create<AppState>((set, get) => {
+  const initialSettings = storage.getUserSettings();
+  const initialScope: UserScope = initialSettings.activeScope || 'facu';
 
-  journalEntries: [],
-  goals: [],
-  goalSteps: [],
-  agendaEvents: [],
-  releaseEntries: [],
-  dailyReflections: [],
-  manifestationSigns: [],
-  successStories: [],
-  futureManifestations: [],
-  settings: storage.getUserSettings(),
-  toasts: [],
+  const computeScopedState = (scope: UserScope, includeShared: boolean = false) => {
+    return {
+      journalEntries: filterByScope(storage.getJournalEntries(), scope, includeShared),
+      goals: filterByScope(storage.getGoals(), scope, includeShared),
+      goalSteps: filterByScope(storage.getGoalSteps(), scope, includeShared),
+      agendaEvents: filterByScope(storage.getAgendaEvents(), scope, includeShared),
+      releaseEntries: filterByScope(storage.getReleaseEntries(), scope, includeShared),
+      dailyReflections: filterByScope(storage.getDailyReflections(), scope, includeShared),
+      manifestationSigns: filterByScope(storage.getManifestationSigns(), scope, includeShared),
+      successStories: filterByScope(storage.getSuccessStories(), scope, includeShared),
+      futureManifestations: filterByScope(storage.getFutureManifestations(), scope, includeShared),
+    };
+  };
 
-  init: () => {
-    storage.initSeedDataIfNeeded();
-    const journalEntries = storage.getJournalEntries();
-    const goals = storage.getGoals();
-    const goalSteps = storage.getGoalSteps();
-    const agendaEvents = storage.getAgendaEvents();
-    const releaseEntries = storage.getReleaseEntries();
-    const dailyReflections = storage.getDailyReflections();
-    const manifestationSigns = storage.getManifestationSigns();
-    const successStories = storage.getSuccessStories();
-    const futureManifestations = storage.getFutureManifestations();
-    const settings = storage.getUserSettings();
+  return {
+    isInitialized: false,
+    activeTab: 'inicio',
+    setActiveTab: (tab) => set({ activeTab: tab }),
 
-    // Check streak
-    const today = new Date().toISOString().split('T')[0];
-    if (settings.lastActiveDate && settings.lastActiveDate !== today) {
-      const last = new Date(settings.lastActiveDate);
-      const diffDays = Math.round((new Date(today).getTime() - last.getTime()) / (1000 * 3600 * 24));
-      if (diffDays === 1) {
-        const updated = storage.saveUserSettings({
-          dailyStreak: settings.dailyStreak + 1,
-          lastActiveDate: today,
-        });
-        set({ settings: updated });
-      } else if (diffDays > 1) {
-        const updated = storage.saveUserSettings({
-          dailyStreak: 1,
-          lastActiveDate: today,
-        });
+    activeScope: initialScope,
+    includeSharedInPersonal: false,
+    isSyncing: false,
+    lastSyncTime: null,
+
+    journalEntries: [],
+    goals: [],
+    goalSteps: [],
+    agendaEvents: [],
+    releaseEntries: [],
+    dailyReflections: [],
+    manifestationSigns: [],
+    successStories: [],
+    futureManifestations: [],
+    settings: initialSettings,
+    toasts: [],
+
+    init: () => {
+      storage.initSeedDataIfNeeded();
+      const settings = storage.getUserSettings();
+      const scope = settings.activeScope || 'facu';
+
+      // Check streak
+      const today = new Date().toISOString().split('T')[0];
+      if (settings.lastActiveDate && settings.lastActiveDate !== today) {
+        const last = new Date(settings.lastActiveDate);
+        const diffDays = Math.round((new Date(today).getTime() - last.getTime()) / (1000 * 3600 * 24));
+        if (diffDays === 1) {
+          const updated = storage.saveUserSettings({
+            dailyStreak: settings.dailyStreak + 1,
+            lastActiveDate: today,
+          });
+          set({ settings: updated });
+        } else if (diffDays > 1) {
+          const updated = storage.saveUserSettings({
+            dailyStreak: 1,
+            lastActiveDate: today,
+          });
+          set({ settings: updated });
+        }
+      } else if (!settings.lastActiveDate) {
+        const updated = storage.saveUserSettings({ lastActiveDate: today });
         set({ settings: updated });
       }
-    } else if (!settings.lastActiveDate) {
-      const updated = storage.saveUserSettings({ lastActiveDate: today });
+
+      const scoped = computeScopedState(scope, false);
+
+      set({
+        ...scoped,
+        activeScope: scope,
+        settings: storage.getUserSettings(),
+        isInitialized: true,
+      });
+
+      // Background remote sync from Turso on init
+      get().syncFromRemote();
+
+      // Listen for window focus & network reconnection to sync Turso in real time
+      if (typeof window !== 'undefined') {
+        const handleSyncTrigger = () => {
+          get().syncFromRemote();
+        };
+
+        window.addEventListener('focus', handleSyncTrigger);
+        window.addEventListener('online', handleSyncTrigger);
+
+        window.addEventListener('manifest_data_changed', () => {
+          const currentScope = get().activeScope;
+          const incShared = get().includeSharedInPersonal;
+          set({
+            ...computeScopedState(currentScope, incShared),
+            settings: storage.getUserSettings(),
+          });
+        });
+      }
+    },
+
+    setActiveScope: (scope: UserScope) => {
+      const currentUserName = scope === 'facu' ? 'Facu' : scope === 'maia' ? 'Maia' : 'Facu & Maia';
+      const updatedSettings = storage.saveUserSettings({
+        activeScope: scope,
+        userName: currentUserName,
+      });
+
+      const incShared = get().includeSharedInPersonal;
+      const scoped = computeScopedState(scope, incShared);
+
+      set({
+        activeScope: scope,
+        settings: updatedSettings,
+        ...scoped,
+      });
+
+      const toastMessage =
+        scope === 'facu'
+          ? 'Santuario de Facu conectado 🌙'
+          : scope === 'maia'
+          ? 'Santuario de Maia conectado 🌸'
+          : 'Espacio Compartido de Facu & Maia ✨';
+
+      get().showToast(toastMessage, 'gentle');
+
+      // Sync with Turso for this scope
+      get().syncFromRemote();
+    },
+
+    toggleIncludeSharedInPersonal: () => {
+      const nextState = !get().includeSharedInPersonal;
+      set({ includeSharedInPersonal: nextState });
+      const scoped = computeScopedState(get().activeScope, nextState);
+      set(scoped);
+      get().showToast(
+        nextState ? 'Mostrando también vivencias en conjunto ✨' : 'Vista personal privada restaurada 🌿',
+        'info'
+      );
+    },
+
+    syncFromRemote: async () => {
+      if (get().isSyncing) return;
+      set({ isSyncing: true });
+
+      try {
+        const remoteData = await tursoSync.fetchRemoteData();
+        if (remoteData) {
+          storage.mergeRemoteData(remoteData);
+          const currentScope = get().activeScope;
+          const incShared = get().includeSharedInPersonal;
+          const scoped = computeScopedState(currentScope, incShared);
+          const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+          set({
+            ...scoped,
+            isSyncing: false,
+            lastSyncTime: nowStr,
+          });
+        } else {
+          set({ isSyncing: false });
+        }
+      } catch (err) {
+        console.warn('Sync failed:', err);
+        set({ isSyncing: false });
+      }
+    },
+
+    showToast: (text, type = 'gentle') => {
+      const id = Math.random().toString(36).substring(2, 9);
+      set((state) => ({ toasts: [...state.toasts, { id, text, type }] }));
+      setTimeout(() => {
+        get().removeToast(id);
+      }, 3600);
+    },
+
+    removeToast: (id) => {
+      set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
+    },
+
+    // Journal
+    saveJournalEntry: (entry) => {
+      const scope = entry.userId || get().activeScope;
+      const author = entry.author || getAuthorForScope(scope);
+      const enriched: JournalEntry = {
+        ...entry,
+        userId: scope,
+        author,
+        updatedAt: new Date().toISOString(),
+      };
+
+      storage.saveJournalEntry(enriched);
+      set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
+      get().showToast('Palabras guardadas con serenidad ✨', 'success');
+
+      // Async Turso sync
+      tursoSync.pushChange({ entity: 'journal', action: 'save', data: enriched });
+    },
+
+    deleteJournalEntry: (id) => {
+      storage.deleteJournalEntry(id);
+      set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
+      get().showToast('Entrada retirada del diario', 'info');
+
+      // Async Turso sync
+      tursoSync.pushChange({ entity: 'journal', action: 'delete', id });
+    },
+
+    // Goals
+    saveGoal: (goal) => {
+      const scope = goal.userId || get().activeScope;
+      const author = goal.author || getAuthorForScope(scope);
+      const enriched: Goal = {
+        ...goal,
+        userId: scope,
+        author,
+      };
+
+      storage.saveGoal(enriched);
+      set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
+      get().showToast('Intención anclada al universo ✨', 'success');
+
+      // Async Turso sync
+      tursoSync.pushChange({ entity: 'goal', action: 'save', data: enriched });
+    },
+
+    deleteGoal: (id) => {
+      storage.deleteGoal(id);
+      set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
+      get().showToast('Intención retirada', 'info');
+
+      // Async Turso sync
+      tursoSync.pushChange({ entity: 'goal', action: 'delete', id });
+    },
+
+    saveGoalStep: (step) => {
+      const scope = step.userId || get().activeScope;
+      const enriched: GoalStep = {
+        ...step,
+        userId: scope,
+      };
+
+      storage.saveGoalStep(enriched);
+      set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
+      get().showToast('Paso de acción registrado', 'gentle');
+
+      // Async Turso sync
+      tursoSync.pushChange({ entity: 'step', action: 'save', data: enriched });
+    },
+
+    toggleGoalStep: (id) => {
+      const steps = storage.getGoalSteps();
+      const step = steps.find((s) => s.id === id);
+      if (!step) return;
+      const willBeCompleted = !step.completed;
+      const updatedStep: GoalStep = {
+        ...step,
+        completed: willBeCompleted,
+        completedAt: willBeCompleted ? new Date().toISOString() : undefined,
+      };
+      storage.saveGoalStep(updatedStep);
+      set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
+      set({ settings: storage.getUserSettings() });
+
+      if (willBeCompleted) {
+        get().showToast('¡Un paso tangible manifestado con éxito! 🌸', 'celebrate');
+      }
+
+      // Async Turso sync
+      tursoSync.pushChange({ entity: 'step', action: 'save', data: updatedStep });
+    },
+
+    deleteGoalStep: (id) => {
+      storage.deleteGoalStep(id);
+      set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
+
+      // Async Turso sync
+      tursoSync.pushChange({ entity: 'step', action: 'delete', id });
+    },
+
+    // Signs & Synchronicities
+    saveManifestationSign: (sign) => {
+      const scope = sign.userId || get().activeScope;
+      const author = sign.author || getAuthorForScope(scope);
+      const enriched: ManifestationSign = {
+        ...sign,
+        userId: scope,
+        author,
+      };
+
+      storage.saveManifestationSign(enriched);
+      set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
+      get().showToast('Sincronía capturada en tu camino ✨', 'celebrate');
+
+      // Async Turso sync
+      tursoSync.pushChange({ entity: 'sign', action: 'save', data: enriched });
+    },
+
+    deleteManifestationSign: (id) => {
+      storage.deleteManifestationSign(id);
+      set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
+      get().showToast('Señal retirada', 'info');
+
+      // Async Turso sync
+      tursoSync.pushChange({ entity: 'sign', action: 'delete', id });
+    },
+
+    // Success Stories
+    saveSuccessStory: (story) => {
+      const scope = story.userId || get().activeScope;
+      const author = story.author || getAuthorForScope(scope);
+      const enriched: SuccessStory = {
+        ...story,
+        userId: scope,
+        author,
+      };
+
+      storage.saveSuccessStory(enriched);
+      set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
+      get().showToast('¡Historia de éxito anclada en gratitud eterna! 🌟', 'celebrate');
+
+      // Async Turso sync
+      tursoSync.pushChange({ entity: 'story', action: 'save', data: enriched });
+    },
+
+    deleteSuccessStory: (id) => {
+      storage.deleteSuccessStory(id);
+      set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
+      get().showToast('Historia retirada del registro', 'info');
+
+      // Async Turso sync
+      tursoSync.pushChange({ entity: 'story', action: 'delete', id });
+    },
+
+    // Future Manifestations
+    saveFutureManifestation: (future) => {
+      const scope = future.userId || get().activeScope;
+      const author = future.author || getAuthorForScope(scope);
+      const enriched: FutureManifestation = {
+        ...future,
+        userId: scope,
+        author,
+      };
+
+      storage.saveFutureManifestation(enriched);
+      set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
+      get().showToast('Semilla del futuro plantada con certeza 🌱', 'success');
+
+      // Async Turso sync
+      tursoSync.pushChange({ entity: 'future', action: 'save', data: enriched });
+    },
+
+    deleteFutureManifestation: (id) => {
+      storage.deleteFutureManifestation(id);
+      set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
+      get().showToast('Visión retirada', 'info');
+
+      // Async Turso sync
+      tursoSync.pushChange({ entity: 'future', action: 'delete', id });
+    },
+
+    // Agenda
+    saveAgendaEvent: (event) => {
+      const scope = event.userId || get().activeScope;
+      const author = event.author || getAuthorForScope(scope);
+      const enriched: AgendaEvent = {
+        ...event,
+        userId: scope,
+        author,
+      };
+
+      storage.saveAgendaEvent(enriched);
+      set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
+      get().showToast('Compromiso agendado con presencia', 'gentle');
+
+      // Async Turso sync
+      tursoSync.pushChange({ entity: 'event', action: 'save', data: enriched });
+    },
+
+    toggleAgendaEvent: (id) => {
+      const events = storage.getAgendaEvents();
+      const event = events.find((e) => e.id === id);
+      if (!event) return;
+      const updated: AgendaEvent = { ...event, completed: !event.completed };
+      storage.saveAgendaEvent(updated);
+      set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
+      if (updated.completed) {
+        get().showToast('Actividad cumplida con amor ✨', 'success');
+      }
+
+      // Async Turso sync
+      tursoSync.pushChange({ entity: 'event', action: 'save', data: updated });
+    },
+
+    deleteAgendaEvent: (id) => {
+      storage.deleteAgendaEvent(id);
+      set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
+      get().showToast('Actividad eliminada', 'info');
+
+      // Async Turso sync
+      tursoSync.pushChange({ entity: 'event', action: 'delete', id });
+    },
+
+    // Release
+    saveReleaseEntry: (entry) => {
+      const scope = entry.userId || get().activeScope;
+      const enriched: ReleaseEntry = {
+        ...entry,
+        userId: scope,
+      };
+
+      storage.saveReleaseEntry(enriched);
+      set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
+
+      // Async Turso sync
+      tursoSync.pushChange({ entity: 'release', action: 'save', data: enriched });
+    },
+
+    destroyRelease: (id) => {
+      storage.permanentlyDestroyRelease(id);
+      set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
+      set({ settings: storage.getUserSettings() });
+      get().showToast('Liberado y desvanecido en gratitud y paz 🕊️', 'celebrate');
+
+      // Async Turso sync
+      tursoSync.pushChange({ entity: 'release', action: 'delete', id });
+    },
+
+    // Daily Reflection
+    saveDailyReflection: (reflection) => {
+      const scope = reflection.userId || get().activeScope;
+      const enriched: DailyReflection = {
+        ...reflection,
+        userId: scope,
+      };
+
+      storage.saveDailyReflection(enriched);
+      set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
+      get().showToast('Reflexión diaria guardada en tu santuario', 'success');
+    },
+
+    // Settings & Backup
+    updateSettings: (partial) => {
+      const updated = storage.saveUserSettings(partial);
       set({ settings: updated });
-    }
+      get().showToast('Tus preferencias han sido actualizadas', 'gentle');
+    },
 
-    set({
-      journalEntries,
-      goals,
-      goalSteps,
-      agendaEvents,
-      releaseEntries,
-      dailyReflections,
-      manifestationSigns,
-      successStories,
-      futureManifestations,
-      settings: storage.getUserSettings(),
-      isInitialized: true,
-    });
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener('manifest_data_changed', () => {
+    restoreFromBackup: (json) => {
+      const res = storage.importBackup(json);
+      if (res.success) {
+        const currentScope = get().activeScope;
+        const incShared = get().includeSharedInPersonal;
         set({
-          journalEntries: storage.getJournalEntries(),
-          goals: storage.getGoals(),
-          goalSteps: storage.getGoalSteps(),
-          agendaEvents: storage.getAgendaEvents(),
-          releaseEntries: storage.getReleaseEntries(),
-          dailyReflections: storage.getDailyReflections(),
-          manifestationSigns: storage.getManifestationSigns(),
-          successStories: storage.getSuccessStories(),
-          futureManifestations: storage.getFutureManifestations(),
+          ...computeScopedState(currentScope, incShared),
           settings: storage.getUserSettings(),
         });
-      });
-    }
-  },
+        get().showToast('Santuario restaurado íntegramente ✨', 'celebrate');
+      }
+      return res;
+    },
 
-  showToast: (text, type = 'gentle') => {
-    const id = Math.random().toString(36).substring(2, 9);
-    set((state) => ({ toasts: [...state.toasts, { id, text, type }] }));
-    setTimeout(() => {
-      get().removeToast(id);
-    }, 3600);
-  },
+    // Helpers
+    getGoalProgress: (goalId) => {
+      const steps = storage.getGoalSteps().filter((s) => s.goalId === goalId);
+      if (steps.length === 0) return 0;
+      const completed = steps.filter((s) => s.completed).length;
+      return Math.round((completed / steps.length) * 100);
+    },
 
-  removeToast: (id) => {
-    set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
-  },
+    getAvailableMilestones: () => {
+      const settings = get().settings;
+      const currentScope = get().activeScope;
+      const journalCount = get().journalEntries.length;
+      const completedActions = get().goalSteps.filter((s) => s.completed).length;
+      const completedGoals = get().goals.filter((g) => {
+        const steps = get().goalSteps.filter((s) => s.goalId === g.id);
+        return steps.length > 0 && steps.every((s) => s.completed);
+      }).length;
+      const releaseCount = settings.totalReleases;
+      const successCount = get().successStories.length;
+      const signsCount = get().manifestationSigns.length;
 
-  // Journal
-  saveJournalEntry: (entry) => {
-    storage.saveJournalEntry(entry);
-    set({ journalEntries: storage.getJournalEntries() });
-    get().showToast('Palabras guardadas con serenidad ✨', 'success');
-  },
-
-  deleteJournalEntry: (id) => {
-    storage.deleteJournalEntry(id);
-    set({ journalEntries: storage.getJournalEntries() });
-    get().showToast('Entrada retirada del diario', 'info');
-  },
-
-  // Goals
-  saveGoal: (goal) => {
-    storage.saveGoal(goal);
-    set({ goals: storage.getGoals() });
-    get().showToast('Intención anclada al universo ✨', 'success');
-  },
-
-  deleteGoal: (id) => {
-    storage.deleteGoal(id);
-    set({
-      goals: storage.getGoals(),
-      goalSteps: storage.getGoalSteps(),
-    });
-    get().showToast('Intención retirada', 'info');
-  },
-
-  saveGoalStep: (step) => {
-    storage.saveGoalStep(step);
-    set({ goalSteps: storage.getGoalSteps() });
-    get().showToast('Paso de acción registrado', 'gentle');
-  },
-
-  toggleGoalStep: (id) => {
-    const steps = get().goalSteps;
-    const step = steps.find((s) => s.id === id);
-    if (!step) return;
-    const willBeCompleted = !step.completed;
-    const updatedStep: GoalStep = {
-      ...step,
-      completed: willBeCompleted,
-      completedAt: willBeCompleted ? new Date().toISOString() : undefined,
-    };
-    storage.saveGoalStep(updatedStep);
-    set({ goalSteps: storage.getGoalSteps(), settings: storage.getUserSettings() });
-    if (willBeCompleted) {
-      get().showToast('¡Un paso tangible manifestado con éxito! 🌸', 'celebrate');
-    }
-  },
-
-  deleteGoalStep: (id) => {
-    storage.deleteGoalStep(id);
-    set({ goalSteps: storage.getGoalSteps() });
-  },
-
-  // Signs & Synchronicities
-  saveManifestationSign: (sign) => {
-    storage.saveManifestationSign(sign);
-    set({ manifestationSigns: storage.getManifestationSigns() });
-    get().showToast('Sincronía capturada en tu camino ✨', 'celebrate');
-  },
-
-  deleteManifestationSign: (id) => {
-    storage.deleteManifestationSign(id);
-    set({ manifestationSigns: storage.getManifestationSigns() });
-    get().showToast('Señal retirada', 'info');
-  },
-
-  // Success Stories
-  saveSuccessStory: (story) => {
-    storage.saveSuccessStory(story);
-    set({ successStories: storage.getSuccessStories() });
-    get().showToast('¡Historia de éxito anclada en gratitud eterna! 🌟', 'celebrate');
-  },
-
-  deleteSuccessStory: (id) => {
-    storage.deleteSuccessStory(id);
-    set({ successStories: storage.getSuccessStories() });
-    get().showToast('Historia retirada del registro', 'info');
-  },
-
-  // Future Manifestations
-  saveFutureManifestation: (future) => {
-    storage.saveFutureManifestation(future);
-    set({ futureManifestations: storage.getFutureManifestations() });
-    get().showToast('Semilla del futuro plantada con certeza 🌱', 'success');
-  },
-
-  deleteFutureManifestation: (id) => {
-    storage.deleteFutureManifestation(id);
-    set({ futureManifestations: storage.getFutureManifestations() });
-    get().showToast('Visión retirada', 'info');
-  },
-
-  // Agenda
-  saveAgendaEvent: (event) => {
-    storage.saveAgendaEvent(event);
-    set({ agendaEvents: storage.getAgendaEvents() });
-    get().showToast('Compromiso agendado con presencia', 'gentle');
-  },
-
-  toggleAgendaEvent: (id) => {
-    const events = get().agendaEvents;
-    const event = events.find((e) => e.id === id);
-    if (!event) return;
-    const updated: AgendaEvent = { ...event, completed: !event.completed };
-    storage.saveAgendaEvent(updated);
-    set({ agendaEvents: storage.getAgendaEvents() });
-    if (updated.completed) {
-      get().showToast('Actividad cumplida con amor ✨', 'success');
-    }
-  },
-
-  deleteAgendaEvent: (id) => {
-    storage.deleteAgendaEvent(id);
-    set({ agendaEvents: storage.getAgendaEvents() });
-    get().showToast('Actividad eliminada', 'info');
-  },
-
-  // Release
-  saveReleaseEntry: (entry) => {
-    storage.saveReleaseEntry(entry);
-    set({ releaseEntries: storage.getReleaseEntries() });
-  },
-
-  destroyRelease: (id) => {
-    storage.permanentlyDestroyRelease(id);
-    set({
-      releaseEntries: storage.getReleaseEntries(),
-      settings: storage.getUserSettings(),
-    });
-    get().showToast('Liberado y desvanecido en gratitud y paz 🕊️', 'celebrate');
-  },
-
-  // Daily Reflection
-  saveDailyReflection: (reflection) => {
-    storage.saveDailyReflection(reflection);
-    set({ dailyReflections: storage.getDailyReflections() });
-    get().showToast('Reflexión diaria guardada en tu santuario', 'success');
-  },
-
-  // Settings & Backup
-  updateSettings: (partial) => {
-    const updated = storage.saveUserSettings(partial);
-    set({ settings: updated });
-    get().showToast('Tus preferencias han sido actualizadas', 'gentle');
-  },
-
-  restoreFromBackup: (json) => {
-    const res = storage.importBackup(json);
-    if (res.success) {
-      set({
-        journalEntries: storage.getJournalEntries(),
-        goals: storage.getGoals(),
-        goalSteps: storage.getGoalSteps(),
-        agendaEvents: storage.getAgendaEvents(),
-        releaseEntries: storage.getReleaseEntries(),
-        dailyReflections: storage.getDailyReflections(),
-        manifestationSigns: storage.getManifestationSigns(),
-        successStories: storage.getSuccessStories(),
-        futureManifestations: storage.getFutureManifestations(),
-        settings: storage.getUserSettings(),
-      });
-      get().showToast('Santuario restaurado íntegramente ✨', 'celebrate');
-    }
-    return res;
-  },
-
-  // Helpers
-  getGoalProgress: (goalId) => {
-    const steps = get().goalSteps.filter((s) => s.goalId === goalId);
-    if (steps.length === 0) return 0;
-    const completed = steps.filter((s) => s.completed).length;
-    return Math.round((completed / steps.length) * 100);
-  },
-
-  getAvailableMilestones: () => {
-    const settings = get().settings;
-    const journalCount = get().journalEntries.length;
-    const completedActions = get().goalSteps.filter((s) => s.completed).length;
-    const completedGoals = get().goals.filter((g) => {
-      const steps = get().goalSteps.filter((s) => s.goalId === g.id);
-      return steps.length > 0 && steps.every((s) => s.completed);
-    }).length;
-    const releaseCount = settings.totalReleases;
-    const successCount = get().successStories.length;
-    const signsCount = get().manifestationSigns.length;
-
-    return [
-      {
-        id: 'welcome_manifest',
-        title: 'Primer Destello',
-        description: 'Abriste tu santuario y diste el primer paso consciente hacia tu transformación.',
-        icon: 'Sparkles',
-        category: 'writing',
-        unlocked: true,
-      },
-      {
-        id: 'first_action',
-        title: 'Manifestación en Acción',
-        description: 'Convertiste una intención mental en tu primera acción real completada.',
-        icon: 'HeartHandshake',
-        category: 'action',
-        unlocked: completedActions >= 1,
-      },
-      {
-        id: 'sign_observer',
-        title: 'Ojos de Sincronía',
-        description: 'Detectaste y registraste tu primera señal o número repetido en el camino.',
-        icon: 'Compass',
-        category: 'writing',
-        unlocked: signsCount >= 1,
-      },
-      {
-        id: 'first_success',
-        title: 'Manifestador Real',
-        description: 'Anclaste tu primera Historia de Éxito documentando un deseo cumplido.',
-        icon: 'Award',
-        category: 'action',
-        unlocked: successCount >= 1,
-      },
-      {
-        id: 'dedicated_scribe',
-        title: 'Alma Reflexiva',
-        description: 'Registraste 3 o más entradas expresando tu mundo interior.',
-        icon: 'Feather',
-        category: 'writing',
-        unlocked: journalCount >= 3,
-      },
-      {
-        id: 'first_release',
-        title: 'Vuelo Ligero',
-        description: 'Completaste tu primer ritual de liberación soltando una carga.',
-        icon: 'Flame',
-        category: 'release',
-        unlocked: releaseCount >= 1,
-      },
-      {
-        id: 'streak_3',
-        title: 'Ritmo Sereno',
-        description: 'Mantuviste 3 días seguidos visitando tu espacio personal.',
-        icon: 'Sun',
-        category: 'streak',
-        unlocked: settings.dailyStreak >= 3,
-      },
-      {
-        id: 'manifestor_master',
-        title: 'Coherencia Completa',
-        description: 'Completaste todas las acciones tangibles de un objetivo.',
-        icon: 'Award',
-        category: 'action',
-        unlocked: completedGoals >= 1,
-      },
-    ];
-  },
-}));
+      return [
+        {
+          id: 'welcome_manifest',
+          title: 'Primer Destello',
+          description: `Abriste el santuario de ${currentScope === 'facu' ? 'Facu' : currentScope === 'maia' ? 'Maia' : 'ambos'} y diste el primer paso consciente.`,
+          icon: 'Sparkles',
+          category: 'writing',
+          unlocked: true,
+        },
+        {
+          id: 'first_action',
+          title: 'Manifestación en Acción',
+          description: 'Convertiste una intención mental en tu primera acción real completada.',
+          icon: 'HeartHandshake',
+          category: 'action',
+          unlocked: completedActions >= 1,
+        },
+        {
+          id: 'sign_observer',
+          title: 'Ojos de Sincronía',
+          description: 'Detectaste y registraste tu primera señal o número repetido en el camino.',
+          icon: 'Compass',
+          category: 'writing',
+          unlocked: signsCount >= 1,
+        },
+        {
+          id: 'first_success',
+          title: 'Manifestador Real',
+          description: 'Anclaste tu primera Historia de Éxito documentando un deseo cumplido.',
+          icon: 'Award',
+          category: 'action',
+          unlocked: successCount >= 1,
+        },
+        {
+          id: 'dedicated_scribe',
+          title: 'Alma Reflexiva',
+          description: 'Registraste 3 o más entradas expresando tu mundo interior.',
+          icon: 'Feather',
+          category: 'writing',
+          unlocked: journalCount >= 3,
+        },
+        {
+          id: 'first_release',
+          title: 'Vuelo Ligero',
+          description: 'Completaste tu primer ritual de liberación soltando una carga.',
+          icon: 'Flame',
+          category: 'release',
+          unlocked: releaseCount >= 1,
+        },
+        {
+          id: 'streak_3',
+          title: 'Ritmo Sereno',
+          description: 'Mantuviste 3 días seguidos visitando tu espacio personal.',
+          icon: 'Sun',
+          category: 'streak',
+          unlocked: settings.dailyStreak >= 3,
+        },
+        {
+          id: 'manifestor_master',
+          title: 'Coherencia Completa',
+          description: 'Completaste todas las acciones tangibles de un objetivo.',
+          icon: 'Award',
+          category: 'action',
+          unlocked: completedGoals >= 1,
+        },
+      ];
+    },
+  };
+});

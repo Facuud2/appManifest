@@ -16,7 +16,7 @@ import {
   Feather,
   Users,
 } from 'lucide-react';
-import { ManifestationSign, SignType } from '@/types';
+import { ManifestationSign, SignType, UserScope } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SIGN_TYPES: {
@@ -34,12 +34,13 @@ const SIGN_TYPES: {
 ];
 
 export const SignsView: React.FC = () => {
-  const { manifestationSigns, saveManifestationSign, deleteManifestationSign, goals } = useAppStore();
+  const { manifestationSigns, saveManifestationSign, deleteManifestationSign, goals, activeScope } = useAppStore();
 
   const [filterType, setFilterType] = useState<SignType | 'all'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Form State
+  const [signScope, setSignScope] = useState<UserScope>(activeScope);
   const [title, setTitle] = useState('');
   const [signType, setSignType] = useState<SignType>('angel_number');
   const [description, setDescription] = useState('');
@@ -48,6 +49,7 @@ export const SignsView: React.FC = () => {
   const [linkedGoalId, setLinkedGoalId] = useState('');
 
   const handleOpenNew = () => {
+    setSignScope(activeScope);
     setTitle('');
     setSignType('angel_number');
     setDescription('');
@@ -60,8 +62,12 @@ export const SignsView: React.FC = () => {
   const handleSave = () => {
     if (!title.trim() || !description.trim()) return;
 
+    const author = signScope === 'facu' ? 'Facu' : signScope === 'maia' ? 'Maia' : 'Facu & Maia';
+
     const sign: ManifestationSign = {
       id: `sign-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      userId: signScope,
+      author,
       title: title.trim(),
       signType,
       description: description.trim(),
@@ -184,6 +190,15 @@ export const SignsView: React.FC = () => {
                       <Calendar className="w-3 h-3" />
                       {sign.date}
                     </span>
+                    {sign.userId === 'shared' ? (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-manifest-pink/60 to-manifest-celeste/60 text-manifest-ink border border-white">
+                        ✨ Juntos
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/70 text-manifest-inkMuted">
+                        {sign.author || (sign.userId === 'facu' ? 'Facu' : 'Maia')}
+                      </span>
+                    )}
                   </div>
 
                   <button
