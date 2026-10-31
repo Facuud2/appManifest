@@ -106,20 +106,23 @@ export const JournalView: React.FC = () => {
     activeScope,
     includeSharedInPersonal,
     toggleIncludeSharedInPersonal,
+    isJournalEditorOpen,
+    journalEditorInitialMode,
+    openJournalEditor,
+    closeJournalEditor,
   } = useAppStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<EntryType | 'all'>('all');
 
   // Editor Modal State
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [entryScope, setEntryScope] = useState<UserScope>(activeScope);
 
   // Form Fields
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [entryType, setEntryType] = useState<EntryType>('manifestation');
+  const [entryType, setEntryType] = useState<EntryType>('progress');
   const [mood, setMood] = useState<MoodType>('radiant');
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
@@ -129,8 +132,22 @@ export const JournalView: React.FC = () => {
   // Delete Confirm Modal State
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
 
+  // Synchronize when store opens editor for new entry
+  useEffect(() => {
+    if (isJournalEditorOpen && !editingEntryId) {
+      setEntryScope(activeScope);
+      setTitle('');
+      setContent('');
+      setEntryType(journalEditorInitialMode || 'progress');
+      setMood('radiant');
+      setTags([]);
+      setSelectedGoalId('');
+      setAutosaveStatus('idle');
+    }
+  }, [isJournalEditorOpen, editingEntryId, journalEditorInitialMode, activeScope]);
+
   // Open editor for new entry
-  const handleOpenNew = (type: EntryType = 'manifestation') => {
+  const handleOpenNew = (type: EntryType = 'progress') => {
     setEditingEntryId(null);
     setEntryScope(activeScope);
     setTitle('');
@@ -140,7 +157,7 @@ export const JournalView: React.FC = () => {
     setTags([]);
     setSelectedGoalId('');
     setAutosaveStatus('idle');
-    setIsEditorOpen(true);
+    openJournalEditor(type);
   };
 
   // Open editor for existing entry
@@ -154,7 +171,12 @@ export const JournalView: React.FC = () => {
     setTags(entry.tags || []);
     setSelectedGoalId(entry.goalReferences?.[0] || '');
     setAutosaveStatus('saved');
-    setIsEditorOpen(true);
+    openJournalEditor(entry.entryType);
+  };
+
+  const handleCloseEditor = () => {
+    closeJournalEditor();
+    setEditingEntryId(null);
   };
 
   // Add tag
@@ -173,7 +195,7 @@ export const JournalView: React.FC = () => {
 
   // Autosave simulation or debounce
   useEffect(() => {
-    if (!isEditorOpen || !title.trim() || !content.trim()) return;
+    if (!isJournalEditorOpen || !title.trim() || !content.trim()) return;
 
     setAutosaveStatus('saving');
     const timer = setTimeout(() => {
@@ -181,7 +203,7 @@ export const JournalView: React.FC = () => {
     }, 800);
 
     return () => clearTimeout(timer);
-  }, [title, content, tags, mood, entryType, isEditorOpen]);
+  }, [title, content, tags, mood, entryType, isJournalEditorOpen]);
 
   // Save entry
   const handleSave = () => {
@@ -223,7 +245,7 @@ export const JournalView: React.FC = () => {
       });
     }
 
-    setIsEditorOpen(false);
+    handleCloseEditor();
   };
 
   // Filtered entries
@@ -447,7 +469,7 @@ export const JournalView: React.FC = () => {
 
       {/* Editor Modal */}
       <AnimatePresence>
-        {isEditorOpen && (
+        {isJournalEditorOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-manifest-ink/35 backdrop-blur-sm overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -476,7 +498,7 @@ export const JournalView: React.FC = () => {
                 </div>
 
                 <button
-                  onClick={() => setIsEditorOpen(false)}
+                  onClick={handleCloseEditor}
                   className="p-1.5 rounded-full glass-pill hover:bg-white text-manifest-inkMuted hover:text-manifest-ink"
                 >
                   <X className="w-4 h-4" />
@@ -669,7 +691,7 @@ export const JournalView: React.FC = () => {
               <div className="pt-3 border-t border-white/70 flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsEditorOpen(false)}
+                  onClick={handleCloseEditor}
                   className="px-4 py-2 rounded-xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink"
                 >
                   Cancelar

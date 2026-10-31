@@ -65,6 +65,7 @@ export const DashboardView: React.FC = () => {
     settings,
     activeScope,
     setActiveTab,
+    openJournalEditor,
     goals,
     getGoalProgress,
     agendaEvents,
@@ -316,7 +317,7 @@ export const DashboardView: React.FC = () => {
             </div>
           </div>
           <button
-            onClick={() => setActiveTab('diario')}
+            onClick={() => openJournalEditor('progress')}
             className="px-4 py-2 rounded-2xl primary-gradient-btn text-xs font-semibold shrink-0"
           >
             Escribir
@@ -350,7 +351,7 @@ export const DashboardView: React.FC = () => {
                 Aún no tienes entradas en este diario. Tómate un momento para volcar tus primeras palabras.
               </p>
               <button
-                onClick={() => setActiveTab('diario')}
+                onClick={() => openJournalEditor('progress')}
                 className="text-xs font-medium text-manifest-auraPurple underline underline-offset-4"
               >
                 + Escribir primera entrada

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
   JournalEntry,
+  EntryType,
   Goal,
   GoalStep,
   AgendaEvent,
@@ -57,6 +58,12 @@ interface AppState {
   isInitialized: boolean;
   activeTab: AppTab;
   setActiveTab: (tab: AppTab) => void;
+
+  // Journal Editor direct trigger
+  isJournalEditorOpen: boolean;
+  journalEditorInitialMode?: EntryType;
+  openJournalEditor: (mode?: EntryType) => void;
+  closeJournalEditor: () => void;
 
   // Active User / Space Scope
   activeScope: UserScope;
@@ -160,6 +167,19 @@ export const useAppStore = create<AppState>((set, get) => {
     isInitialized: false,
     activeTab: 'inicio',
     setActiveTab: (tab) => set({ activeTab: tab }),
+
+    isJournalEditorOpen: false,
+    journalEditorInitialMode: 'progress',
+    openJournalEditor: (mode = 'progress') => {
+      set({
+        activeTab: 'diario',
+        isJournalEditorOpen: true,
+        journalEditorInitialMode: mode,
+      });
+    },
+    closeJournalEditor: () => {
+      set({ isJournalEditorOpen: false });
+    },
 
     activeScope: initialScope,
     includeSharedInPersonal: false,
