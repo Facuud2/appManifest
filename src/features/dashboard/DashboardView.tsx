@@ -176,11 +176,6 @@ export const DashboardView: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Scope Switcher Quick Bar */}
-        <div className="lg:hidden w-full pt-1 pb-0.5">
-          <UserScopeSwitcher fullWidth idPrefix="dashboard-mobile" className="w-full" />
-        </div>
-
         {/* SECCIÓN 1: Afirmaciones Conscientes (Primeras 3 con Contador Táctil de Repetición) */}
         <div className="space-y-3">
           <div className="flex items-center justify-between px-1">

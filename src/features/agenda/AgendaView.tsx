@@ -45,6 +45,7 @@ export const AgendaView: React.FC = () => {
   const [eventDate, setEventDate] = useState(new Date().toISOString().split('T')[0]);
   const [eventTime, setEventTime] = useState('');
   const [linkedGoalId, setLinkedGoalId] = useState('');
+  const [quickTitle, setQuickTitle] = useState('');
 
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
 
@@ -96,6 +97,23 @@ export const AgendaView: React.FC = () => {
 
     saveAgendaEvent(event);
     setIsModalOpen(false);
+  };
+
+  const handleQuickAdd = () => {
+    if (!quickTitle.trim()) return;
+    const author =
+      activeScope === 'facu' ? 'Facu' : activeScope === 'maia' ? 'Maia' : 'Facu & Maia';
+
+    saveAgendaEvent({
+      id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      userId: activeScope,
+      author,
+      title: quickTitle.trim(),
+      date: selectedDateStr,
+      completed: false,
+      createdAt: new Date().toISOString(),
+    });
+    setQuickTitle('');
   };
 
   // Filtered by selected date or all
@@ -222,6 +240,27 @@ export const AgendaView: React.FC = () => {
 
         {/* Right Column: Events List */}
         <div className="lg:col-span-7 space-y-3">
+          {/* Quick 1-step inline adder */}
+          <div className="flex items-center gap-2 p-2 rounded-2xl glass-card border border-white/95 shadow-sm">
+            <input
+              type="text"
+              value={quickTitle}
+              onChange={(e) => setQuickTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleQuickAdd();
+              }}
+              placeholder={`+ Añadir compromiso rápido para ${viewMode === 'day' ? format(selectedDate, "d 'de' MMMM", { locale: es }) : 'la agenda'}...`}
+              className="flex-1 px-3 py-1.5 rounded-xl glass-input text-xs placeholder:text-manifest-inkLight"
+            />
+            <button
+              onClick={handleQuickAdd}
+              disabled={!quickTitle.trim()}
+              className="px-3.5 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold disabled:opacity-40 shrink-0"
+            >
+              Añadir
+            </button>
+          </div>
+
           {filteredEvents.length === 0 ? (
             <div className="p-8 sm:p-12 rounded-3xl glass-card text-center space-y-2 border border-white/80">
               <p className="text-xs text-manifest-inkMuted">

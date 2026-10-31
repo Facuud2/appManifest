@@ -19,6 +19,8 @@ import {
   Calendar,
   Target,
   Compass,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -128,6 +130,7 @@ export const JournalView: React.FC = () => {
   const [tags, setTags] = useState<string[]>([]);
   const [selectedGoalId, setSelectedGoalId] = useState<string>('');
   const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
 
   // Delete Confirm Modal State
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
@@ -506,184 +509,174 @@ export const JournalView: React.FC = () => {
               </div>
 
               {/* Form Content */}
-              <div className="space-y-4 py-4 overflow-y-auto flex-1">
-                {/* Espacio de Guardado (Personal o Compartido) */}
+              <div className="space-y-4 py-3 overflow-y-auto flex-1">
+                {/* Destino: Personal o Compartido */}
+                <div className="flex items-center gap-2 p-1 rounded-2xl bg-white/70 border border-white">
+                  <button
+                    type="button"
+                    onClick={() => setEntryScope(activeScope === 'maia' ? 'maia' : 'facu')}
+                    className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-medium transition-all ${
+                      entryScope !== 'shared'
+                        ? 'bg-manifest-lavender/60 text-manifest-ink font-semibold shadow-sm'
+                        : 'text-manifest-inkMuted hover:text-manifest-ink'
+                    }`}
+                  >
+                    {activeScope === 'maia' ? '🌸 Diario personal de Maia' : '🌙 Diario personal de Facu'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEntryScope('shared')}
+                    className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-medium transition-all ${
+                      entryScope === 'shared'
+                        ? 'bg-gradient-to-r from-manifest-pink/70 via-manifest-lavender/70 to-manifest-celeste/70 text-manifest-ink font-semibold shadow-sm'
+                        : 'text-manifest-inkMuted hover:text-manifest-ink'
+                    }`}
+                  >
+                    ✨ Compartido (Facu & Maia)
+                  </button>
+                </div>
+
+                {/* Tipo de Registro (4 opciones directas y claras) */}
                 <div>
-                  <label className="text-[11px] font-semibold text-manifest-inkMuted block mb-1.5">
-                    Espacio de Guardado
+                  <label className="text-xs font-semibold text-manifest-ink block mb-1.5">
+                    ¿Qué deseas registrar hoy?
                   </label>
-                  <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-white/60 border border-white/80">
-                    <button
-                      type="button"
-                      onClick={() => setEntryScope(activeScope === 'maia' ? 'maia' : 'facu')}
-                      className={`py-1.5 px-3 rounded-xl text-xs font-medium transition-all text-center ${
-                        entryScope !== 'shared'
-                          ? 'bg-white shadow-sm text-manifest-ink font-semibold'
-                          : 'text-manifest-inkMuted hover:bg-white/40'
-                      }`}
-                    >
-                      {activeScope === 'maia' ? '🌸 Diario personal de Maia' : '🌙 Diario personal de Facu'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEntryScope('shared')}
-                      className={`py-1.5 px-3 rounded-xl text-xs font-medium transition-all text-center ${
-                        entryScope === 'shared'
-                          ? 'bg-gradient-to-r from-manifest-pink/70 via-manifest-lavender/70 to-manifest-celeste/70 shadow-sm text-manifest-ink font-semibold'
-                          : 'text-manifest-inkMuted hover:bg-white/40'
-                      }`}
-                    >
-                      ✨ En Conjunto (Facu & Maia)
-                    </button>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { type: 'progress', label: '✨ Avance', desc: 'Evidencia tangible' },
+                      { type: 'sign', label: '👁️ Señal 11:11', desc: 'Sincronía' },
+                      { type: 'gratitude', label: '💖 Gratitud', desc: 'Agradecimiento' },
+                      { type: 'free', label: '✍️ Libre', desc: 'Sentir libre' },
+                    ].map((mode) => (
+                      <button
+                        key={mode.type}
+                        type="button"
+                        onClick={() => setEntryType(mode.type as EntryType)}
+                        className={`p-2.5 rounded-2xl text-xs text-left transition-all border ${
+                          entryType === mode.type
+                            ? 'bg-white border-manifest-auraPurple/70 shadow-sm text-manifest-ink font-semibold ring-2 ring-manifest-auraPurple/20'
+                            : 'bg-white/50 border-white/80 text-manifest-inkMuted hover:bg-white/80'
+                        }`}
+                      >
+                        <span className="block font-medium">{mode.label}</span>
+                        <span className="text-[10px] text-manifest-inkMuted block font-normal">{mode.desc}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                {/* Entry Type Picker */}
-                <div>
-                  <label className="text-[11px] font-semibold text-manifest-inkMuted block mb-1.5">
-                    Modalidad de Escritura
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-                    {ENTRY_MODES.map((mode) => {
-                      const Icon = mode.icon;
-                      const isSel = entryType === mode.type;
-                      return (
-                        <button
-                          key={mode.type}
-                          type="button"
-                          onClick={() => setEntryType(mode.type)}
-                          className={`flex items-center gap-1.5 p-2 rounded-xl text-[11px] font-medium border text-left transition-all ${
-                            isSel
-                              ? 'bg-manifest-lavender/60 border-manifest-auraPurple/50 text-manifest-ink shadow-sm'
-                              : 'bg-white/50 border-white/80 text-manifest-inkMuted hover:text-manifest-ink'
-                          }`}
-                        >
-                          <Icon className="w-3.5 h-3.5 shrink-0" />
-                          <span className="truncate">{mode.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Energy Mood Picker */}
-                <div>
-                  <label className="text-[11px] font-semibold text-manifest-inkMuted block mb-1.5">
-                    ¿Cuál es tu vibración hoy?
-                  </label>
-                  <div className="flex gap-1.5 flex-wrap">
-                    {MOODS.map((m) => {
-                      const Icon = m.icon;
-                      const isSel = mood === m.type;
-                      return (
-                        <button
-                          key={m.type}
-                          type="button"
-                          onClick={() => setMood(m.type)}
-                          className={`px-2.5 py-1 rounded-xl text-xs flex items-center gap-1.5 border transition-all ${
-                            isSel
-                              ? 'bg-white border-manifest-auraPurple text-manifest-ink shadow-sm font-medium'
-                              : 'bg-white/50 border-white/80 text-manifest-inkMuted'
-                          }`}
-                        >
-                          <Icon className="w-3.5 h-3.5" />
-                          <span>{m.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Title */}
+                {/* Título */}
                 <div>
                   <input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Título o afirmación central..."
-                    className="w-full px-3.5 py-2 rounded-xl glass-input text-sm font-serif font-bold text-manifest-ink placeholder:font-sans placeholder:font-normal placeholder:text-manifest-inkLight"
+                    placeholder="Título o resumen de lo vivido..."
+                    className="w-full px-4 py-2.5 rounded-2xl glass-input text-sm font-serif font-bold text-manifest-ink placeholder:font-sans placeholder:font-normal placeholder:text-manifest-inkLight"
                   />
                 </div>
 
-                {/* Content area with dynamic prompt suggestion */}
+                {/* Contenido principal */}
                 <div>
-                  <p className="text-[11px] text-manifest-inkMuted/80 italic mb-1">
-                    {ENTRY_MODES.find((m) => m.type === entryType)?.prompt}
-                  </p>
                   <textarea
-                    rows={6}
+                    rows={5}
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    placeholder="Escribe libremente con el corazón..."
-                    className="w-full p-3.5 rounded-2xl glass-input text-xs leading-relaxed text-manifest-ink placeholder:text-manifest-inkLight resize-none"
+                    placeholder="Describe lo que sentiste, viste o avanzó con serenidad..."
+                    className="w-full p-4 rounded-2xl glass-input text-xs leading-relaxed text-manifest-ink placeholder:text-manifest-inkLight resize-none"
                   />
                 </div>
 
-                {/* Link to Goal (Optional) */}
-                {goals.length > 0 && (
-                  <div>
-                    <label className="text-[11px] font-semibold text-manifest-inkMuted block mb-1">
-                      Conectar con una intención activa (opcional)
-                    </label>
-                    <select
-                      value={selectedGoalId}
-                      onChange={(e) => setSelectedGoalId(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl glass-input text-xs text-manifest-ink"
-                    >
-                      <option value="">Ninguna intención asociada</option>
-                      {goals.map((g) => (
-                        <option key={g.id} value={g.id}>
-                          {g.title}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                {/* Opciones opcionales colapsables (Tags y Metas sin estorbar) */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                    className="text-xs text-manifest-inkMuted hover:text-manifest-ink flex items-center gap-1 font-medium transition-colors"
+                  >
+                    {showAdvancedOptions ? (
+                      <>
+                        <ChevronUp className="w-3.5 h-3.5" />
+                        <span>Ocultar detalles adicionales</span>
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="w-3.5 h-3.5" />
+                        <span>+ Añadir etiquetas o vincular intención (opcional)</span>
+                      </>
+                    )}
+                  </button>
 
-                {/* Tags */}
-                <div>
-                  <label className="text-[11px] font-semibold text-manifest-inkMuted block mb-1">
-                    Etiquetas de enfoque
-                  </label>
-                  <div className="flex gap-1.5 mb-2 flex-wrap">
-                    {tags.map((t) => (
-                      <span
-                        key={t}
-                        className="text-[10px] px-2 py-0.5 rounded-full bg-manifest-lavender/50 text-manifest-ink flex items-center gap-1"
-                      >
-                        #{t}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveTag(t)}
-                          className="hover:text-rose-600"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                  <div className="flex gap-1.5">
-                    <input
-                      type="text"
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddTag();
-                        }
-                      }}
-                      placeholder="Nueva etiqueta (ej: Amor, Claridad, Negocio)..."
-                      className="flex-1 px-3 py-1.5 rounded-xl glass-input text-xs"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddTag}
-                      className="px-3 py-1.5 rounded-xl glass-pill text-xs font-medium text-manifest-ink"
-                    >
-                      Añadir
-                    </button>
-                  </div>
+                  {showAdvancedOptions && (
+                    <div className="mt-2.5 space-y-3 p-3.5 rounded-2xl bg-white/60 border border-white/80">
+                      {/* Link to Goal (Optional) */}
+                      {goals.length > 0 && (
+                        <div>
+                          <label className="text-[11px] font-semibold text-manifest-inkMuted block mb-1">
+                            Vincular a una intención
+                          </label>
+                          <select
+                            value={selectedGoalId}
+                            onChange={(e) => setSelectedGoalId(e.target.value)}
+                            className="w-full px-3 py-1.5 rounded-xl glass-input text-xs text-manifest-ink"
+                          >
+                            <option value="">Ninguna intención asociada</option>
+                            {goals.map((g) => (
+                              <option key={g.id} value={g.id}>
+                                {g.title}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Tags */}
+                      <div>
+                        <label className="text-[11px] font-semibold text-manifest-inkMuted block mb-1">
+                          Etiquetas (#)
+                        </label>
+                        <div className="flex gap-1.5 mb-1.5 flex-wrap">
+                          {tags.map((t) => (
+                            <span
+                              key={t}
+                              className="text-[10px] px-2 py-0.5 rounded-full bg-manifest-lavender/50 text-manifest-ink flex items-center gap-1"
+                            >
+                              #{t}
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveTag(t)}
+                                className="hover:text-rose-600"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                        <div className="flex gap-1.5">
+                          <input
+                            type="text"
+                            value={tagInput}
+                            onChange={(e) => setTagInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleAddTag();
+                              }
+                            }}
+                            placeholder="Nueva etiqueta..."
+                            className="flex-1 px-3 py-1.5 rounded-xl glass-input text-xs"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddTag}
+                            className="px-3 py-1.5 rounded-xl glass-pill text-xs font-medium text-manifest-ink"
+                          >
+                            Añadir
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
