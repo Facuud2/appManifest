@@ -184,3 +184,23 @@ h1, h2, h3, .font-editorial {
     scroll-behavior: auto !important;
   }
 }
+
+/* Netlify injected badge / drawer remover */
+#nl-badge-frame,
+[id*="nl-badge" i],
+[id*="netlify-drawer" i],
+[id*="netlify-feedback" i],
+iframe[title*="Netlify" i],
+iframe[title*="Powered by Netlify" i],
+iframe[src*="netlify" i],
+div[id*="netlify" i],
+netlify-drawer {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  position: absolute !important;
+  z-index: -9999 !important;
+}

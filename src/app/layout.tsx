@@ -40,6 +40,37 @@ export default function RootLayout({
       </head>
       <body className="aura-bg text-manifest-ink antialiased selection:bg-manifest-lavender/50 min-h-screen">
         {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                function purgeNetlifyBadge() {
+                  var selectors = [
+                    '#nl-badge-frame',
+                    '[id*="nl-badge"]',
+                    '[id*="netlify-drawer"]',
+                    '[id*="netlify-feedback"]',
+                    'iframe[title*="Netlify" i]',
+                    'iframe[title*="Powered by Netlify" i]',
+                    'netlify-drawer'
+                  ];
+                  selectors.forEach(function(sel) {
+                    var els = document.querySelectorAll(sel);
+                    for (var i = 0; i < els.length; i++) {
+                      els[i].remove();
+                    }
+                  });
+                }
+                if (typeof window !== 'undefined') {
+                  window.addEventListener('DOMContentLoaded', purgeNetlifyBadge);
+                  window.addEventListener('load', purgeNetlifyBadge);
+                  var observer = new MutationObserver(purgeNetlifyBadge);
+                  observer.observe(document.documentElement, { childList: true, subtree: true });
+                }
+              })();
+            `,
+          }}
+        />
       </body>
     </html>
   );
