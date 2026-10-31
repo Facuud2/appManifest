@@ -47,7 +47,7 @@ const STORAGE_KEYS = {
   SCHEMA_VERSION: 'manifest_schema_version',
 } as const;
 
-export const CURRENT_SCHEMA_VERSION = 4;
+export const CURRENT_SCHEMA_VERSION = 5;
 
 export const DEFAULT_SETTINGS: UserSettings = {
   userName: 'Facu',
@@ -189,7 +189,17 @@ class LocalStorageService implements IStorageService {
             !a.id.startsWith('aff-shared-')
         )
       );
-      this.safeSet(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
+
+      const currentRampage = this.safeGet<any[]>(STORAGE_KEYS.RAMPAGE_SETS, []);
+      this.safeSet(
+        STORAGE_KEYS.RAMPAGE_SETS,
+        currentRampage.filter((r) => r && r.id && !r.id.startsWith('set-'))
+      );
+
+      const existingSettings = this.safeGet<any>(STORAGE_KEYS.SETTINGS, null);
+      if (!existingSettings) {
+        this.safeSet(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
+      }
       window.localStorage.setItem(STORAGE_KEYS.SCHEMA_VERSION, String(CURRENT_SCHEMA_VERSION));
     }
   }
@@ -355,72 +365,21 @@ class LocalStorageService implements IStorageService {
     const valid: RampageSet[] = [];
     if (raw && raw.length > 0) {
       for (const item of raw) {
+        // Exclude test/seed sets
+        if (
+          typeof item === 'object' &&
+          item !== null &&
+          'id' in item &&
+          typeof (item as any).id === 'string' &&
+          (item as any).id.startsWith('set-')
+        ) {
+          continue;
+        }
         const parsed = RampageSetSchema.safeParse(item);
         if (parsed.success) {
           valid.push(parsed.data as RampageSet);
         }
       }
-    }
-
-    if (valid.length === 0) {
-      const defaultSets: RampageSet[] = [
-        {
-          id: 'set-abundancia',
-          userId: 'facu',
-          author: 'Facu',
-          title: 'Abundancia & Prosperidad',
-          category: 'abundancia',
-          affirmations: [
-            { id: 'aff-ramp-1', text: 'Merezco recibir abundancia ilimitada de forma fluida y natural.', repeatCount: 0 },
-            { id: 'aff-ramp-2', text: 'El dinero y las oportunidades bendecidas llegan a mí constantemente.', repeatCount: 0 },
-            { id: 'aff-ramp-3', text: 'Agradezco la prosperidad presente y me abro a multiplicarla con gozo.', repeatCount: 0 },
-            { id: 'aff-ramp-4', text: 'Todo lo que invierto en mi crecimiento regresa multiplicado a mi vida.', repeatCount: 0 },
-          ],
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 'set-amor-paz',
-          userId: 'facu',
-          author: 'Facu',
-          title: 'Amor Propio & Paz Serena',
-          category: 'bienestar',
-          affirmations: [
-            { id: 'aff-ramp-5', text: 'Me acepto con profunda ternura y honro mi propio ritmo sagrado.', repeatCount: 0 },
-            { id: 'aff-ramp-6', text: 'Mi mente descansa en una calma lúcida, luminosa y agradecida.', repeatCount: 0 },
-            { id: 'aff-ramp-7', text: 'Suelto lo que escapa a mi control y habito el presente con serenidad.', repeatCount: 0 },
-            { id: 'aff-ramp-8', text: 'Merezco relaciones amorosas, honestas y de apoyo mutuo.', repeatCount: 0 },
-          ],
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 'set-exito',
-          userId: 'facu',
-          author: 'Facu',
-          title: 'Éxito & Expansión Creativa',
-          category: 'carrera',
-          affirmations: [
-            { id: 'aff-ramp-9', text: 'Mis talentos únicos generan valor real e inspiran a quienes me rodean.', repeatCount: 0 },
-            { id: 'aff-ramp-10', text: 'Confío en mi intuición y en mi capacidad técnica para superar retos.', repeatCount: 0 },
-            { id: 'aff-ramp-11', text: 'Cada proyecto que inicio florece con impacto, claridad y trascendencia.', repeatCount: 0 },
-          ],
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 'set-salud',
-          userId: 'facu',
-          author: 'Facu',
-          title: 'Salud Radiante & Vitalidad',
-          category: 'bienestar',
-          affirmations: [
-            { id: 'aff-ramp-12', text: 'Cada célula de mi cuerpo vibra en óptima salud, energía y vitalidad.', repeatCount: 0 },
-            { id: 'aff-ramp-13', text: 'Nutro mi cuerpo y mi mente con hábitos que expanden mi bienestar.', repeatCount: 0 },
-            { id: 'aff-ramp-14', text: 'Respiro vida plena, renuevo mi fuerza y despierto con gozo cada día.', repeatCount: 0 },
-          ],
-          createdAt: new Date().toISOString(),
-        },
-      ];
-      this.safeSet(STORAGE_KEYS.RAMPAGE_SETS, defaultSets);
-      return defaultSets;
     }
 
     return valid;

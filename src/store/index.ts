@@ -184,7 +184,7 @@ export const useAppStore = create<AppState>((set, get) => {
       successStories: filterByScope(storage.getSuccessStories(), scope, includeShared),
       futureManifestations: filterByScope(storage.getFutureManifestations(), scope, includeShared),
       affirmations: filterByScope(storage.getAffirmations(), scope, includeShared),
-      rampageSets: scopedRampage.length > 0 ? scopedRampage : rawRampage,
+      rampageSets: scopedRampage,
     };
   };
 
