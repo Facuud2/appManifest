@@ -270,6 +270,7 @@ export const DashboardView: React.FC = () => {
               {recentEntries.map((entry) => {
                 const formattedEntryDate = format(new Date(entry.createdAt), "d 'de' MMMM", { locale: es });
                 const isProgress = entry.entryType === 'progress';
+                const isManifestation = entry.entryType === 'manifestation';
 
                 return (
                   <div
@@ -281,10 +282,14 @@ export const DashboardView: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <span
                           className={`text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                            isProgress ? 'bg-manifest-mint/50 text-manifest-ink' : 'bg-manifest-lavender/50 text-manifest-ink'
+                            isProgress
+                              ? 'bg-manifest-mint/60 text-emerald-800'
+                              : isManifestation
+                              ? 'bg-gradient-to-r from-manifest-pink/40 to-manifest-lavender/60 text-manifest-auraPurple border border-manifest-auraPurple/30'
+                              : 'bg-manifest-lavender/50 text-manifest-ink'
                           }`}
                         >
-                          {isProgress ? 'Avance / Logro' : 'Nota de Cuaderno'}
+                          {isProgress ? 'Avance / Logro' : isManifestation ? 'Manifestación' : 'Nota de Cuaderno'}
                         </span>
                         <span className="text-[10px] text-manifest-inkMuted">
                           {formattedEntryDate}

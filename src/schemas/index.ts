@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const UserScopeEnum = z.enum(['facu', 'maia', 'shared']);
-export const EntryTypeEnum = z.enum(['manifestation', 'gratitude', 'affirmation', 'reflection', 'free', 'sign']);
+export const EntryTypeEnum = z.enum(['manifestation', 'progress', 'gratitude', 'affirmation', 'reflection', 'free', 'sign']);
 export const MoodTypeEnum = z.enum(['peaceful', 'inspired', 'grateful', 'radiant', 'contemplative']);
 export const GoalCategoryEnum = z.enum(['crecimiento', 'carrera', 'bienestar', 'relaciones', 'abundancia', 'creatividad']);
 export const GoalStatusEnum = z.enum(['active', 'paused', 'completed', 'archived']);

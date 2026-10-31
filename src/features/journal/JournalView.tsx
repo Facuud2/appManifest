@@ -26,12 +26,12 @@ export const JournalView: React.FC = () => {
   } = useAppStore();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'manifestation' | 'progress'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'manifestation' | 'reflection' | 'progress'>('all');
 
   // Delete Confirm Modal State
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
 
-  const handleOpenNew = (type: 'manifestation' | 'progress' = 'manifestation') => {
+  const handleOpenNew = (type: 'manifestation' | 'progress' | 'reflection' = 'manifestation') => {
     openJournalEditor(type);
   };
 
@@ -45,15 +45,19 @@ export const JournalView: React.FC = () => {
     setEntryToDelete(null);
   };
 
-  // Filter entries: only manifestation notes and progress advances
+  // Filter entries
   const filteredEntries = journalEntries
     .filter((entry) => {
       // Exclude legacy mock seed entries
       if (entry.id.startsWith('seed-')) return false;
 
       // Filter by type
-      if (selectedFilter !== 'all' && entry.entryType !== selectedFilter) {
-        return false;
+      if (selectedFilter !== 'all') {
+        if (selectedFilter === 'reflection') {
+          if (entry.entryType !== 'reflection' && entry.entryType !== 'free') return false;
+        } else if (entry.entryType !== selectedFilter) {
+          return false;
+        }
       }
 
       // Filter by search
@@ -66,6 +70,10 @@ export const JournalView: React.FC = () => {
 
       return true;
     });
+
+  const manifestationsCount = journalEntries.filter((e) => e.entryType === 'manifestation').length;
+  const reflectionsCount = journalEntries.filter((e) => e.entryType === 'reflection' || e.entryType === 'free').length;
+  const progressCount = journalEntries.filter((e) => e.entryType === 'progress').length;
 
   return (
     <div className="max-w-2xl mx-auto space-y-4 pt-1">
@@ -87,11 +95,11 @@ export const JournalView: React.FC = () => {
         </button>
       </div>
 
-      {/* Filter Tabs: Todas / Notas / Avances */}
-      <div className="flex gap-2">
+      {/* Filter Tabs: Todas / Manifestaciones / Notas / Avances */}
+      <div className="flex flex-wrap gap-1.5 sm:gap-2">
         <button
           onClick={() => setSelectedFilter('all')}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
             selectedFilter === 'all'
               ? 'bg-manifest-ink text-white shadow-sm'
               : 'glass-pill text-manifest-inkMuted hover:text-manifest-ink'
@@ -101,25 +109,36 @@ export const JournalView: React.FC = () => {
         </button>
         <button
           onClick={() => setSelectedFilter('manifestation')}
-          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
             selectedFilter === 'manifestation'
               ? 'bg-manifest-ink text-white shadow-sm'
               : 'glass-pill text-manifest-inkMuted hover:text-manifest-ink'
           }`}
         >
+          <Target className="w-3.5 h-3.5" />
+          Manifestaciones ({manifestationsCount})
+        </button>
+        <button
+          onClick={() => setSelectedFilter('reflection')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+            selectedFilter === 'reflection'
+              ? 'bg-manifest-ink text-white shadow-sm'
+              : 'glass-pill text-manifest-inkMuted hover:text-manifest-ink'
+          }`}
+        >
           <BookOpen className="w-3.5 h-3.5" />
-          Notas de Cuaderno
+          Notas ({reflectionsCount})
         </button>
         <button
           onClick={() => setSelectedFilter('progress')}
-          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
             selectedFilter === 'progress'
               ? 'bg-manifest-ink text-white shadow-sm'
               : 'glass-pill text-manifest-inkMuted hover:text-manifest-ink'
           }`}
         >
           <Sparkles className="w-3.5 h-3.5" />
-          Avances
+          Avances ({progressCount})
         </button>
       </div>
 
@@ -174,6 +193,7 @@ export const JournalView: React.FC = () => {
           {filteredEntries.map((entry) => {
             const formattedEntryDate = format(new Date(entry.createdAt), "d 'de' MMMM, yyyy", { locale: es });
             const isProgress = entry.entryType === 'progress';
+            const isManifestation = entry.entryType === 'manifestation';
 
             return (
               <motion.article
@@ -188,11 +208,13 @@ export const JournalView: React.FC = () => {
                     <span
                       className={`text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                         isProgress
-                          ? 'bg-manifest-mint/50 text-manifest-ink'
+                          ? 'bg-manifest-mint/60 text-emerald-800'
+                          : isManifestation
+                          ? 'bg-gradient-to-r from-manifest-pink/40 to-manifest-lavender/60 text-manifest-auraPurple border border-manifest-auraPurple/30'
                           : 'bg-manifest-lavender/50 text-manifest-ink'
                       }`}
                     >
-                      {isProgress ? 'Avance / Logro' : 'Nota de Cuaderno'}
+                      {isProgress ? 'Avance / Logro' : isManifestation ? 'Manifestación' : 'Nota de Cuaderno'}
                     </span>
                     <span className="text-[11px] text-manifest-inkMuted flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
