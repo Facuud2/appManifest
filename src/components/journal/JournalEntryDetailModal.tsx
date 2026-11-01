@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { JournalEntry } from '@/types';
 import {
   X,
@@ -34,6 +34,17 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
   onDelete,
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   const isManifestation = entry?.entryType === 'manifestation';
   const isProgress = entry?.entryType === 'progress';
