@@ -26,10 +26,8 @@ export const AffirmationEditorModal: React.FC = () => {
     activeScope,
     saveAffirmation,
     closeAffirmationEditor,
-    addEtherFragments,
     showToast,
-    triggerCelebration,
-    openOracle,
+    checkAndUnlockMilestones,
   } = useAppStore();
 
   const {
@@ -113,26 +111,22 @@ export const AffirmationEditorModal: React.FC = () => {
     };
 
     saveAffirmation(itemToSave);
-    addEtherFragments(15);
-    showToast(
-      isEditing
-        ? '¡Afirmación actualizada! +15 Fragmentos de Éter'
-        : '¡Intención anclada! +15 Fragmentos de Éter',
-      'celebrate'
-    );
 
     if (editingAffirmation || !chainNext) {
       closeAffirmationEditor();
-      triggerCelebration({
-        title: isEditing ? 'Afirmación actualizada en tu realidad' : 'Intención anclada en tu realidad',
-        message: `"${trimmed.slice(0, 80)}${trimmed.length > 80 ? '...' : ''}"`,
-        fragments: 15,
-        nextStepLabel: 'Girar el Oráculo',
-        onNextStep: () => openOracle(),
-        secondaryLabel: 'Seguir en el Santuario',
-      });
+      const unlocked = checkAndUnlockMilestones();
+      if (unlocked.length === 0) {
+        showToast(
+          isEditing ? 'Afirmación actualizada' : 'Afirmación guardada',
+          'gentle'
+        );
+      }
     } else {
       // Trello functionality: clear and keep focus ready for next affirmation
+      const unlocked = checkAndUnlockMilestones({ suppressModal: true });
+      if (unlocked.length === 0) {
+        showToast('Afirmación añadida', 'gentle');
+      }
       setValue('text', '', { shouldValidate: false, shouldDirty: false });
       setSessionAddedCount((prev) => prev + 1);
       requestAnimationFrame(() => {

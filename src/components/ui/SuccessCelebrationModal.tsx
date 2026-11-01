@@ -40,6 +40,7 @@ export const SuccessCelebrationModal: React.FC = () => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 16 }}
           transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+          style={{ backgroundColor: 'rgba(252, 250, 255, 0.97)' }}
           className="w-full max-w-sm rounded-[2.5rem] glass-card p-6 sm:p-7 border border-white shadow-liquid text-center space-y-4 relative overflow-hidden"
         >
           {/* Luminous micro-particles background */}
@@ -77,6 +78,9 @@ export const SuccessCelebrationModal: React.FC = () => {
 
           {/* Title & Micro-reward text */}
           <div className="relative z-10 space-y-1.5">
+            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100/80 border border-amber-300/60 text-[10px] font-bold uppercase tracking-wider text-amber-800">
+              <span>🏆 Hito de Conexión Desbloqueado</span>
+            </div>
             <h3 className="font-serif text-lg sm:text-xl font-bold text-manifest-ink">
               {celebrationData.title}
             </h3>

@@ -30,6 +30,7 @@ export const GoalsView: React.FC = () => {
     openRampageSetEditor,
     goalsViewMode,
     setGoalsViewMode,
+    checkAndUnlockMilestones,
   } = useAppStore();
 
   const viewMode = goalsViewMode;
@@ -79,6 +80,8 @@ export const GoalsView: React.FC = () => {
       createdAt: new Date().toISOString(),
       lastRepeatedAt: new Date().toISOString(),
     });
+
+    checkAndUnlockMilestones({ suppressModal: true });
 
     setManifestationText('');
 

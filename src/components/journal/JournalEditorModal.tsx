@@ -28,10 +28,8 @@ export const JournalEditorModal: React.FC = () => {
     activeScope,
     saveJournalEntry,
     closeJournalEditor,
-    addEtherFragments,
     showToast,
-    triggerCelebration,
-    openOracle,
+    checkAndUnlockMilestones,
   } = useAppStore();
 
   const {
@@ -141,23 +139,15 @@ export const JournalEditorModal: React.FC = () => {
     };
 
     saveJournalEntry(entryToSave);
-    addEtherFragments(20);
-    showToast(
-      isEditing
-        ? '¡Entrada actualizada en tu santuario! +20 Fragmentos de Éter'
-        : '¡Nota guardada en tu santuario! +20 Fragmentos de Éter',
-      'celebrate'
-    );
     closeJournalEditor();
 
-    triggerCelebration({
-      title: isEditing ? 'Entrada actualizada en tu realidad' : 'Registro anclado en tu realidad',
-      message: `"${trimmedContent.slice(0, 80)}${trimmedContent.length > 80 ? '...' : ''}"`,
-      fragments: 20,
-      nextStepLabel: 'Girar el Oráculo',
-      onNextStep: () => openOracle(),
-      secondaryLabel: 'Seguir en el Santuario',
-    });
+    const unlocked = checkAndUnlockMilestones();
+    if (unlocked.length === 0) {
+      showToast(
+        isEditing ? 'Entrada actualizada' : 'Entrada guardada en tu diario',
+        'gentle'
+      );
+    }
   };
 
   const getModalTitle = () => {

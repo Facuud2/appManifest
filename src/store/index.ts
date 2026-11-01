@@ -196,6 +196,7 @@ interface AppState {
   // Derived Helpers
   getGoalProgress: (goalId: string) => number;
   getAvailableMilestones: () => Milestone[];
+  checkAndUnlockMilestones: (options?: { suppressModal?: boolean }) => Milestone[];
 }
 
 export const useAppStore = create<AppState>((set, get) => {
@@ -360,6 +361,24 @@ export const useAppStore = create<AppState>((set, get) => {
         isInitialized: true,
       });
 
+      // Silently record any milestones already satisfied by existing stored data on startup
+      const initialMilestones = get().getAvailableMilestones();
+      const currentSettings = storage.getUserSettings();
+      const alreadyUnlockedIds = new Set(currentSettings.unlockedMilestones || []);
+      let changedInitial = false;
+      initialMilestones.forEach((m) => {
+        if (m.unlocked && !alreadyUnlockedIds.has(m.id)) {
+          alreadyUnlockedIds.add(m.id);
+          changedInitial = true;
+        }
+      });
+      if (changedInitial) {
+        const syncedSettings = storage.saveUserSettings({
+          unlockedMilestones: Array.from(alreadyUnlockedIds),
+        });
+        set({ settings: syncedSettings });
+      }
+
       // Background remote sync from Turso on init
       get().syncFromRemote();
 
@@ -399,6 +418,21 @@ export const useAppStore = create<AppState>((set, get) => {
         ...scoped,
       });
 
+      // Silently sync already-unlocked milestones for this scope so switching scope doesn't trigger popups
+      const scopeMilestones = get().getAvailableMilestones();
+      const curUnlocked = new Set(storage.getUserSettings().unlockedMilestones || []);
+      let scopeChanged = false;
+      scopeMilestones.forEach((m) => {
+        if (m.unlocked && !curUnlocked.has(m.id)) {
+          curUnlocked.add(m.id);
+          scopeChanged = true;
+        }
+      });
+      if (scopeChanged) {
+        const synced = storage.saveUserSettings({ unlockedMilestones: Array.from(curUnlocked) });
+        set({ settings: synced });
+      }
+
       // Sync with Turso for this scope
       get().syncFromRemote();
     },
@@ -428,6 +462,23 @@ export const useAppStore = create<AppState>((set, get) => {
             isSyncing: false,
             lastSyncTime: nowStr,
           });
+
+          // Silently sync any milestones already satisfied by remote data so remote hydration doesn't falsely trigger popups
+          const remoteMilestones = get().getAvailableMilestones();
+          const curUnlocked = new Set(storage.getUserSettings().unlockedMilestones || []);
+          let remoteMilestoneChanged = false;
+          remoteMilestones.forEach((m) => {
+            if (m.unlocked && !curUnlocked.has(m.id)) {
+              curUnlocked.add(m.id);
+              remoteMilestoneChanged = true;
+            }
+          });
+          if (remoteMilestoneChanged) {
+            const syncedSettings = storage.saveUserSettings({
+              unlockedMilestones: Array.from(curUnlocked),
+            });
+            set({ settings: syncedSettings });
+          }
         } else {
           set({ isSyncing: false });
         }
@@ -473,6 +524,7 @@ export const useAppStore = create<AppState>((set, get) => {
       if (!updated) return;
       const incShared = get().includeSharedInPersonal;
       set(computeScopedState(get().activeScope, incShared));
+      get().checkAndUnlockMilestones();
       tursoSync.pushChange({ entity: 'affirmation', action: 'save', data: updated });
     },
 
@@ -524,6 +576,7 @@ export const useAppStore = create<AppState>((set, get) => {
       if (!result) return;
       const incShared = get().includeSharedInPersonal;
       set(computeScopedState(get().activeScope, incShared));
+      get().checkAndUnlockMilestones();
     },
 
     // Journal
@@ -781,32 +834,111 @@ export const useAppStore = create<AppState>((set, get) => {
     getAvailableMilestones: () => {
       const settings = get().settings;
       const currentScope = get().activeScope;
-      const journalCount = get().journalEntries.length;
-      const completedActions = get().goalSteps.filter((s) => s.completed).length;
-      const completedGoals = get().goals.filter((g) => {
-        const steps = get().goalSteps.filter((s) => s.goalId === g.id);
-        return steps.length > 0 && steps.every((s) => s.completed);
-      }).length;
-      const releaseCount = settings.totalReleases;
-      const successCount = get().successStories.length;
-      const signsCount = get().manifestationSigns.length;
+      const affirmationsList = get().affirmations;
+      const rampageList = get().rampageSets;
+      const journals = get().journalEntries;
+
+      const affirmationsCount = affirmationsList.length;
+      const rampageSetsCount = rampageList.length;
+      const journalCount = journals.length;
+      const totalRepeats =
+        affirmationsList.reduce((sum, a) => sum + (a.repeatCount || 0), 0) +
+        rampageList.reduce(
+          (sum, r) =>
+            sum + (r.affirmations || []).reduce((s, ra) => s + (ra.repeatCount || 0), 0),
+          0
+        );
+      const releaseCount = settings.totalReleases || 0;
+      const successCount =
+        get().successStories.length +
+        journals.filter((e) => e.entryType === 'reflection' || e.entryType === 'gratitude').length;
+      const signsCount =
+        get().manifestationSigns.length +
+        journals.filter((e) => e.entryType === 'sign').length;
+
+      const scopeLabel =
+        currentScope === 'facu' ? 'Facu' : currentScope === 'maia' ? 'Maia' : 'ambos';
 
       return [
         {
           id: 'welcome_manifest',
           title: 'Primer Destello',
-          description: `Abriste el santuario de ${currentScope === 'facu' ? 'Facu' : currentScope === 'maia' ? 'Maia' : 'ambos'} y diste el primer paso consciente.`,
+          description: `Abriste el santuario de ${scopeLabel} y diste el primer paso consciente.`,
           icon: 'Sparkles',
           category: 'writing',
           unlocked: true,
+          rewardFragments: 15,
+          progress: { current: 1, target: 1 },
         },
         {
           id: 'first_action',
-          title: 'Manifestación en Acción',
-          description: 'Convertiste una intención mental en tu primera acción real completada.',
+          title: 'Voz Creadora',
+          description: 'Anclaste tu primera afirmación consciente en el santuario.',
           icon: 'HeartHandshake',
           category: 'action',
-          unlocked: completedActions >= 1,
+          unlocked: affirmationsCount >= 1,
+          rewardFragments: 20,
+          progress: { current: Math.min(affirmationsCount, 1), target: 1 },
+        },
+        {
+          id: 'affirmation_architect',
+          title: 'Arquitecto de Intenciones',
+          description: 'Creaste 5 o más afirmaciones para sostener tu nueva realidad.',
+          icon: 'Award',
+          category: 'action',
+          unlocked: affirmationsCount >= 5,
+          rewardFragments: 35,
+          progress: { current: Math.min(affirmationsCount, 5), target: 5 },
+        },
+        {
+          id: 'rampage_creator',
+          title: 'Secuencia de Poder',
+          description: 'Creaste tu primer Set de Rampage para elevar tu frecuencia.',
+          icon: 'Flame',
+          category: 'action',
+          unlocked: rampageSetsCount >= 1,
+          rewardFragments: 30,
+          progress: { current: Math.min(rampageSetsCount, 1), target: 1 },
+        },
+        {
+          id: 'manifestor_master',
+          title: 'Frecuencia Magnética',
+          description: 'Acumulaste 25 o más repeticiones conscientes en tus afirmaciones y sets.',
+          icon: 'Award',
+          category: 'action',
+          unlocked: totalRepeats >= 25,
+          rewardFragments: 45,
+          progress: { current: Math.min(totalRepeats, 25), target: 25 },
+        },
+        {
+          id: 'first_journal',
+          title: 'Semilla en el Diario',
+          description: 'Escribiste tu primera manifestación o avance en el Diario.',
+          icon: 'Feather',
+          category: 'writing',
+          unlocked: journalCount >= 1,
+          rewardFragments: 20,
+          progress: { current: Math.min(journalCount, 1), target: 1 },
+        },
+        {
+          id: 'dedicated_scribe',
+          title: 'Alma Reflexiva',
+          description: 'Registraste 3 o más entradas expresando tu mundo interior en el Diario.',
+          icon: 'Feather',
+          category: 'writing',
+          unlocked: journalCount >= 3,
+          rewardFragments: 35,
+          progress: { current: Math.min(journalCount, 3), target: 3 },
+        },
+        {
+          id: 'first_success',
+          title: 'Manifestador Real',
+          description: 'Anclaste tu primera Success Story documentando un deseo cumplido.',
+          icon: 'Award',
+          category: 'action',
+          unlocked: successCount >= 1,
+          rewardFragments: 50,
+          progress: { current: Math.min(successCount, 1), target: 1 },
         },
         {
           id: 'sign_observer',
@@ -815,22 +947,8 @@ export const useAppStore = create<AppState>((set, get) => {
           icon: 'Compass',
           category: 'writing',
           unlocked: signsCount >= 1,
-        },
-        {
-          id: 'first_success',
-          title: 'Manifestador Real',
-          description: 'Anclaste tu primera Historia de Éxito documentando un deseo cumplido.',
-          icon: 'Award',
-          category: 'action',
-          unlocked: successCount >= 1,
-        },
-        {
-          id: 'dedicated_scribe',
-          title: 'Alma Reflexiva',
-          description: 'Registraste 3 o más entradas expresando tu mundo interior.',
-          icon: 'Feather',
-          category: 'writing',
-          unlocked: journalCount >= 3,
+          rewardFragments: 25,
+          progress: { current: Math.min(signsCount, 1), target: 1 },
         },
         {
           id: 'first_release',
@@ -839,6 +957,8 @@ export const useAppStore = create<AppState>((set, get) => {
           icon: 'Flame',
           category: 'release',
           unlocked: releaseCount >= 1,
+          rewardFragments: 30,
+          progress: { current: Math.min(releaseCount, 1), target: 1 },
         },
         {
           id: 'streak_3',
@@ -847,16 +967,63 @@ export const useAppStore = create<AppState>((set, get) => {
           icon: 'Sun',
           category: 'streak',
           unlocked: settings.dailyStreak >= 3,
-        },
-        {
-          id: 'manifestor_master',
-          title: 'Coherencia Completa',
-          description: 'Completaste todas las acciones tangibles de un objetivo.',
-          icon: 'Award',
-          category: 'action',
-          unlocked: completedGoals >= 1,
+          rewardFragments: 40,
+          progress: { current: Math.min(settings.dailyStreak, 3), target: 3 },
         },
       ];
+    },
+
+    checkAndUnlockMilestones: (options) => {
+      const currentSettings = storage.getUserSettings();
+      const unlockedSet = new Set(currentSettings.unlockedMilestones || []);
+      // Ensure welcome_manifest is always baseline unlocked
+      unlockedSet.add('welcome_manifest');
+
+      const allMilestones = get().getAvailableMilestones();
+      const newlyUnlocked = allMilestones.filter(
+        (m) => m.unlocked && !unlockedSet.has(m.id)
+      );
+
+      if (newlyUnlocked.length === 0) {
+        return [];
+      }
+
+      newlyUnlocked.forEach((m) => unlockedSet.add(m.id));
+      const totalFragments = newlyUnlocked.reduce((sum, m) => sum + (m.rewardFragments || 20), 0);
+      const nextEther = Math.max(0, (get().etherFragments || 0) + totalFragments);
+
+      const updatedSettings = storage.saveUserSettings({
+        unlockedMilestones: Array.from(unlockedSet),
+        etherFragments: nextEther,
+      });
+
+      set({
+        settings: updatedSettings,
+        etherFragments: nextEther,
+      });
+
+      const primary = newlyUnlocked[0];
+      get().showToast(
+        `🏆 ¡Logro desbloqueado: ${primary.title}! +${totalFragments} Fragmentos de Éter`,
+        'celebrate'
+      );
+
+      if (!options?.suppressModal) {
+        get().triggerCelebration({
+          title:
+            newlyUnlocked.length > 1
+              ? `¡${newlyUnlocked.length} Logros Desbloqueados!`
+              : `¡Logro: ${primary.title}!`,
+          message: newlyUnlocked.map((m) => m.description).join(' • '),
+          fragments: totalFragments,
+          nextStepLabel: 'Girar el Oráculo',
+          onNextStep: () => get().openOracle(),
+          secondaryLabel: 'Ver mis Logros',
+          onSecondary: () => get().setActiveTab('espacio'),
+        });
+      }
+
+      return newlyUnlocked;
     },
   };
 });

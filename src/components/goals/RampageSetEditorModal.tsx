@@ -56,11 +56,8 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
     isRampageSetEditorOpen,
     editingRampageSet,
     closeRampageSetEditor,
-    addEtherFragments,
     showToast,
-    triggerCelebration,
-    openOracle,
-    navigateToGoals,
+    checkAndUnlockMilestones,
   } = useAppStore();
 
   const isOpen = propIsOpen !== undefined ? propIsOpen : isRampageSetEditorOpen;
@@ -233,24 +230,15 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
     };
 
     saveRampageSet(newSet);
-    addEtherFragments(30);
-    showToast(
-      isEditing
-        ? '¡Set de Rampage actualizado! +30 Fragmentos de Éter'
-        : '¡Set de Rampage creado! +30 Fragmentos de Éter',
-      'celebrate'
-    );
     onClose();
 
-    triggerCelebration({
-      title: isEditing ? 'Secuencia de Rampage Actualizada' : 'Secuencia de Rampage Creada',
-      message: `Set "${data.title.trim()}" con ${validAffirmations.length} ${validAffirmations.length === 1 ? 'afirmación rítmica' : 'afirmaciones rítmicas'}.`,
-      fragments: 30,
-      nextStepLabel: 'Girar el Oráculo',
-      onNextStep: () => openOracle(),
-      secondaryLabel: 'Ir a Sets de Rampage',
-      onSecondary: () => navigateToGoals('rampage'),
-    });
+    const unlocked = checkAndUnlockMilestones();
+    if (unlocked.length === 0) {
+      showToast(
+        isEditing ? 'Set de Rampage actualizado' : 'Set de Rampage guardado',
+        'gentle'
+      );
+    }
   };
 
   return (

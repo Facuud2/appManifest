@@ -34,7 +34,15 @@ const SIGN_TYPES: {
 ];
 
 export const SignsView: React.FC = () => {
-  const { manifestationSigns, saveManifestationSign, deleteManifestationSign, goals, activeScope } = useAppStore();
+  const {
+    manifestationSigns,
+    saveManifestationSign,
+    deleteManifestationSign,
+    goals,
+    activeScope,
+    showToast,
+    checkAndUnlockMilestones,
+  } = useAppStore();
 
   const [filterType, setFilterType] = useState<SignType | 'all'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -79,6 +87,10 @@ export const SignsView: React.FC = () => {
 
     saveManifestationSign(sign);
     setIsModalOpen(false);
+    const unlocked = checkAndUnlockMilestones();
+    if (unlocked.length === 0) {
+      showToast('Señal registrada en tu camino', 'gentle');
+    }
   };
 
   const filteredSigns = filterType === 'all'

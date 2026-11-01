@@ -40,10 +40,8 @@ export const BottomNavigation: React.FC = () => {
                 aria-label={item.label}
               >
                 {isActive && (
-                  <motion.div
-                    layoutId="activeTabIndicator"
-                    className="absolute inset-0 rounded-xl bg-gradient-to-tr from-manifest-pink/40 via-manifest-lavender/50 to-manifest-celeste/40 border border-white/80 shadow-sm"
-                    transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                  <div
+                    className="absolute inset-0 rounded-xl bg-gradient-to-tr from-manifest-pink/40 via-manifest-lavender/50 to-manifest-celeste/40 border border-white/80 shadow-sm transition-opacity duration-200"
                   />
                 )}
                 <div className="relative z-10 flex flex-col items-center gap-0.5">

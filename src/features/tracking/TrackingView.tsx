@@ -28,8 +28,7 @@ export const TrackingView: React.FC = () => {
     settings,
     activeScope,
     journalEntries,
-    goals,
-    goalSteps,
+    affirmations,
     dailyReflections,
     saveDailyReflection,
     getAvailableMilestones,
@@ -44,7 +43,7 @@ export const TrackingView: React.FC = () => {
   const [learnings, setLearnings] = useState('');
   const [gratitude, setGratitude] = useState('');
 
-  const completedStepsCount = goalSteps.filter((s) => s.completed).length;
+  const affirmationsCount = affirmations.length;
   const milestones = getAvailableMilestones();
   const unlockedCount = milestones.filter((m) => m.unlocked).length;
 
@@ -124,10 +123,10 @@ export const TrackingView: React.FC = () => {
             <CheckCircle2 className="w-4 h-4 text-manifest-ink" />
           </div>
           <span className="text-2xl sm:text-3xl font-serif font-bold text-manifest-ink block pt-1">
-            {completedStepsCount}
+            {affirmationsCount}
           </span>
           <p className="text-[11px] text-manifest-inkMuted">
-            Acciones tangibles logradas
+            Afirmaciones creadas
           </p>
         </div>
 
@@ -193,16 +192,25 @@ export const TrackingView: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h4 className="text-xs font-bold text-manifest-ink">
-                    {milestone.title}
-                  </h4>
-                  {milestone.unlocked && (
-                    <span className="text-[9px] uppercase font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                      Conseguido
-                    </span>
-                  )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-bold text-manifest-ink">
+                      {milestone.title}
+                    </h4>
+                    {milestone.unlocked ? (
+                      <span className="text-[9px] uppercase font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                        Conseguido
+                      </span>
+                    ) : milestone.progress ? (
+                      <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-white/70 text-manifest-inkMuted">
+                        {milestone.progress.current}/{milestone.progress.target}
+                      </span>
+                    ) : null}
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-manifest-lavender/50 text-manifest-auraPurple border border-manifest-auraPurple/20">
+                    +{milestone.rewardFragments} Éter
+                  </span>
                 </div>
                 <p className="text-[11px] text-manifest-inkMuted mt-0.5 leading-relaxed">
                   {milestone.description}

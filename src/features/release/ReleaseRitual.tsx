@@ -19,7 +19,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 type RitualStage = 'write' | 'reflect' | 'burning' | 'released';
 
 export const ReleaseRitual: React.FC = () => {
-  const { destroyRelease, settings, addEtherFragments, showToast, openOracle } = useAppStore();
+  const { destroyRelease, showToast, openOracle, checkAndUnlockMilestones } = useAppStore();
 
   const [stage, setStage] = useState<RitualStage>('write');
   const [fearContent, setFearContent] = useState('');
@@ -41,8 +41,10 @@ export const ReleaseRitual: React.FC = () => {
     setTimeout(() => {
       // Permanently destroy the content from memory/storage
       destroyRelease('ritual-current');
-      addEtherFragments(20);
-      showToast('¡Carga transmutada en luz! +20 Fragmentos de Éter', 'celebrate');
+      const unlocked = checkAndUnlockMilestones({ suppressModal: true });
+      if (unlocked.length === 0) {
+        showToast('Carga transmutada en luz y paz', 'gentle');
+      }
       setStage('released');
     }, 2800);
   };

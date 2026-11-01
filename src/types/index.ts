@@ -208,4 +208,9 @@ export interface Milestone {
   icon: string;
   category: 'writing' | 'action' | 'release' | 'streak';
   unlocked: boolean;
+  rewardFragments: number;
+  progress?: {
+    current: number;
+    target: number;
+  };
 }
