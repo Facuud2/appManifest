@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { turso } from '@/lib/turso';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -153,20 +156,27 @@ export async function GET(req: NextRequest) {
       order: r.order_index != null ? Number(r.order_index) : undefined,
     }));
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        journalEntries,
-        goals,
-        goalSteps,
-        agendaEvents,
-        manifestationSigns,
-        successStories,
-        futureManifestations,
-        releaseEntries,
-        affirmations,
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          journalEntries,
+          goals,
+          goalSteps,
+          agendaEvents,
+          manifestationSigns,
+          successStories,
+          futureManifestations,
+          releaseEntries,
+          affirmations,
+        },
       },
-    });
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   } catch (error) {
     console.error('Error fetching from Turso:', error);
     return NextResponse.json(
@@ -195,14 +205,19 @@ export async function POST(req: NextRequest) {
       };
 
       const table = tableMap[entity];
-      if (table && id) {
-        await turso.execute({
-          sql: `DELETE FROM ${table} WHERE id = ?;`,
-          args: [id],
-        });
+      if (!table || !id) {
+        return NextResponse.json(
+          { success: false, error: 'Entity or ID missing for delete' },
+          { status: 400 }
+        );
       }
 
-      return NextResponse.json({ success: true });
+      await turso.execute({
+        sql: `DELETE FROM ${table} WHERE id = ?;`,
+        args: [id],
+      });
+
+      return NextResponse.json({ success: true, deletedId: id });
     }
 
     // Save / Upsert

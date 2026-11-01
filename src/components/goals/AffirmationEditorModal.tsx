@@ -1,16 +1,16 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAppStore } from '@/store';
-import { Sparkles, X } from 'lucide-react';
+import { Sparkles, X, Mic } from 'lucide-react';
 import { Affirmation, UserScope } from '@/types';
 import { UserScopeEnum } from '@/schemas';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
-import { VoiceDictationButton } from '@/components/ui/VoiceDictationButton';
+import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
 
 const affirmationFormSchema = z.object({
   text: z.string().min(1, 'Escribe tu manifestación o afirmación consciente'),
@@ -45,6 +45,7 @@ export const AffirmationEditorModal: React.FC = () => {
 
   const selectedUserId = watch('userId');
   const currentText = watch('text') || '';
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
 
   useEffect(() => {
     if (isAffirmationEditorOpen) {
@@ -84,9 +85,8 @@ export const AffirmationEditorModal: React.FC = () => {
     closeAffirmationEditor();
   };
 
-  const handleVoiceTranscript = (transcript: string) => {
-    const updated = currentText ? `${currentText} ${transcript}` : transcript;
-    setValue('text', updated, { shouldValidate: true, shouldDirty: true });
+  const handleVoiceTranscript = (fullText: string) => {
+    setValue('text', fullText, { shouldValidate: true, shouldDirty: true });
   };
 
   return (
@@ -157,30 +157,52 @@ export const AffirmationEditorModal: React.FC = () => {
 
             {/* Texto de Manifestación con AutoResize y Voz */}
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-manifest-ink">
-                  Decreto o Afirmación
-                </label>
-                <VoiceDictationButton
-                  onTranscript={handleVoiceTranscript}
-                  size="sm"
-                  title="Dictar manifestación"
+              <label className="text-xs font-semibold text-manifest-ink block">
+                Decreto o Afirmación
+              </label>
+              {isVoiceActive ? (
+                <VoiceAudioVisualizer
+                  initialText={currentText}
+                  placeholder="Habla ahora para tu afirmación..."
+                  onCommit={(fullText) => {
+                    setValue('text', fullText, { shouldValidate: true, shouldDirty: true });
+                    setIsVoiceActive(false);
+                  }}
+                  onSend={(fullText) => {
+                    setValue('text', fullText, { shouldValidate: true, shouldDirty: true });
+                    setIsVoiceActive(false);
+                  }}
+                  onCancel={() => setIsVoiceActive(false)}
                 />
-              </div>
-              <Controller
-                name="text"
-                control={control}
-                render={({ field }) => (
-                  <AutoResizeTextarea
-                    {...field}
-                    minRows={3}
-                    placeholder="Escribe en tiempo presente... (Ej: Atraigo abundancia, tranquilidad y felicidad cada día)"
-                    className={`w-full p-3.5 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight leading-relaxed ${
-                      errors.text ? 'border-rose-400 ring-1 ring-rose-400' : ''
-                    }`}
+              ) : (
+                <div className="relative">
+                  <Controller
+                    name="text"
+                    control={control}
+                    render={({ field }) => (
+                      <AutoResizeTextarea
+                        {...field}
+                        minRows={3}
+                        placeholder="Escribe en tiempo presente... (Ej: Atraigo abundancia, tranquilidad y felicidad cada día)"
+                        className={`w-full p-3.5 pr-11 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight leading-relaxed ${
+                          errors.text ? 'border-rose-400 ring-1 ring-rose-400' : ''
+                        }`}
+                      />
+                    )}
                   />
-                )}
-              />
+                  <div className="absolute right-2.5 bottom-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setIsVoiceActive(true)}
+                      title="Dictar manifestación con micrófono"
+                      aria-label="Dictar manifestación con micrófono"
+                      className="w-8 h-8 rounded-xl bg-white/80 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/90 shadow-sm flex items-center justify-center transition-all cursor-pointer"
+                    >
+                      <Mic className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
               {errors.text && (
                 <p className="text-[11px] text-rose-500 font-medium">{errors.text.message}</p>
               )}
@@ -191,13 +213,13 @@ export const AffirmationEditorModal: React.FC = () => {
               <button
                 type="button"
                 onClick={closeAffirmationEditor}
-                className="px-4 py-2 rounded-xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/60 transition-colors"
+                className="px-4 py-2.5 rounded-2xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/70 active:scale-95 transition-all cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="px-5 py-2.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm cursor-pointer"
+                className="px-5 py-2.5 rounded-2xl primary-gradient-btn text-xs font-semibold shadow-sm active:scale-95 transition-transform cursor-pointer"
               >
                 {editingAffirmation ? 'Guardar Cambios' : 'Guardar Afirmación'}
               </button>

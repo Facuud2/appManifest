@@ -1,16 +1,16 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAppStore } from '@/store';
-import { Sparkles, X, Plus, Trash2 } from 'lucide-react';
+import { Sparkles, X, Plus, Trash2, Mic } from 'lucide-react';
 import { RampageSet, UserScope } from '@/types';
 import { UserScopeEnum } from '@/schemas';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
-import { VoiceDictationButton } from '@/components/ui/VoiceDictationButton';
+import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
 
 const rampageFormSchema = z.object({
   title: z.string().min(1, 'El título del set es requerido'),
@@ -74,6 +74,8 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
     control,
     name: 'affirmations',
   });
+
+  const [voiceActiveIdx, setVoiceActiveIdx] = useState<number | null>(null);
 
   const selectedUserId = watch('userId');
   const watchedAffirmations = watch('affirmations');
@@ -242,16 +244,17 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                           Afirmación #{idx + 1}
                         </span>
                         <div className="flex items-center gap-1.5">
-                          <VoiceDictationButton
-                            size="sm"
-                            onTranscript={(trans) => {
-                              const updated = currentText ? `${currentText} ${trans}` : trans;
-                              setValue(`affirmations.${idx}.text`, updated, {
-                                shouldValidate: true,
-                                shouldDirty: true,
-                              });
-                            }}
-                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setVoiceActiveIdx(voiceActiveIdx === idx ? null : idx)
+                            }
+                            title="Dictar con micrófono"
+                            aria-label="Dictar con micrófono"
+                            className="w-7 h-7 rounded-xl bg-white/80 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/90 shadow-sm flex items-center justify-center transition-all cursor-pointer"
+                          >
+                            <Mic className="w-3.5 h-3.5" />
+                          </button>
                           {fields.length > 1 && (
                             <button
                               type="button"
@@ -265,18 +268,40 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                         </div>
                       </div>
 
-                      <Controller
-                        name={`affirmations.${idx}.text`}
-                        control={control}
-                        render={({ field }) => (
-                          <AutoResizeTextarea
-                            {...field}
-                            minRows={2}
-                            placeholder="Escribe la afirmación para esta secuencia..."
-                            className="w-full p-2.5 rounded-xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight"
-                          />
-                        )}
-                      />
+                      {voiceActiveIdx === idx ? (
+                        <VoiceAudioVisualizer
+                          initialText={currentText}
+                          placeholder={`Habla ahora para la afirmación #${idx + 1}...`}
+                          onCommit={(fullText) => {
+                            setValue(`affirmations.${idx}.text`, fullText, {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
+                            setVoiceActiveIdx(null);
+                          }}
+                          onSend={(fullText) => {
+                            setValue(`affirmations.${idx}.text`, fullText, {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
+                            setVoiceActiveIdx(null);
+                          }}
+                          onCancel={() => setVoiceActiveIdx(null)}
+                        />
+                      ) : (
+                        <Controller
+                          name={`affirmations.${idx}.text`}
+                          control={control}
+                          render={({ field }) => (
+                            <AutoResizeTextarea
+                              {...field}
+                              minRows={2}
+                              placeholder="Escribe la afirmación para esta secuencia..."
+                              className="w-full p-2.5 rounded-xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight"
+                            />
+                          )}
+                        />
+                      )}
                     </div>
                   );
                 })}

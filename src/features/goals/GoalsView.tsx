@@ -8,11 +8,13 @@ import {
   Pin,
   ListOrdered,
   Flame,
+  Send,
+  Mic,
 } from 'lucide-react';
 import { UserScope, Affirmation } from '@/types';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
-import { VoiceDictationButton } from '@/components/ui/VoiceDictationButton';
+import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
 import { ManifestationCard } from '@/components/goals/ManifestationCard';
 import { RampageSetView } from '@/components/goals/RampageSetView';
 
@@ -23,37 +25,81 @@ export const GoalsView: React.FC = () => {
     saveAffirmation,
     reorderAffirmations,
     openRampageSetEditor,
+    goalsViewMode,
+    setGoalsViewMode,
   } = useAppStore();
 
-  const [viewMode, setViewMode] = useState<'list' | 'rampage'>('list');
+  const viewMode = goalsViewMode;
+  const setViewMode = setGoalsViewMode;
   const [manifestationText, setManifestationText] = useState('');
+  const [isDictating, setIsDictating] = useState(false);
   const [scope, setScope] = useState<UserScope>(activeScope);
 
   const pinnedContainerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const bottomAnchorRef = useRef<HTMLDivElement>(null);
 
   // Split pinned and unpinned manifestations
   const pinnedAffirmations = affirmations.filter((a) => a.pinned);
-  const unpinnedAffirmations = affirmations.filter((a) => !a.pinned);
+  // Unpinned manifestations ordered chronologically/sequentially so newly added append at the bottom
+  const unpinnedAffirmations = affirmations
+    .filter((a) => !a.pinned)
+    .sort((a, b) => {
+      if (a.order !== undefined && b.order !== undefined) {
+        return a.order - b.order;
+      }
+      if (a.order !== undefined) return -1;
+      if (b.order !== undefined) return 1;
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!manifestationText.trim()) return;
+  const submitManifestation = (textToSave: string) => {
+    const trimmed = textToSave.trim();
+    if (!trimmed) return;
 
     const author =
       scope === 'facu' ? 'Facu' : scope === 'maia' ? 'Maia' : 'Facu & Maia';
+
+    const maxOrder = affirmations.reduce(
+      (max, a) => Math.max(max, a.order ?? 0),
+      0
+    );
 
     saveAffirmation({
       id: `aff-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       userId: scope,
       author,
-      text: manifestationText.trim(),
+      text: trimmed,
       repeatCount: 1,
       pinned: false,
+      order: maxOrder + 1,
       createdAt: new Date().toISOString(),
       lastRepeatedAt: new Date().toISOString(),
     });
 
     setManifestationText('');
+
+    // Trello-style: Keep focus and smoothly scroll to keep creator comfortably visible
+    requestAnimationFrame(() => {
+      textareaRef.current?.focus();
+      bottomAnchorRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      });
+    });
+  };
+
+  const handleSave = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    submitManifestation(manifestationText);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Intercept Enter (or mobile virtual keyboard Send action) to add and chain creation
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSave();
+    }
   };
 
   const handleReorderPinned = (reordered: Affirmation[]) => {
@@ -136,67 +182,6 @@ export const GoalsView: React.FC = () => {
       {/* VIEW MODE 1: LISTA Y FIJADOS */}
       {viewMode === 'list' && (
         <div className="space-y-4">
-          {/* Quick Manifestation Writer */}
-          <form
-            onSubmit={handleSave}
-            className="p-4 sm:p-5 rounded-3xl glass-card border border-white/95 shadow-sm space-y-3"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <label className="text-xs font-semibold text-manifest-ink">
-                Nueva Afirmación
-              </label>
-              <div className="flex items-center gap-1">
-                {[
-                  { key: 'facu' as UserScope, label: 'Facu' },
-                  { key: 'maia' as UserScope, label: 'Maia' },
-                  { key: 'shared' as UserScope, label: '✨ Juntos' },
-                ].map((sc) => (
-                  <button
-                    key={sc.key}
-                    type="button"
-                    onClick={() => setScope(sc.key)}
-                    className={`py-1 px-2.5 rounded-xl text-[11px] font-semibold transition-all border ${
-                      scope === sc.key
-                        ? 'bg-manifest-ink text-white border-manifest-ink shadow-sm'
-                        : 'bg-white/70 hover:bg-white text-manifest-inkMuted border-white/80'
-                    }`}
-                  >
-                    {sc.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="relative">
-              <AutoResizeTextarea
-                minRows={2}
-                value={manifestationText}
-                onChange={(e) => setManifestationText(e.target.value)}
-                placeholder="Escribe en tiempo presente tu deseo o afirmación... (Ej: Atraigo abundancia, tranquilidad y felicidad cada día)"
-                className="w-full p-3.5 pr-11 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight"
-                required
-              />
-              <div className="absolute right-2.5 bottom-2.5">
-                <VoiceDictationButton
-                  size="sm"
-                  onTranscript={(trans) =>
-                    setManifestationText((prev) => (prev ? `${prev} ${trans}` : trans))
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-0.5">
-              <button
-                type="submit"
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Guardar Afirmación</span>
-              </button>
-            </div>
-          </form>
-
           {/* SECTION: PINNED (DRAG & DROP RESTRICTED) */}
           {pinnedAffirmations.length > 0 && (
             <div className="space-y-2.5">
@@ -253,7 +238,7 @@ export const GoalsView: React.FC = () => {
                   Sin afirmaciones aún
                 </h4>
                 <p className="text-xs text-manifest-inkMuted max-w-xs mx-auto">
-                  Escribe arriba tu primera afirmación para comenzar a proyectar tu realidad.
+                  Escribe abajo tu primera afirmación para comenzar a proyectar tu realidad.
                 </p>
               </div>
             ) : unpinnedAffirmations.length === 0 && pinnedAffirmations.length > 0 ? (
@@ -273,6 +258,90 @@ export const GoalsView: React.FC = () => {
                 </AnimatePresence>
               </div>
             )}
+
+            {/* Quick Manifestation Writer: dynamically positioned below the last card */}
+            <form
+              onSubmit={handleSave}
+              className="p-4 sm:p-5 rounded-3xl glass-card border border-white/95 shadow-sm space-y-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-xs font-semibold text-manifest-ink">
+                  Añadir Afirmación
+                </label>
+                <div className="flex items-center gap-1">
+                  {[
+                    { key: 'facu' as UserScope, label: 'Facu' },
+                    { key: 'maia' as UserScope, label: 'Maia' },
+                    { key: 'shared' as UserScope, label: '✨ Juntos' },
+                  ].map((sc) => (
+                    <button
+                      key={sc.key}
+                      type="button"
+                      onClick={() => setScope(sc.key)}
+                      className={`py-1 px-2.5 rounded-xl text-[11px] font-semibold transition-all border ${
+                        scope === sc.key
+                          ? 'bg-manifest-ink text-white border-manifest-ink shadow-sm'
+                          : 'bg-white/70 hover:bg-white text-manifest-inkMuted border-white/80'
+                      }`}
+                    >
+                      {sc.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {isDictating ? (
+                <VoiceAudioVisualizer
+                  initialText={manifestationText}
+                  placeholder="Habla ahora para tu afirmación..."
+                  onCommit={(fullText) => {
+                    setManifestationText(fullText);
+                    setIsDictating(false);
+                  }}
+                  onSend={(fullText) => {
+                    setIsDictating(false);
+                    submitManifestation(fullText);
+                  }}
+                  onCancel={() => setIsDictating(false)}
+                />
+              ) : (
+                <div className="relative">
+                  <AutoResizeTextarea
+                    ref={textareaRef}
+                    minRows={2}
+                    value={manifestationText}
+                    onChange={(e) => setManifestationText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    enterKeyHint="send"
+                    placeholder="Escribe en tiempo presente tu deseo o afirmación... (Pulsa Enviar para añadir otra)"
+                    className="w-full p-3.5 pr-11 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight"
+                    required
+                  />
+                  <div className="absolute right-2.5 bottom-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setIsDictating(true)}
+                      title="Dictar afirmación con micrófono"
+                      aria-label="Dictar afirmación con micrófono"
+                      className="w-8 h-8 rounded-xl bg-white/80 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/90 shadow-sm flex items-center justify-center transition-all cursor-pointer"
+                    >
+                      <Mic className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end pt-0.5">
+                <button
+                  type="submit"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm cursor-pointer active:scale-95 transition-transform"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Añadir afirmación</span>
+                </button>
+              </div>
+            </form>
+            <div ref={bottomAnchorRef} />
           </div>
         </div>
       )}

@@ -27,3 +27,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+tsconfig.tsbuildinfo
+
+# Agent & Skill metadata
+.agents/
+.claude/
+skills-lock.json

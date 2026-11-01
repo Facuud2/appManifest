@@ -83,7 +83,7 @@ export default function Home() {
 
         <main className="flex-1 flex flex-col w-full max-w-full lg:max-w-6xl xl:max-w-7xl mx-auto px-3 sm:px-6 lg:px-10">
           {/* Dynamic Content Canvas with View Crossfading */}
-          <div className="flex-1 pt-1.5 sm:pt-3 lg:pt-6 pb-[calc(env(safe-area-inset-bottom,0px)+4.5rem)] lg:pb-8">
+          <div className="flex-1 pt-3 sm:pt-4 lg:pt-6 pb-[calc(env(safe-area-inset-bottom,0px)+7.5rem)] lg:pb-8">
           <AnimatePresence mode="wait">
             {activeTab === 'inicio' && (
               <motion.div

@@ -44,6 +44,7 @@ const STORAGE_KEYS = {
   AFFIRMATIONS: 'manifest_affirmations',
   RAMPAGE_SETS: 'manifest_rampage_sets',
   SETTINGS: 'manifest_user_settings',
+  DELETED_IDS: 'manifest_deleted_ids',
   SCHEMA_VERSION: 'manifest_schema_version',
 } as const;
 
@@ -131,6 +132,12 @@ export interface IStorageService {
   importBackup(jsonString: string): { success: boolean; message: string; error?: string };
   clearAllData(): void;
   bulkReplaceFromRemote(data: any): void;
+
+  // Tombstones & Deletion guarantees
+  markAsDeleted(id: string): void;
+  unmarkDeleted(id: string): void;
+  isDeleted(id: string): boolean;
+  getDeletedIds(): string[];
 }
 
 class LocalStorageService implements IStorageService {
@@ -158,6 +165,31 @@ class LocalStorageService implements IStorageService {
     } catch (e) {
       console.error(`[LocalStorage] Error saving key ${key}:`, e);
     }
+  }
+
+  // Tombstone methods to prevent resurrecting deleted items upon remote sync
+  public getDeletedIds(): string[] {
+    return this.safeGet<string[]>(STORAGE_KEYS.DELETED_IDS, []);
+  }
+
+  public markAsDeleted(id: string): void {
+    if (!this.isBrowser() || !id) return;
+    const current = new Set(this.getDeletedIds());
+    current.add(id);
+    this.safeSet(STORAGE_KEYS.DELETED_IDS, Array.from(current));
+  }
+
+  public unmarkDeleted(id: string): void {
+    if (!this.isBrowser() || !id) return;
+    const current = new Set(this.getDeletedIds());
+    current.delete(id);
+    this.safeSet(STORAGE_KEYS.DELETED_IDS, Array.from(current));
+  }
+
+  public isDeleted(id: string): boolean {
+    if (!id) return false;
+    const current = new Set(this.getDeletedIds());
+    return current.has(id);
   }
 
   public initSeedDataIfNeeded(): void {
@@ -233,7 +265,7 @@ class LocalStorageService implements IStorageService {
     const valid: JournalEntry[] = [];
     for (const item of raw) {
       const parsed = JournalEntrySchema.safeParse(item);
-      if (parsed.success && !parsed.data.id.startsWith('seed-')) {
+      if (parsed.success && !parsed.data.id.startsWith('seed-') && !this.isDeleted(parsed.data.id)) {
         valid.push(parsed.data as JournalEntry);
       }
     }
@@ -241,6 +273,7 @@ class LocalStorageService implements IStorageService {
   }
 
   public saveJournalEntry(entry: JournalEntry): void {
+    this.unmarkDeleted(entry.id);
     const current = this.getJournalEntries();
     const index = current.findIndex((e) => e.id === entry.id);
     let updated: JournalEntry[];
@@ -256,6 +289,7 @@ class LocalStorageService implements IStorageService {
   }
 
   public deleteJournalEntry(id: string): void {
+    this.markAsDeleted(id);
     const current = this.getJournalEntries();
     this.safeSet(STORAGE_KEYS.JOURNAL, current.filter((e) => e.id !== id));
   }
@@ -268,6 +302,7 @@ class LocalStorageService implements IStorageService {
       const parsed = AffirmationSchema.safeParse(item);
       if (
         parsed.success &&
+        !this.isDeleted(parsed.data.id) &&
         !parsed.data.id.startsWith('aff-facu-') &&
         !parsed.data.id.startsWith('aff-maia-') &&
         !parsed.data.id.startsWith('aff-shared-')
@@ -285,12 +320,13 @@ class LocalStorageService implements IStorageService {
       }
       if (a.order !== undefined) return -1;
       if (b.order !== undefined) return 1;
-      // Fallback to createdAt desc
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      // Fallback to createdAt asc for chronological Trello-like order
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
   }
 
   public saveAffirmation(affirmation: Affirmation): void {
+    this.unmarkDeleted(affirmation.id);
     const current = this.getAffirmations();
     const index = current.findIndex((a) => a.id === affirmation.id);
     let updated: Affirmation[];
@@ -355,6 +391,7 @@ class LocalStorageService implements IStorageService {
   }
 
   public deleteAffirmation(id: string): void {
+    this.markAsDeleted(id);
     const current = this.getAffirmations();
     this.safeSet(STORAGE_KEYS.AFFIRMATIONS, current.filter((a) => a.id !== id));
   }
@@ -376,7 +413,7 @@ class LocalStorageService implements IStorageService {
           continue;
         }
         const parsed = RampageSetSchema.safeParse(item);
-        if (parsed.success) {
+        if (parsed.success && !this.isDeleted(parsed.data.id)) {
           valid.push(parsed.data as RampageSet);
         }
       }
@@ -386,6 +423,7 @@ class LocalStorageService implements IStorageService {
   }
 
   public saveRampageSet(set: RampageSet): void {
+    this.unmarkDeleted(set.id);
     const current = this.getRampageSets();
     const index = current.findIndex((s) => s.id === set.id);
     let updated: RampageSet[];
@@ -399,6 +437,7 @@ class LocalStorageService implements IStorageService {
   }
 
   public deleteRampageSet(id: string): void {
+    this.markAsDeleted(id);
     const current = this.getRampageSets();
     this.safeSet(STORAGE_KEYS.RAMPAGE_SETS, current.filter((s) => s.id !== id));
   }
@@ -762,9 +801,18 @@ class LocalStorageService implements IStorageService {
       if (!remoteList || !Array.isArray(remoteList) || remoteList.length === 0) return currentList;
       const map = new Map<string, T>();
       for (const item of currentList) {
-        map.set(item.id, item);
+        if (!this.isDeleted(item.id)) {
+          map.set(item.id, item);
+        } else {
+          changed = true;
+        }
       }
       for (const rItem of remoteList) {
+        // Ignorar cualquier elemento que el usuario haya marcado como eliminado
+        if (this.isDeleted(rItem.id)) {
+          continue;
+        }
+
         if (!map.has(rItem.id)) {
           map.set(rItem.id, rItem);
           changed = true;

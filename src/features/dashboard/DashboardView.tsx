@@ -12,6 +12,7 @@ import {
   BookOpen,
   Plus,
   Flame,
+  Pin,
   Edit3,
   Trash2,
   RotateCcw,
@@ -19,19 +20,22 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Affirmation } from '@/types';
+import { Affirmation, JournalEntry } from '@/types';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { ManifestationCard } from '@/components/goals/ManifestationCard';
 import { RampageSetView } from '@/components/goals/RampageSetView';
+import { JournalEntryDetailModal } from '@/components/journal/JournalEntryDetailModal';
 
 export const DashboardView: React.FC = () => {
   const {
     activeScope,
     setActiveTab,
+    navigateToGoals,
     openJournalEditor,
     openAffirmationEditor,
     openRampageSetEditor,
     journalEntries,
+    deleteJournalEntry,
     affirmations,
     reorderAffirmations,
     deleteAffirmation,
@@ -39,6 +43,8 @@ export const DashboardView: React.FC = () => {
   } = useAppStore();
 
   const [viewMode, setViewMode] = useState<'list' | 'rampage'>('list');
+  const [selectedJournalEntryForView, setSelectedJournalEntryForView] = useState<JournalEntry | null>(null);
+  const [journalEntryToDelete, setJournalEntryToDelete] = useState<JournalEntry | null>(null);
   const [affirmationToDelete, setAffirmationToDelete] = useState<Affirmation | null>(null);
   const [recentlyDeletedAffirmation, setRecentlyDeletedAffirmation] = useState<Affirmation | null>(null);
 
@@ -54,13 +60,43 @@ export const DashboardView: React.FC = () => {
     }
   }, [recentlyDeletedAffirmation]);
 
+  // Helper to accurately extract timestamp from createdAt, ID, or fallback
+  const getAffirmationTime = (aff: Affirmation): number => {
+    if (aff.createdAt) {
+      const parsed = new Date(aff.createdAt).getTime();
+      if (!isNaN(parsed) && parsed > 0) return parsed;
+    }
+    if (aff.id) {
+      const match = aff.id.match(/^aff-(\d+)/);
+      if (match && match[1]) {
+        const idTime = parseInt(match[1], 10);
+        if (!isNaN(idTime) && idTime > 0) return idTime;
+      }
+    }
+    if (typeof aff.order === 'number') {
+      return aff.order;
+    }
+    return 0;
+  };
+
   // Separate pinned and unpinned affirmations
+  // En la pantalla de inicio: de arriba hacia abajo siendo la primera la más reciente
   const pinnedAffirmations = affirmations.filter((a) => a.pinned);
-  const unpinnedAffirmations = affirmations.filter((a) => !a.pinned);
+  const unpinnedAffirmations = affirmations
+    .filter((a) => !a.pinned)
+    .sort((a, b) => {
+      const timeA = getAffirmationTime(a);
+      const timeB = getAffirmationTime(b);
+      if (timeA !== timeB) {
+        return timeB - timeA; // Más reciente primero (al principio de forma predeterminada)
+      }
+      return (b.id || '').localeCompare(a.id || '');
+    });
 
   const recentEntries = journalEntries.slice(0, 3);
 
-  const formattedDate = format(new Date(), "EEEE, d 'de' MMMM", { locale: es });
+  const rawDate = format(new Date(), "EEEE, d 'de' MMMM", { locale: es });
+  const formattedDate = rawDate.charAt(0).toUpperCase() + rawDate.slice(1);
   const hour = new Date().getHours();
 
   const handleReorderPinned = (reordered: Affirmation[]) => {
@@ -85,7 +121,7 @@ export const DashboardView: React.FC = () => {
       {/* 1. Date & Warm Greeting */}
       <div className="px-1 flex items-center justify-between">
         <div>
-          <p className="text-xs font-medium text-manifest-inkMuted capitalize">
+          <p className="text-xs font-medium text-manifest-inkMuted">
             {formattedDate}
           </p>
           <h2 className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink flex items-center gap-2 mt-0.5">
@@ -106,9 +142,9 @@ export const DashboardView: React.FC = () => {
 
       {/* 2. SECCIÓN: Afirmaciones & Sets de Rampage */}
       <section className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-1">
-          {/* iOS Segmented Control */}
-          <div className="flex p-1 rounded-2xl bg-white/75 border border-white shadow-sm backdrop-blur-md self-start sm:self-auto">
+        {/* Switch Bar */}
+        <div className="flex items-center justify-between gap-2 px-1">
+          <div className="flex p-1 rounded-2xl bg-white/75 border border-white shadow-sm backdrop-blur-md">
             <button
               type="button"
               onClick={() => setViewMode('list')}
@@ -153,19 +189,36 @@ export const DashboardView: React.FC = () => {
               </span>
             </button>
           </div>
+        </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-auto">
+        {/* Section Header Row with Section Title on Left and Actions on Right */}
+        <div className="flex items-center justify-between px-1 pt-0.5">
+          <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
+            {viewMode === 'rampage' ? (
+              <>
+                <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                <span>Sets de Rampage</span>
+              </>
+            ) : (
+              <>
+                <Pin className="w-3.5 h-3.5 text-manifest-auraPurple fill-manifest-auraPurple" />
+                <span>{pinnedAffirmations.length > 0 ? 'Afirmaciones Fijadas' : 'Afirmaciones'}</span>
+              </>
+            )}
+          </h3>
+
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setActiveTab('objetivos')}
+              onClick={() => navigateToGoals(viewMode)}
               className="text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink transition-colors flex items-center gap-0.5 cursor-pointer"
             >
-              <span>Ver todas</span>
+              <span>{viewMode === 'rampage' ? 'Ver todos' : 'Ver todas'}</span>
               <ArrowRight className="w-3 h-3" />
             </button>
             {viewMode === 'rampage' ? (
               <button
                 onClick={() => openRampageSetEditor(null)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer active:scale-95 transition-transform"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Nuevo Set</span>
@@ -173,7 +226,7 @@ export const DashboardView: React.FC = () => {
             ) : (
               <button
                 onClick={() => openAffirmationEditor(null)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer active:scale-95 transition-transform"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Nueva</span>
@@ -415,50 +468,74 @@ export const DashboardView: React.FC = () => {
                 return (
                   <div
                     key={entry.id}
-                    onClick={() => openJournalEditor(entry.entryType, entry)}
+                    onClick={() => setSelectedJournalEntryForView(entry)}
+                    data-testid={`journal-card-${entry.id}`}
                     className="p-3.5 sm:p-4 rounded-2xl glass-card-interactive cursor-pointer border border-white/90 space-y-2 hover:scale-[1.005] transition-transform select-none"
                   >
                     <div className="flex items-center justify-between gap-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                         <span
-                          className={`text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                          className={`text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 ${
                             isProgress
-                              ? 'bg-manifest-mint/60 text-emerald-800'
+                              ? 'bg-manifest-mint/70 text-emerald-800'
                               : isManifestation
                               ? 'bg-gradient-to-r from-manifest-pink/40 to-manifest-lavender/60 text-manifest-auraPurple border border-manifest-auraPurple/30'
-                              : 'bg-manifest-lavender/50 text-manifest-ink'
+                              : 'bg-amber-100/80 text-amber-800 border border-amber-300/40'
                           }`}
                         >
-                          {isProgress ? 'Avance / Logro' : isManifestation ? 'Manifestación' : 'Nota de Cuaderno'}
+                          {isProgress ? 'Avance de manifestación' : isManifestation ? 'Manifestación' : 'Success Story'}
                         </span>
-                        <span className="text-[10px] text-manifest-inkMuted">
+                        <span className="text-[10px] text-manifest-inkMuted whitespace-nowrap shrink-0">
                           {formattedEntryDate}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
                         <span className="text-[10px] text-manifest-inkMuted">
                           {entry.userId === 'shared' ? '✨ Juntos' : entry.author || (entry.userId === 'facu' ? 'Facu' : 'Maia')}
                         </span>
-                        {/* Direct Edit Button */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openJournalEditor(entry.entryType, entry);
-                          }}
-                          title="Editar entrada"
-                          className="p-1 rounded-full hover:bg-white text-manifest-inkMuted hover:text-manifest-ink transition-colors cursor-pointer"
+
+                        {/* Action Buttons: Edit and Delete */}
+                        <div
+                          className="flex items-center gap-1 shrink-0"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openJournalEditor(entry.entryType, entry);
+                            }}
+                            title="Editar entrada"
+                            data-testid={`edit-journal-card-${entry.id}`}
+                            className="w-7 h-7 rounded-xl flex items-center justify-center bg-white/70 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/80 shadow-xs active:scale-95 transition-all cursor-pointer"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setJournalEntryToDelete(entry);
+                            }}
+                            title="Eliminar entrada"
+                            data-testid={`delete-journal-card-${entry.id}`}
+                            className="w-7 h-7 rounded-xl flex items-center justify-center bg-white/70 hover:bg-rose-50 text-manifest-inkMuted hover:text-rose-600 border border-white/80 shadow-xs active:scale-95 transition-all cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
 
                     <div>
-                      <h4 className="text-xs sm:text-sm font-serif font-bold text-manifest-ink line-clamp-1">
-                        {entry.title}
-                      </h4>
-                      <p className="text-[11px] text-manifest-inkMuted line-clamp-2 leading-relaxed mt-0.5">
+                      {entry.title &&
+                        entry.title !== 'Entrada de diario' &&
+                        !entry.content.startsWith(entry.title.replace(/\.\.\.$/, '')) && (
+                          <h4 className="text-xs sm:text-sm font-serif font-bold text-manifest-ink line-clamp-1 mb-0.5">
+                            {entry.title}
+                          </h4>
+                        )}
+                      <p className="text-[11px] text-manifest-inkMuted line-clamp-2 leading-relaxed">
                         {entry.content}
                       </p>
                     </div>
@@ -469,6 +546,78 @@ export const DashboardView: React.FC = () => {
           )}
         </div>
       </section>
+
+      {/* Detail Modal for viewing full Journal Entry from Inicio (without changing sections) */}
+      <JournalEntryDetailModal
+        isOpen={!!selectedJournalEntryForView}
+        entry={selectedJournalEntryForView}
+        onClose={() => setSelectedJournalEntryForView(null)}
+        onEdit={(entry) => openJournalEditor(entry.entryType, entry)}
+        onDelete={(id) => deleteJournalEntry(id)}
+      />
+
+      {/* Confirmation Dialog for deleting a journal entry directly from the card in Inicio */}
+      <AnimatePresence>
+        {journalEntryToDelete && (
+          <div
+            onClick={() => setJournalEntryToDelete(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-manifest-ink/35 backdrop-blur-sm"
+          >
+            <motion.div
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.96, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 6 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-sm rounded-3xl bg-white p-5 sm:p-6 border border-white shadow-liquid space-y-4"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-100/80 border border-rose-200/80 text-rose-500 flex items-center justify-center shrink-0 shadow-sm">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-sm font-bold text-manifest-ink">
+                    ¿Eliminar esta entrada?
+                  </h3>
+                  <p className="text-[11px] text-manifest-inkMuted">
+                    Confirmación de eliminación
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-manifest-lavender/30 border border-white/90">
+                <p className="text-xs font-semibold text-manifest-ink line-clamp-1">
+                  {journalEntryToDelete.title}
+                </p>
+                <p className="text-[11px] text-manifest-inkMuted line-clamp-2 mt-0.5">
+                  {journalEntryToDelete.content}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setJournalEntryToDelete(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink hover:bg-neutral-100 transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    deleteJournalEntry(journalEntryToDelete.id);
+                    setJournalEntryToDelete(null);
+                  }}
+                  data-testid="confirm-delete-journal-card-btn"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-sm active:scale-95 transition-all cursor-pointer"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

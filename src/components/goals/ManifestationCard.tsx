@@ -9,8 +9,10 @@ import {
   Trash2,
   Edit3,
   Sparkles,
+  GripVertical,
 } from 'lucide-react';
 import { motion, Reorder, useDragControls } from 'framer-motion';
+import { useTapVsScroll } from '@/hooks/useTapVsScroll';
 
 interface ManifestationCardProps {
   affirmation: Affirmation;
@@ -64,14 +66,18 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
     }
   };
 
+  const cardTapHandlers = useTapVsScroll({
+    onTap: () => incrementAffirmationRepeat(affirmation.id),
+  });
+
   const cardContent = (
     <div
-      onClick={handleRepeat}
-      className="p-4 sm:p-4.5 rounded-3xl glass-card-interactive border border-white/95 shadow-sm space-y-2.5 transition-all select-none cursor-pointer hover:shadow-md"
+      {...cardTapHandlers}
+      className="p-4 sm:p-4.5 rounded-3xl glass-card-interactive border border-white/95 shadow-sm space-y-2.5 transition-all select-none cursor-pointer hover:shadow-md touch-pan-y"
     >
       {/* Top Meta Bar */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {isPinnedMode && (
             <button
               type="button"
@@ -80,13 +86,9 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
                 dragControls.start(e);
               }}
               title="Arrastrar para reordenar prioridad"
-              className="touch-none cursor-grab active:cursor-grabbing p-1.5 -ml-1 rounded-xl hover:bg-white/90 text-manifest-inkMuted hover:text-manifest-ink transition-colors flex items-center justify-center shrink-0"
+              className="touch-none cursor-grab active:cursor-grabbing p-1 -ml-1 rounded-lg hover:bg-white/90 text-manifest-inkMuted/60 hover:text-manifest-ink transition-colors flex items-center justify-center shrink-0"
             >
-              {/* iOS style two horizontal lines (=) handle */}
-              <div className="flex flex-col gap-[3px] items-center justify-center w-4 py-0.5">
-                <div className="w-3.5 h-[2px] bg-manifest-ink/70 rounded-full" />
-                <div className="w-3.5 h-[2px] bg-manifest-ink/70 rounded-full" />
-              </div>
+              <GripVertical className="w-3.5 h-3.5" />
             </button>
           )}
 
@@ -95,26 +97,30 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
               ✨ Juntos
             </span>
           ) : (
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/80 text-manifest-inkMuted">
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/80 text-manifest-inkMuted border border-white/80">
               {affirmation.author || (affirmation.userId === 'facu' ? 'Facu' : 'Maia')}
             </span>
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+        {/* Action Buttons - Unified h-7, rounded-xl and consistent baseline */}
+        <div
+          className="flex items-center gap-1 sm:gap-1.5 shrink-0"
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
           {/* Pin Button */}
           <button
             type="button"
             onClick={handlePin}
             title={affirmation.pinned ? 'Desfijar manifestación' : 'Fijar manifestación'}
-            className={`p-1.5 rounded-full transition-all ${
+            className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
               affirmation.pinned
-                ? 'bg-manifest-lavender text-manifest-auraPurple shadow-sm ring-1 ring-manifest-auraPurple/30'
-                : 'hover:bg-white/80 text-manifest-inkMuted hover:text-manifest-ink'
+                ? 'bg-manifest-lavender/70 text-manifest-auraPurple border border-manifest-auraPurple/30 shadow-xs'
+                : 'bg-white/70 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/80'
             }`}
           >
-            <Pin className={`w-3.5 h-3.5 ${affirmation.pinned ? 'fill-manifest-auraPurple rotate-45' : ''}`} />
+            <Pin className={`w-3.5 h-3.5 ${affirmation.pinned ? 'fill-manifest-auraPurple' : ''}`} />
           </button>
 
           {/* Edit Button */}
@@ -122,7 +128,7 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
             type="button"
             onClick={handleEdit}
             title="Editar manifestación"
-            className="p-1.5 rounded-full hover:bg-white/80 text-manifest-inkMuted hover:text-manifest-ink transition-colors"
+            className="w-7 h-7 rounded-xl flex items-center justify-center bg-white/70 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/80 shadow-xs active:scale-95 transition-all cursor-pointer"
           >
             <Edit3 className="w-3.5 h-3.5" />
           </button>
@@ -132,14 +138,14 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
             type="button"
             onClick={handleRepeat}
             title="Repeticiones"
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-2xl bg-white/90 hover:bg-white text-manifest-ink border border-white shadow-sm transition-all"
+            className="h-7 flex items-center gap-1 px-2 rounded-xl bg-white/85 hover:bg-white text-manifest-ink border border-white/90 shadow-xs active:scale-95 transition-all cursor-pointer"
           >
             <Flame
               className={`w-3.5 h-3.5 transition-colors ${
                 affirmation.repeatCount > 0 ? 'text-amber-500 fill-amber-400' : 'text-manifest-inkMuted'
               }`}
             />
-            <span className="text-xs font-bold font-mono text-manifest-ink">
+            <span className="text-[11px] font-bold font-mono text-manifest-ink">
               {affirmation.repeatCount || 0}
             </span>
           </button>
@@ -149,7 +155,7 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
             type="button"
             onClick={handleDelete}
             title="Eliminar manifestación"
-            className="p-1.5 rounded-full hover:bg-white/80 text-manifest-inkMuted hover:text-rose-500 transition-colors"
+            className="w-7 h-7 rounded-xl flex items-center justify-center bg-white/70 hover:bg-rose-50 text-manifest-inkMuted hover:text-rose-500 border border-white/80 shadow-xs active:scale-95 transition-all cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -182,25 +188,49 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
           transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
         }}
         transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full relative touch-none select-none list-none"
+        className="w-full relative select-none list-none touch-pan-y"
       >
         {cardContent}
       </Reorder.Item>
     );
   }
 
+  const isNew = affirmation.createdAt && Date.now() - new Date(affirmation.createdAt).getTime() < 3500;
+
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, scale: 0.97 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0, y: -20, scale: 0.95 }}
+      animate={{
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        boxShadow: isNew
+          ? [
+              '0px 0px 0px rgba(184, 165, 255, 0)',
+              '0px 0px 24px rgba(184, 165, 255, 0.45)',
+              '0px 2px 8px rgba(0, 0, 0, 0.04)',
+            ]
+          : '0px 2px 8px rgba(0, 0, 0, 0.04)',
+      }}
       exit={{
         opacity: 0,
         scale: 0.96,
         filter: 'blur(3px)',
         transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
       }}
-      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+      transition={{
+        type: 'spring',
+        stiffness: 420,
+        damping: 28,
+        mass: 0.8,
+        boxShadow: { duration: 1.8, ease: 'easeOut' },
+        layout: {
+          type: 'spring',
+          stiffness: 420,
+          damping: 32,
+        },
+      }}
       className="w-full list-none"
     >
       {cardContent}

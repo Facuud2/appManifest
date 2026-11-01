@@ -10,6 +10,7 @@ import {
   Edit3,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTapVsScroll } from '@/hooks/useTapVsScroll';
 
 export const RampageSetView: React.FC = () => {
   const {
@@ -62,6 +63,10 @@ export const RampageSetView: React.FC = () => {
     // 3. Advance to next affirmation in continuous loop
     setAffirmationIndex((prev) => (prev + 1) % totalAffirmationsInSet);
   };
+
+  const cardTapHandlers = useTapVsScroll({
+    onTap: handleCardTap,
+  });
 
   const slideVariants = {
     enter: (dir: number) => ({
@@ -186,8 +191,8 @@ export const RampageSetView: React.FC = () => {
               initial="enter"
               animate="center"
               exit="exit"
-              onClick={handleCardTap}
-              className="w-full relative p-6 sm:p-9 rounded-3xl sm:rounded-[2rem] glass-card border border-white shadow-liquid cursor-pointer select-none transition-shadow hover:shadow-xl active:scale-[0.985] flex flex-col justify-between min-h-[220px] sm:min-h-[250px]"
+              {...cardTapHandlers}
+              className="w-full relative p-6 sm:p-9 rounded-3xl sm:rounded-[2rem] glass-card border border-white shadow-liquid cursor-pointer select-none transition-shadow hover:shadow-xl active:scale-[0.985] flex flex-col justify-between min-h-[220px] sm:min-h-[250px] touch-pan-y"
             >
               {/* Corner Decorative Quotation Marks (4 corners) */}
               {/* Top-Left */}

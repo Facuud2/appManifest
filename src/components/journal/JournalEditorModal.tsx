@@ -1,22 +1,21 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAppStore } from '@/store';
-import { BookOpen, X, Target, Sparkles, Check } from 'lucide-react';
+import { X, Target, Sparkles, Trophy, Mic } from 'lucide-react';
 import { EntryType, JournalEntry, UserScope } from '@/types';
 import { UserScopeEnum } from '@/schemas';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
-import { VoiceDictationButton } from '@/components/ui/VoiceDictationButton';
+import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
 
 const journalFormSchema = z.object({
-  title: z.string().min(1, 'El título o intención es requerido'),
-  content: z.string().min(1, 'El contenido no puede estar vacío'),
+  content: z.string().min(1, 'Describe tu entrada antes de guardar'),
   userId: UserScopeEnum,
-  entryType: z.enum(['manifestation', 'reflection', 'progress']),
+  entryType: z.enum(['manifestation', 'progress', 'reflection']),
 });
 
 type JournalFormData = z.infer<typeof journalFormSchema>;
@@ -32,7 +31,6 @@ export const JournalEditorModal: React.FC = () => {
   } = useAppStore();
 
   const {
-    register,
     handleSubmit,
     control,
     reset,
@@ -42,7 +40,6 @@ export const JournalEditorModal: React.FC = () => {
   } = useForm<JournalFormData>({
     resolver: zodResolver(journalFormSchema),
     defaultValues: {
-      title: '',
       content: '',
       userId: activeScope,
       entryType: 'manifestation',
@@ -52,13 +49,14 @@ export const JournalEditorModal: React.FC = () => {
   const selectedUserId = watch('userId');
   const selectedEntryType = watch('entryType');
   const currentContent = watch('content') || '';
-  const currentTitle = watch('title') || '';
+
+  const [isVoiceActiveContent, setIsVoiceActiveContent] = useState(false);
 
   // Hydrate form whenever modal opens or editing entry changes
   useEffect(() => {
     if (isJournalEditorOpen) {
       if (editingJournalEntry) {
-        const type: 'manifestation' | 'reflection' | 'progress' =
+        const type: 'manifestation' | 'progress' | 'reflection' =
           editingJournalEntry.entryType === 'progress'
             ? 'progress'
             : editingJournalEntry.entryType === 'reflection'
@@ -66,13 +64,12 @@ export const JournalEditorModal: React.FC = () => {
             : 'manifestation';
 
         reset({
-          title: editingJournalEntry.title,
           content: editingJournalEntry.content,
           userId: editingJournalEntry.userId || activeScope,
           entryType: type,
         });
       } else {
-        const initialType: 'manifestation' | 'reflection' | 'progress' =
+        const initialType: 'manifestation' | 'progress' | 'reflection' =
           journalEditorInitialMode === 'progress'
             ? 'progress'
             : journalEditorInitialMode === 'reflection'
@@ -80,7 +77,6 @@ export const JournalEditorModal: React.FC = () => {
             : 'manifestation';
 
         reset({
-          title: '',
           content: '',
           userId: activeScope,
           entryType: initialType,
@@ -97,12 +93,17 @@ export const JournalEditorModal: React.FC = () => {
 
     const tags = editingJournalEntry?.tags || [];
 
+    // Auto-derive clean title from content for DB storage and backwards compatibility
+    const trimmedContent = data.content.trim();
+    const firstLine = trimmedContent.split('\n')[0].trim();
+    const autoTitle = firstLine.length > 55 ? `${firstLine.slice(0, 52)}...` : firstLine;
+
     const entryToSave: JournalEntry = {
       id: editingJournalEntry?.id || `journal-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
       userId: data.userId,
       author,
-      title: data.title.trim(),
-      content: data.content.trim(),
+      title: editingJournalEntry?.title || autoTitle || 'Entrada de diario',
+      content: trimmedContent,
       entryType: data.entryType as EntryType,
       tags,
       createdAt: editingJournalEntry?.createdAt || new Date().toISOString(),
@@ -113,25 +114,15 @@ export const JournalEditorModal: React.FC = () => {
     closeJournalEditor();
   };
 
-  const handleVoiceTranscriptTitle = (transcript: string) => {
-    const updated = currentTitle ? `${currentTitle} ${transcript}` : transcript;
-    setValue('title', updated, { shouldValidate: true, shouldDirty: true });
-  };
-
-  const handleVoiceTranscriptContent = (transcript: string) => {
-    const updated = currentContent ? `${currentContent} ${transcript}` : transcript;
-    setValue('content', updated, { shouldValidate: true, shouldDirty: true });
-  };
-
   const getModalTitle = () => {
     if (editingJournalEntry) {
       if (selectedEntryType === 'manifestation') return 'Editar Manifestación';
-      if (selectedEntryType === 'progress') return 'Editar Avance o Logro';
-      return 'Editar Nota de Cuaderno';
+      if (selectedEntryType === 'progress') return 'Editar Avance de Manifestación';
+      return 'Editar Success Story';
     }
     if (selectedEntryType === 'manifestation') return 'Nueva Manifestación Concreta';
-    if (selectedEntryType === 'progress') return 'Nuevo Avance / Logro';
-    return 'Nueva Nota de Cuaderno';
+    if (selectedEntryType === 'progress') return 'Nuevo Avance de Manifestación';
+    return 'Nueva Success Story';
   };
 
   return (
@@ -157,15 +148,15 @@ export const JournalEditorModal: React.FC = () => {
                     ? 'bg-gradient-to-tr from-manifest-pink to-manifest-lavender text-manifest-auraPurple'
                     : selectedEntryType === 'progress'
                     ? 'bg-manifest-mint text-emerald-700'
-                    : 'bg-white/90 text-manifest-ink'
+                    : 'bg-amber-100 text-amber-700 border border-amber-200'
                 }`}
               >
                 {selectedEntryType === 'manifestation' ? (
                   <Target className="w-4 h-4" />
                 ) : selectedEntryType === 'progress' ? (
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-4 h-4 text-emerald-600" />
                 ) : (
-                  <BookOpen className="w-4 h-4" />
+                  <Trophy className="w-4 h-4 text-amber-600" />
                 )}
               </div>
               <div>
@@ -211,127 +202,120 @@ export const JournalEditorModal: React.FC = () => {
               </div>
             </div>
 
-            {/* Tipo de Entrada: Manifestación vs Nota vs Avance */}
+            {/* Tipo de Entrada: Manifestación vs Avance de manifestación vs Success Story */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-manifest-ink">
                 Tipo de entrada
               </label>
-              <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+              <div className="grid grid-cols-3 gap-1 sm:gap-2 p-1 rounded-2xl bg-white/60 border border-white/80">
                 {/* 1. Manifestación */}
                 <button
                   type="button"
                   onClick={() => setValue('entryType', 'manifestation', { shouldDirty: true })}
-                  className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 rounded-xl text-xs font-semibold transition-all border cursor-pointer ${
+                  className={`flex items-center justify-center gap-1 py-2 px-1 rounded-xl text-[10.5px] sm:text-xs font-semibold tracking-tight transition-all cursor-pointer whitespace-nowrap ${
                     selectedEntryType === 'manifestation'
-                      ? 'bg-gradient-to-tr from-manifest-pink/40 to-manifest-lavender text-manifest-auraPurple border-manifest-auraPurple/50 shadow-sm'
-                      : 'bg-white/70 hover:bg-white text-manifest-inkMuted border-white/80'
+                      ? 'bg-gradient-to-tr from-manifest-pink/50 to-manifest-lavender text-manifest-auraPurple border border-manifest-auraPurple/40 shadow-sm'
+                      : 'hover:bg-white/80 text-manifest-inkMuted'
                   }`}
                 >
                   <Target className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">Manifestación</span>
+                  <span>Manifestación</span>
                 </button>
 
-                {/* 2. Nota de Cuaderno */}
-                <button
-                  type="button"
-                  onClick={() => setValue('entryType', 'reflection', { shouldDirty: true })}
-                  className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 rounded-xl text-xs font-semibold transition-all border cursor-pointer ${
-                    selectedEntryType === 'reflection'
-                      ? 'bg-manifest-lavender text-manifest-ink border-manifest-auraPurple/50 shadow-sm'
-                      : 'bg-white/70 hover:bg-white text-manifest-inkMuted border-white/80'
-                  }`}
-                >
-                  <BookOpen className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">Nota de Cuaderno</span>
-                </button>
-
-                {/* 3. Avance / Logro */}
+                {/* 2. Avance de manifestación (reemplaza Nota de Cuaderno) */}
                 <button
                   type="button"
                   onClick={() => setValue('entryType', 'progress', { shouldDirty: true })}
-                  className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2 px-1.5 rounded-xl text-xs font-semibold transition-all border cursor-pointer ${
+                  className={`flex items-center justify-center gap-1 py-2 px-1 rounded-xl text-[10.5px] sm:text-xs font-semibold tracking-tight transition-all cursor-pointer whitespace-nowrap ${
                     selectedEntryType === 'progress'
-                      ? 'bg-manifest-mint text-manifest-ink border-emerald-400/50 shadow-sm'
-                      : 'bg-white/70 hover:bg-white text-manifest-inkMuted border-white/80'
+                      ? 'bg-manifest-mint text-emerald-800 border border-emerald-400/50 shadow-sm'
+                      : 'hover:bg-white/80 text-manifest-inkMuted'
                   }`}
                 >
                   <Sparkles className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
-                  <span className="truncate">Avance / Logro</span>
+                  <span>Avance</span>
+                </button>
+
+                {/* 3. Success Story (tercer botón) */}
+                <button
+                  type="button"
+                  onClick={() => setValue('entryType', 'reflection', { shouldDirty: true })}
+                  className={`flex items-center justify-center gap-1 py-2 px-1 rounded-xl text-[10.5px] sm:text-xs font-semibold tracking-tight transition-all cursor-pointer whitespace-nowrap ${
+                    selectedEntryType === 'reflection'
+                      ? 'bg-amber-100/90 text-amber-900 border border-amber-300 shadow-sm'
+                      : 'hover:bg-white/80 text-manifest-inkMuted'
+                  }`}
+                >
+                  <Trophy className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+                  <span>Success Story</span>
                 </button>
               </div>
             </div>
 
-            {/* Título */}
+            {/* Contenido con AutoResizeTextarea y Micrófono (Describe adaptado dinámicamente) */}
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-manifest-ink">
-                  {selectedEntryType === 'manifestation'
-                    ? 'Título de la Manifestación'
-                    : selectedEntryType === 'progress'
-                    ? 'Título del Avance o Hecho'
-                    : 'Título o Intención'}
-                </label>
-                <VoiceDictationButton
-                  onTranscript={handleVoiceTranscriptTitle}
-                  size="sm"
-                  title="Dictar título"
+              <label className="text-xs font-semibold text-manifest-ink block">
+                {selectedEntryType === 'manifestation'
+                  ? 'Describe tu manifestación'
+                  : selectedEntryType === 'progress'
+                  ? 'Describe el avance de manifestación'
+                  : 'Describe tu Success Story'}
+              </label>
+              {isVoiceActiveContent ? (
+                <VoiceAudioVisualizer
+                  initialText={currentContent}
+                  placeholder={
+                    selectedEntryType === 'manifestation'
+                      ? 'Describe tu manifestación en tiempo presente...'
+                      : selectedEntryType === 'progress'
+                      ? 'Describe el avance de manifestación...'
+                      : 'Describe tu Success Story...'
+                  }
+                  onCommit={(fullText) => {
+                    setValue('content', fullText, { shouldValidate: true, shouldDirty: true });
+                    setIsVoiceActiveContent(false);
+                  }}
+                  onSend={(fullText) => {
+                    setValue('content', fullText, { shouldValidate: true, shouldDirty: true });
+                    setIsVoiceActiveContent(false);
+                  }}
+                  onCancel={() => setIsVoiceActiveContent(false)}
                 />
-              </div>
-              <input
-                type="text"
-                {...register('title')}
-                placeholder={
-                  selectedEntryType === 'manifestation'
-                    ? 'Ej: Mi nuevo auto deportivo / Mi aumento de sueldo...'
-                    : selectedEntryType === 'progress'
-                    ? 'Ej: Primer indicio de mi nuevo proyecto...'
-                    : 'Ej: Mi visión viviendo en el campo...'
-                }
-                className={`w-full px-3.5 py-2.5 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight ${
-                  errors.title ? 'border-rose-400 ring-1 ring-rose-400' : ''
-                }`}
-              />
-              {errors.title && (
-                <p className="text-[11px] text-rose-500 font-medium">{errors.title.message}</p>
-              )}
-            </div>
-
-            {/* Contenido con AutoResizeTextarea y Micrófono */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-manifest-ink">
-                  {selectedEntryType === 'manifestation'
-                    ? 'Describe la manifestación en tiempo presente'
-                    : selectedEntryType === 'progress'
-                    ? 'Describe el avance o evidencia vivida'
-                    : 'Describe tu sentir o reflexión'}
-                </label>
-                <VoiceDictationButton
-                  onTranscript={handleVoiceTranscriptContent}
-                  size="sm"
-                  title="Dictar contenido"
-                />
-              </div>
-              <Controller
-                name="content"
-                control={control}
-                render={({ field }) => (
-                  <AutoResizeTextarea
-                    {...field}
-                    minRows={4}
-                    placeholder={
-                      selectedEntryType === 'manifestation'
-                        ? 'Describe con total certeza y detalle sensorial lo que ya es tuyo en la realidad...'
-                        : selectedEntryType === 'progress'
-                        ? 'Describe qué sucedió, qué sincronía percibiste o qué paso diste...'
-                        : 'Escribe tus pensamientos libres o vivencias del día...'
-                    }
-                    className={`w-full p-3.5 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight leading-relaxed ${
-                      errors.content ? 'border-rose-400 ring-1 ring-rose-400' : ''
-                    }`}
+              ) : (
+                <div className="relative">
+                  <Controller
+                    name="content"
+                    control={control}
+                    render={({ field }) => (
+                      <AutoResizeTextarea
+                        {...field}
+                        minRows={4}
+                        placeholder={
+                          selectedEntryType === 'manifestation'
+                            ? 'Describe con total certeza y detalle sensorial lo que ya es tuyo en la realidad...'
+                            : selectedEntryType === 'progress'
+                            ? 'Describe qué avance viste, qué sincronía percibiste o qué paso diste...'
+                            : 'Describe con gratitud el hecho consumado, cómo se materializó tu manifestación...'
+                        }
+                        className={`w-full p-3.5 pr-11 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight leading-relaxed ${
+                          errors.content ? 'border-rose-400 ring-1 ring-rose-400' : ''
+                        }`}
+                      />
+                    )}
                   />
-                )}
-              />
+                  <div className="absolute right-2.5 bottom-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setIsVoiceActiveContent(true)}
+                      title="Dictar contenido con micrófono"
+                      aria-label="Dictar contenido con micrófono"
+                      className="w-8 h-8 rounded-xl bg-white/80 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/90 shadow-sm flex items-center justify-center transition-all cursor-pointer"
+                    >
+                      <Mic className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
               {errors.content && (
                 <p className="text-[11px] text-rose-500 font-medium">{errors.content.message}</p>
               )}
@@ -342,21 +326,21 @@ export const JournalEditorModal: React.FC = () => {
               <button
                 type="button"
                 onClick={closeJournalEditor}
-                className="px-4 py-2 rounded-xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/60 transition-colors cursor-pointer"
+                className="px-4 py-2.5 rounded-2xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/70 active:scale-95 transition-all cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="px-5 py-2.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm cursor-pointer"
+                className="px-5 py-2.5 rounded-2xl primary-gradient-btn text-xs font-semibold shadow-sm active:scale-95 transition-transform cursor-pointer"
               >
                 {editingJournalEntry
                   ? 'Guardar Cambios'
                   : selectedEntryType === 'manifestation'
                   ? 'Guardar Manifestación'
                   : selectedEntryType === 'progress'
-                  ? 'Registrar Avance'
-                  : 'Guardar en Cuaderno'}
+                  ? 'Guardar Avance'
+                  : 'Guardar Success Story'}
               </button>
             </div>
           </form>

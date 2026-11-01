@@ -12,6 +12,7 @@ import {
   X,
   Calendar,
   Target,
+  Trophy,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -96,10 +97,10 @@ export const JournalView: React.FC = () => {
       </div>
 
       {/* Filter Tabs: Todas / Manifestaciones / Notas / Avances */}
-      <div className="flex flex-wrap gap-1.5 sm:gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none pb-0.5">
         <button
           onClick={() => setSelectedFilter('all')}
-          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             selectedFilter === 'all'
               ? 'bg-manifest-ink text-white shadow-sm'
               : 'glass-pill text-manifest-inkMuted hover:text-manifest-ink'
@@ -109,36 +110,36 @@ export const JournalView: React.FC = () => {
         </button>
         <button
           onClick={() => setSelectedFilter('manifestation')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             selectedFilter === 'manifestation'
               ? 'bg-manifest-ink text-white shadow-sm'
               : 'glass-pill text-manifest-inkMuted hover:text-manifest-ink'
           }`}
         >
           <Target className="w-3.5 h-3.5" />
-          Manifestaciones ({manifestationsCount})
-        </button>
-        <button
-          onClick={() => setSelectedFilter('reflection')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-            selectedFilter === 'reflection'
-              ? 'bg-manifest-ink text-white shadow-sm'
-              : 'glass-pill text-manifest-inkMuted hover:text-manifest-ink'
-          }`}
-        >
-          <BookOpen className="w-3.5 h-3.5" />
-          Notas ({reflectionsCount})
+          <span>Manifestaciones ({manifestationsCount})</span>
         </button>
         <button
           onClick={() => setSelectedFilter('progress')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             selectedFilter === 'progress'
               ? 'bg-manifest-ink text-white shadow-sm'
               : 'glass-pill text-manifest-inkMuted hover:text-manifest-ink'
           }`}
         >
           <Sparkles className="w-3.5 h-3.5" />
-          Avances ({progressCount})
+          <span>Avances de manifestación ({progressCount})</span>
+        </button>
+        <button
+          onClick={() => setSelectedFilter('reflection')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+            selectedFilter === 'reflection'
+              ? 'bg-manifest-ink text-white shadow-sm'
+              : 'glass-pill text-manifest-inkMuted hover:text-manifest-ink'
+          }`}
+        >
+          <Trophy className="w-3.5 h-3.5" />
+          <span>Success Stories ({reflectionsCount})</span>
         </button>
       </div>
 
@@ -203,45 +204,46 @@ export const JournalView: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="p-4 sm:p-5 rounded-3xl glass-card border border-white/95 shadow-sm space-y-2.5 hover:shadow-md transition-shadow"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
+                {/* Card Meta Header */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
                     <span
-                      className={`text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                      className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 ${
                         isProgress
-                          ? 'bg-manifest-mint/60 text-emerald-800'
+                          ? 'bg-manifest-mint/80 text-emerald-800 border border-emerald-300/60'
                           : isManifestation
-                          ? 'bg-gradient-to-r from-manifest-pink/40 to-manifest-lavender/60 text-manifest-auraPurple border border-manifest-auraPurple/30'
-                          : 'bg-manifest-lavender/50 text-manifest-ink'
+                          ? 'bg-gradient-to-r from-manifest-pink/50 to-manifest-lavender/70 text-manifest-auraPurple border border-manifest-auraPurple/30'
+                          : 'bg-amber-100/90 text-amber-800 border border-amber-300/50'
                       }`}
                     >
-                      {isProgress ? 'Avance / Logro' : isManifestation ? 'Manifestación' : 'Nota de Cuaderno'}
+                      {isProgress ? 'Avance de manifestación' : isManifestation ? 'Manifestación' : 'Success Story'}
                     </span>
-                    <span className="text-[11px] text-manifest-inkMuted flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
+                    <span className="text-[11px] text-manifest-inkMuted flex items-center gap-1 whitespace-nowrap shrink-0">
+                      <Calendar className="w-3 h-3 text-manifest-inkMuted/70" />
                       {formattedEntryDate}
                     </span>
                     {entry.userId === 'shared' ? (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-manifest-pink/60 to-manifest-celeste/60 text-manifest-ink border border-white">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-manifest-pink/60 to-manifest-celeste/60 text-manifest-ink border border-white whitespace-nowrap shrink-0">
                         ✨ Juntos
                       </span>
                     ) : (
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/70 text-manifest-inkMuted">
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/80 text-manifest-inkMuted whitespace-nowrap shrink-0 border border-white/90">
                         {entry.author || (entry.userId === 'facu' ? 'Facu' : 'Maia')}
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5 shrink-0 -mr-1 -mt-1">
                     <button
                       onClick={() => handleEditEntry(entry)}
-                      className="p-1.5 rounded-full hover:bg-white/80 text-manifest-inkMuted hover:text-manifest-ink transition-colors"
+                      className="p-1.5 rounded-xl hover:bg-white text-manifest-inkMuted hover:text-manifest-ink active:scale-95 transition-all cursor-pointer"
                       title="Editar entrada"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => setEntryToDelete(entry.id)}
-                      className="p-1.5 rounded-full hover:bg-white/80 text-manifest-inkMuted hover:text-rose-600 transition-colors"
+                      className="p-1.5 rounded-xl hover:bg-rose-50 text-manifest-inkMuted hover:text-rose-600 active:scale-95 transition-all cursor-pointer"
                       title="Eliminar entrada"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -250,10 +252,14 @@ export const JournalView: React.FC = () => {
                 </div>
 
                 <div>
-                  <h3 className="font-serif text-base font-bold text-manifest-ink leading-snug">
-                    {entry.title}
-                  </h3>
-                  <p className="text-xs text-manifest-ink/80 leading-relaxed mt-1 whitespace-pre-line">
+                  {entry.title &&
+                    entry.title !== 'Entrada de diario' &&
+                    !entry.content.startsWith(entry.title.replace(/\.\.\.$/, '')) && (
+                      <h3 className="font-serif text-base font-bold text-manifest-ink leading-snug mb-1">
+                        {entry.title}
+                      </h3>
+                    )}
+                  <p className="text-xs text-manifest-ink/80 leading-relaxed whitespace-pre-line">
                     {entry.content}
                   </p>
                 </div>

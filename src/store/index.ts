@@ -60,6 +60,11 @@ interface AppState {
   activeTab: AppTab;
   setActiveTab: (tab: AppTab) => void;
 
+  // Goals / Affirmations view mode and direct navigation
+  goalsViewMode: 'list' | 'rampage';
+  setGoalsViewMode: (mode: 'list' | 'rampage') => void;
+  navigateToGoals: (mode?: 'list' | 'rampage') => void;
+
   // Journal Editor direct trigger
   isJournalEditorOpen: boolean;
   journalEditorInitialMode?: EntryType;
@@ -192,6 +197,10 @@ export const useAppStore = create<AppState>((set, get) => {
     isInitialized: false,
     activeTab: 'inicio',
     setActiveTab: (tab) => set({ activeTab: tab }),
+
+    goalsViewMode: 'list',
+    setGoalsViewMode: (mode) => set({ goalsViewMode: mode }),
+    navigateToGoals: (mode = 'list') => set({ activeTab: 'objetivos', goalsViewMode: mode }),
 
     isJournalEditorOpen: false,
     journalEditorInitialMode: 'manifestation',
@@ -411,11 +420,11 @@ export const useAppStore = create<AppState>((set, get) => {
       set(computeScopedState(get().activeScope, incShared));
     },
 
-    deleteAffirmation: (id) => {
+    deleteAffirmation: async (id) => {
       storage.deleteAffirmation(id);
       const incShared = get().includeSharedInPersonal;
       set(computeScopedState(get().activeScope, incShared));
-      tursoSync.pushChange({ entity: 'affirmation', action: 'delete', id });
+      await tursoSync.pushChange({ entity: 'affirmation', action: 'delete', id });
     },
 
     // Rampage Sets
@@ -462,19 +471,24 @@ export const useAppStore = create<AppState>((set, get) => {
       storage.saveJournalEntry(enriched);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
 
-      // ÚNICAMENTE mostrar notificación al crear una nueva entrada de notas de cuaderno
       if (!isExisting) {
-        get().showToast('Nueva nota guardada en tu cuaderno ✨', 'success');
+        const toastMsg =
+          enriched.entryType === 'manifestation'
+            ? 'Nueva manifestación guardada ✨'
+            : enriched.entryType === 'progress'
+            ? 'Avance de manifestación registrado 🌱'
+            : '¡Success Story registrada con éxito! 🏆';
+        get().showToast(toastMsg, 'success');
       }
 
       // Async Turso sync
       tursoSync.pushChange({ entity: 'journal', action: 'save', data: enriched });
     },
 
-    deleteJournalEntry: (id) => {
+    deleteJournalEntry: async (id) => {
       storage.deleteJournalEntry(id);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-      tursoSync.pushChange({ entity: 'journal', action: 'delete', id });
+      await tursoSync.pushChange({ entity: 'journal', action: 'delete', id });
     },
 
     // Goals
@@ -494,12 +508,10 @@ export const useAppStore = create<AppState>((set, get) => {
       tursoSync.pushChange({ entity: 'goal', action: 'save', data: enriched });
     },
 
-    deleteGoal: (id) => {
+    deleteGoal: async (id) => {
       storage.deleteGoal(id);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-
-      // Async Turso sync
-      tursoSync.pushChange({ entity: 'goal', action: 'delete', id });
+      await tursoSync.pushChange({ entity: 'goal', action: 'delete', id });
     },
 
     saveGoalStep: (step) => {
@@ -534,12 +546,10 @@ export const useAppStore = create<AppState>((set, get) => {
       tursoSync.pushChange({ entity: 'step', action: 'save', data: updatedStep });
     },
 
-    deleteGoalStep: (id) => {
+    deleteGoalStep: async (id) => {
       storage.deleteGoalStep(id);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-
-      // Async Turso sync
-      tursoSync.pushChange({ entity: 'step', action: 'delete', id });
+      await tursoSync.pushChange({ entity: 'step', action: 'delete', id });
     },
 
     // Signs & Synchronicities
@@ -559,12 +569,10 @@ export const useAppStore = create<AppState>((set, get) => {
       tursoSync.pushChange({ entity: 'sign', action: 'save', data: enriched });
     },
 
-    deleteManifestationSign: (id) => {
+    deleteManifestationSign: async (id) => {
       storage.deleteManifestationSign(id);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-
-      // Async Turso sync
-      tursoSync.pushChange({ entity: 'sign', action: 'delete', id });
+      await tursoSync.pushChange({ entity: 'sign', action: 'delete', id });
     },
 
     // Success Stories
@@ -584,12 +592,10 @@ export const useAppStore = create<AppState>((set, get) => {
       tursoSync.pushChange({ entity: 'story', action: 'save', data: enriched });
     },
 
-    deleteSuccessStory: (id) => {
+    deleteSuccessStory: async (id) => {
       storage.deleteSuccessStory(id);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-
-      // Async Turso sync
-      tursoSync.pushChange({ entity: 'story', action: 'delete', id });
+      await tursoSync.pushChange({ entity: 'story', action: 'delete', id });
     },
 
     // Future Manifestations
@@ -609,12 +615,10 @@ export const useAppStore = create<AppState>((set, get) => {
       tursoSync.pushChange({ entity: 'future', action: 'save', data: enriched });
     },
 
-    deleteFutureManifestation: (id) => {
+    deleteFutureManifestation: async (id) => {
       storage.deleteFutureManifestation(id);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-
-      // Async Turso sync
-      tursoSync.pushChange({ entity: 'future', action: 'delete', id });
+      await tursoSync.pushChange({ entity: 'future', action: 'delete', id });
     },
 
     // Agenda
@@ -646,12 +650,10 @@ export const useAppStore = create<AppState>((set, get) => {
       tursoSync.pushChange({ entity: 'event', action: 'save', data: updated });
     },
 
-    deleteAgendaEvent: (id) => {
+    deleteAgendaEvent: async (id) => {
       storage.deleteAgendaEvent(id);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-
-      // Async Turso sync
-      tursoSync.pushChange({ entity: 'event', action: 'delete', id });
+      await tursoSync.pushChange({ entity: 'event', action: 'delete', id });
     },
 
     // Release

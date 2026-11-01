@@ -1,0 +1,394 @@
+'use client';
+
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Plus, ArrowUp } from 'lucide-react';
+import { useAppStore } from '@/store';
+
+interface VoiceAudioVisualizerProps {
+  initialText?: string;
+  onCommit: (fullText: string) => void;
+  onSend?: (fullText: string) => void;
+  onCancel: () => void;
+  className?: string;
+  placeholder?: string;
+}
+
+const BAR_COUNT = 13;
+const CENTER_INDEX = 6;
+const MIN_HEIGHT = 4; // px (silent dot)
+const MAX_HEIGHT = 34; // px (peak voice)
+
+export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
+  initialText = '',
+  onCommit,
+  onSend,
+  onCancel,
+  className = '',
+  placeholder = 'Habla ahora...',
+}) => {
+  const { showToast } = useAppStore();
+  const [transcribedText, setTranscribedText] = useState(initialText);
+
+  const baseTextRef = useRef<string>((initialText || '').trim());
+  const currentFullTextRef = useRef<string>((initialText || '').trim());
+  const isListeningRef = useRef<boolean>(true);
+
+  // References for Web Audio API
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+  const recognitionRef = useRef<any>(null);
+
+  // References for the 13 CAVA bars
+  const barRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const barHeightsRef = useRef<number[]>(new Array(BAR_COUNT).fill(MIN_HEIGHT));
+
+  // Cleanup all audio and speech resources
+  const cleanup = useCallback(() => {
+    isListeningRef.current = false;
+
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.abort();
+      } catch (_) {}
+      recognitionRef.current = null;
+    }
+
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch (_) {}
+      });
+      mediaStreamRef.current = null;
+    }
+
+    if (audioContextRef.current) {
+      try {
+        if (audioContextRef.current.state !== 'closed') {
+          audioContextRef.current.close();
+        }
+      } catch (_) {}
+      audioContextRef.current = null;
+    }
+  }, []);
+
+  // Handle Stop button (⏹): commits current transcribed text and closes visualizer
+  const handleStop = () => {
+    const finalText = currentFullTextRef.current.trim();
+    cleanup();
+    onCommit(finalText);
+  };
+
+  // Handle Send button (↑): commits and triggers onSend (or fallback onCommit)
+  const handleSend = () => {
+    const finalText = currentFullTextRef.current.trim();
+    cleanup();
+    if (onSend) {
+      onSend(finalText);
+    } else {
+      onCommit(finalText);
+    }
+  };
+
+  // Handle Cancel button (+): cancels and closes visualizer
+  const handleCancel = useCallback(() => {
+    cleanup();
+    onCancel();
+  }, [cleanup, onCancel]);
+
+  useEffect(() => {
+    isListeningRef.current = true;
+    baseTextRef.current = (initialText || '').trim();
+    currentFullTextRef.current = baseTextRef.current;
+    setTranscribedText(baseTextRef.current);
+
+    if (typeof window === 'undefined') return;
+
+    // 1. Initialize Web Audio API for Real-Time Sound Analysis
+    const startAudioAnalysis = async () => {
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          console.warn('getUserMedia not supported in this environment');
+          return;
+        }
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        });
+
+        if (!isListeningRef.current) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+
+        mediaStreamRef.current = stream;
+
+        const AudioContextClass =
+          window.AudioContext || (window as any).webkitAudioContext;
+        const audioCtx = new AudioContextClass();
+        audioContextRef.current = audioCtx;
+
+        if (audioCtx.state === 'suspended') {
+          await audioCtx.resume();
+        }
+
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 64;
+        analyser.smoothingTimeConstant = 0.55;
+        analyserRef.current = analyser;
+
+        const source = audioCtx.createMediaStreamSource(stream);
+        source.connect(analyser);
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        const renderFrame = () => {
+          if (!isListeningRef.current || !analyserRef.current) return;
+
+          analyserRef.current.getByteFrequencyData(dataArray);
+
+          // Compute average volume across speech fundamental frequencies
+          let sum = 0;
+          let count = 0;
+          for (let i = 1; i < Math.min(dataArray.length, 16); i++) {
+            sum += dataArray[i];
+            count++;
+          }
+          const avg = count > 0 ? sum / count : 0; // 0 to 255
+          // Noise gate: ignore low background hiss (below 12)
+          const normalizedVol = Math.max(0, (avg - 12) / (255 - 12));
+
+          for (let i = 0; i < BAR_COUNT; i++) {
+            const bar = barRefs.current[i];
+            if (!bar) continue;
+
+            // Distance from center: 0 at center (bar 6), 1 at edges (bar 0 & 12)
+            const distFromCenter = Math.abs(i - CENTER_INDEX) / CENTER_INDEX;
+            // Cosine bell-curve weight: center gets 1.0, edges get ~0.2
+            const bellWeight = Math.max(
+              0.15,
+              Math.cos(distFromCenter * (Math.PI * 0.46))
+            );
+
+            // Frequency variation based on bar index
+            const binIdx = Math.min(
+              dataArray.length - 1,
+              Math.max(1, Math.round(2 + (1 - distFromCenter) * 5 + (i % 2)))
+            );
+            const binEnergy = (dataArray[binIdx] || 0) / 255;
+
+            // Combined energy driving the wave height
+            const waveEnergy = (normalizedVol * 0.75 + binEnergy * 0.25) * bellWeight;
+
+            // Target height for the bar
+            const targetHeight =
+              MIN_HEIGHT + waveEnergy * (MAX_HEIGHT - MIN_HEIGHT);
+
+            // Smooth physical response
+            const prevHeight = barHeightsRef.current[i] || MIN_HEIGHT;
+            const smoothedHeight =
+              prevHeight + (targetHeight - prevHeight) * 0.4;
+            barHeightsRef.current[i] = smoothedHeight;
+
+            bar.style.height = `${smoothedHeight.toFixed(1)}px`;
+          }
+
+          animFrameRef.current = requestAnimationFrame(renderFrame);
+        };
+
+        animFrameRef.current = requestAnimationFrame(renderFrame);
+      } catch (err: any) {
+        console.warn('Audio analysis init:', err);
+        // If permission error, notify user
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          showToast(
+            'Permiso de micrófono denegado. Permite el acceso para dictar.',
+            'info'
+          );
+        }
+      }
+    };
+
+    // 2. Initialize Speech Recognition
+    const startSpeechRecognition = () => {
+      const SpeechRecognition =
+        (window as any).SpeechRecognition ||
+        (window as any).webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        showToast(
+          'El dictado por voz no es compatible con este navegador.',
+          'info'
+        );
+        return;
+      }
+
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'es-ES';
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        recognition.onresult = (event: any) => {
+          if (!isListeningRef.current) return;
+
+          let sessionFinal = '';
+          let sessionInterim = '';
+
+          for (let i = 0; i < event.results.length; i++) {
+            const res = event.results[i];
+            const phrase = res[0]?.transcript || '';
+            if (res.isFinal) {
+              sessionFinal += (sessionFinal ? ' ' : '') + phrase.trim();
+            } else {
+              sessionInterim += (sessionInterim ? ' ' : '') + phrase.trim();
+            }
+          }
+
+          const sessionSpoken = [sessionFinal, sessionInterim]
+            .filter(Boolean)
+            .join(' ');
+          if (sessionSpoken) {
+            const base = baseTextRef.current;
+            const separator = base && !base.endsWith(' ') ? ' ' : '';
+            const fullText = base
+              ? `${base}${separator}${sessionSpoken}`
+              : sessionSpoken;
+            currentFullTextRef.current = fullText;
+            setTranscribedText(fullText);
+          }
+        };
+
+        recognition.onerror = (event: any) => {
+          if (event.error === 'not-allowed') {
+            showToast(
+              'Permiso de micrófono denegado. Permite el acceso para dictar.',
+              'info'
+            );
+            handleCancel();
+          } else if (event.error === 'no-speech') {
+            // Silence detected: continue listening smoothly
+          }
+        };
+
+        recognition.onend = () => {
+          if (isListeningRef.current) {
+            baseTextRef.current = currentFullTextRef.current;
+            try {
+              recognition.start();
+            } catch (_) {
+              setTimeout(() => {
+                if (isListeningRef.current) {
+                  try {
+                    startSpeechRecognition();
+                  } catch (_) {}
+                }
+              }, 250);
+            }
+          }
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+      } catch (e) {
+        console.warn('SpeechRecognition start error:', e);
+      }
+    };
+
+    startAudioAnalysis();
+    startSpeechRecognition();
+
+    return () => {
+      cleanup();
+    };
+  }, [cleanup, initialText, showToast, handleCancel]);
+
+  return (
+    <div
+      className={`w-full flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-200 ${className}`}
+      data-testid="gemini-voice-visualizer"
+    >
+      {/* Real-time transcribed text preview banner */}
+      <div className="flex items-center justify-between px-3.5 py-1 text-[11px] text-manifest-inkMuted min-h-[22px]">
+        <div className="flex items-center gap-1.5 truncate">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+          <span className="truncate">
+            {transcribedText ? transcribedText : placeholder}
+          </span>
+        </div>
+        <span className="text-[10px] text-manifest-inkLight shrink-0 ml-2 font-medium">
+          En vivo
+        </span>
+      </div>
+
+      {/* Gemini Voice Pill Container */}
+      <div className="w-full h-14 rounded-full bg-white border border-black/5 shadow-[0_4px_20px_rgba(0,0,0,0.06)] px-3.5 sm:px-4 flex items-center justify-between gap-3 select-none">
+        {/* Left: Plus (+) Button */}
+        <button
+          type="button"
+          onClick={handleCancel}
+          title="Cancelar dictado"
+          aria-label="Cancelar dictado"
+          className="w-10 h-10 rounded-full flex items-center justify-center text-neutral-800 hover:text-black hover:bg-neutral-100 active:scale-95 transition-all cursor-pointer shrink-0"
+        >
+          <Plus className="w-5 h-5 stroke-[2.2]" />
+        </button>
+
+        {/* Center: CAVA Audio Waves (13 vertical bars growing symmetrically from the middle) */}
+        <div
+          className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 h-10 overflow-hidden px-1"
+          aria-hidden="true"
+        >
+          {Array.from({ length: BAR_COUNT }).map((_, i) => (
+            <span
+              key={i}
+              ref={(el) => {
+                barRefs.current[i] = el;
+              }}
+              style={{ height: `${MIN_HEIGHT}px` }}
+              className="w-[3px] sm:w-[3.5px] rounded-full bg-[#111111] transition-[height] duration-75 block shrink-0"
+            />
+          ))}
+        </div>
+
+        {/* Right Action Buttons: Stop (⏹) and Send (↑) */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Stop / Pause Button (⏹) */}
+          <button
+            type="button"
+            onClick={handleStop}
+            title="Detener y conservar texto"
+            aria-label="Detener y conservar texto"
+            data-testid="voice-stop-btn"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#E8EAED] hover:bg-[#DCE0E5] active:scale-95 flex items-center justify-center transition-all cursor-pointer text-neutral-900 shadow-sm"
+          >
+            <span className="w-3.5 h-3.5 rounded-[3px] border-[2px] border-neutral-900 bg-transparent block" />
+          </button>
+
+          {/* Send / Commit Button (↑) */}
+          <button
+            type="button"
+            onClick={handleSend}
+            title="Enviar / Aceptar"
+            aria-label="Enviar"
+            data-testid="voice-send-btn"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#A8D4FE] hover:bg-[#92c6fd] active:scale-95 flex items-center justify-center transition-all cursor-pointer text-neutral-900 shadow-sm"
+          >
+            <ArrowUp className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};

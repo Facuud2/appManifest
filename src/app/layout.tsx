@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
+import { PwaScrollBoundary } from '@/components/pwa/PwaScrollBoundary';
+import { PwaInputEnterNavigator } from '@/components/pwa/PwaInputEnterNavigator';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -48,11 +50,93 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon.svg" />
       </head>
       <body className="aura-bg text-manifest-ink font-sans antialiased selection:bg-manifest-lavender/50 min-h-screen">
+        <PwaScrollBoundary />
+        <PwaInputEnterNavigator />
         {children}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
+                // PWA Overscroll Boundary Lock: Bloquea el rubber-band elástico al no haber elementos arriba o abajo
+                (function initPwaScrollLock() {
+                  var startY = 0;
+                  var startX = 0;
+
+                  function isScrollableEl(el) {
+                    if (!el || el === document.body || el === document.documentElement) return false;
+                    var style = window.getComputedStyle(el);
+                    var overflowY = style.overflowY;
+                    var canScroll = (overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight;
+                    return canScroll;
+                  }
+
+                  function getScrollableAncestor(node) {
+                    var curr = node;
+                    while (curr && curr !== document.body && curr !== document.documentElement) {
+                      if (isScrollableEl(curr)) return curr;
+                      curr = curr.parentElement;
+                    }
+                    return null;
+                  }
+
+                  function handleTouchStart(e) {
+                    if (!e.touches || e.touches.length === 0) return;
+                    startY = e.touches[0].clientY;
+                    startX = e.touches[0].clientX;
+                  }
+
+                  function handleTouchMove(e) {
+                    if (!e.touches || e.touches.length === 0) return;
+                    var curY = e.touches[0].clientY;
+                    var curX = e.touches[0].clientX;
+                    var deltaY = curY - startY;
+                    var deltaX = curX - startX;
+
+                    if (Math.abs(deltaY) < 1) return;
+                    if (Math.abs(deltaX) > Math.abs(deltaY)) return;
+
+                    var target = e.target;
+                    var scrollable = getScrollableAncestor(target);
+
+                    if (scrollable) {
+                      var scrollTop = scrollable.scrollTop;
+                      var isAtTop = scrollTop <= 0;
+                      var isAtBottom = scrollTop + scrollable.clientHeight >= scrollable.scrollHeight - 1;
+
+                      if (deltaY > 0 && isAtTop) {
+                        if (e.cancelable) e.preventDefault();
+                      } else if (deltaY < 0 && isAtBottom) {
+                        if (e.cancelable) e.preventDefault();
+                      }
+                    } else {
+                      var doc = document.documentElement;
+                      var body = document.body;
+                      var sTop = window.scrollY || doc.scrollTop || (body ? body.scrollTop : 0) || 0;
+                      var sHeight = Math.max(doc.scrollHeight, body ? body.scrollHeight : 0);
+                      var cHeight = window.innerHeight || doc.clientHeight;
+                      var hasScroll = sHeight > cHeight + 2;
+
+                      if (!hasScroll) {
+                        if (e.cancelable) e.preventDefault();
+                      } else {
+                        var atTop = sTop <= 0;
+                        var atBottom = sTop + cHeight >= sHeight - 2;
+
+                        if (deltaY > 0 && atTop) {
+                          if (e.cancelable) e.preventDefault();
+                        } else if (deltaY < 0 && atBottom) {
+                          if (e.cancelable) e.preventDefault();
+                        }
+                      }
+                    }
+                  }
+
+                  window.addEventListener('touchstart', handleTouchStart, { passive: true });
+                  window.addEventListener('touchmove', handleTouchMove, { passive: false });
+                  document.addEventListener('touchstart', handleTouchStart, { passive: true });
+                  document.addEventListener('touchmove', handleTouchMove, { passive: false });
+                })();
+
                 function purgeNetlifyBadge() {
                   var selectors = [
                     '#nl-badge-frame',

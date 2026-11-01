@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff } from 'lucide-react';
+import { Mic } from 'lucide-react';
 import { useAppStore } from '@/store';
 
 interface VoiceDictationButtonProps {
-  onTranscript: (text: string) => void;
+  onTranscript: (fullText: string) => void;
+  initialText?: string;
   className?: string;
   title?: string;
   size?: 'sm' | 'md';
@@ -13,16 +14,25 @@ interface VoiceDictationButtonProps {
 
 export const VoiceDictationButton: React.FC<VoiceDictationButtonProps> = ({
   onTranscript,
+  initialText = '',
   className = '',
   title = 'Dictar por voz (Español)',
   size = 'md',
 }) => {
   const [isListening, setIsListening] = useState(false);
+  const isListeningRef = useRef<boolean>(false);
+  const baseTextRef = useRef<string>('');
+  const currentFullTextRef = useRef<string>('');
   const recognitionRef = useRef<any>(null);
   const { showToast } = useAppStore();
 
   useEffect(() => {
+    isListeningRef.current = isListening;
+  }, [isListening]);
+
+  useEffect(() => {
     return () => {
+      isListeningRef.current = false;
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
@@ -35,13 +45,14 @@ export const VoiceDictationButton: React.FC<VoiceDictationButtonProps> = ({
     e.preventDefault();
     e.stopPropagation();
 
-    if (isListening) {
+    if (isListeningRef.current) {
+      isListeningRef.current = false;
+      setIsListening(false);
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
         } catch (_) {}
       }
-      setIsListening(false);
       return;
     }
 
@@ -59,49 +70,99 @@ export const VoiceDictationButton: React.FC<VoiceDictationButtonProps> = ({
       return;
     }
 
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'es-ES';
-      recognition.continuous = true;
-      recognition.interimResults = true;
+    isListeningRef.current = true;
+    setIsListening(true);
+    baseTextRef.current = (initialText || '').trim();
+    currentFullTextRef.current = baseTextRef.current;
 
-      recognition.onstart = () => {
-        setIsListening(true);
-      };
+    const startRecognitionSession = () => {
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'es-ES';
+        recognition.continuous = true;
+        recognition.interimResults = true;
 
-      recognition.onresult = (event: any) => {
-        let transcript = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
-        }
-        if (transcript.trim()) {
-          onTranscript(transcript);
-        }
-      };
+        recognition.onstart = () => {
+          setIsListening(true);
+        };
 
-      recognition.onerror = (event: any) => {
-        if (event.error === 'not-allowed') {
-          showToast(
-            'Permiso de micrófono denegado. Permite el acceso al micrófono para dictar.',
-            'info'
-          );
-        } else if (event.error !== 'no-speech') {
-          showToast('Micrófono detenido o sin señal.', 'gentle');
-        }
+        recognition.onresult = (event: any) => {
+          if (!isListeningRef.current) return;
+
+          let sessionFinal = '';
+          let sessionInterim = '';
+
+          // Iterate over all results in the current session so pauses don't discard previous speech
+          for (let i = 0; i < event.results.length; i++) {
+            const res = event.results[i];
+            const phrase = res[0]?.transcript || '';
+            if (res.isFinal) {
+              sessionFinal += (sessionFinal ? ' ' : '') + phrase.trim();
+            } else {
+              sessionInterim += (sessionInterim ? ' ' : '') + phrase.trim();
+            }
+          }
+
+          const sessionSpoken = [sessionFinal, sessionInterim].filter(Boolean).join(' ');
+          if (sessionSpoken) {
+            const base = baseTextRef.current;
+            const separator = base && !base.endsWith(' ') ? ' ' : '';
+            const fullText = base ? `${base}${separator}${sessionSpoken}` : sessionSpoken;
+            currentFullTextRef.current = fullText;
+            onTranscript(fullText);
+          }
+        };
+
+        recognition.onerror = (event: any) => {
+          if (event.error === 'not-allowed') {
+            showToast(
+              'Permiso de micrófono denegado. Permite el acceso al micrófono para dictar.',
+              'info'
+            );
+            isListeningRef.current = false;
+            setIsListening(false);
+          } else if (event.error === 'no-speech') {
+            // Silence detected during a pause: keep listening, do not abort
+          } else {
+            console.warn('Speech recognition status:', event.error);
+          }
+        };
+
+        recognition.onend = () => {
+          // If the user hasn't explicitly stopped (e.g. mobile engine timed out after a pause)
+          if (isListeningRef.current) {
+            // Snapshot current accumulated text as the new base text for the resumed session
+            baseTextRef.current = currentFullTextRef.current;
+            try {
+              recognition.start();
+            } catch (_) {
+              setTimeout(() => {
+                if (isListeningRef.current) {
+                  try {
+                    startRecognitionSession();
+                  } catch (_) {
+                    isListeningRef.current = false;
+                    setIsListening(false);
+                  }
+                }
+              }, 250);
+            }
+          } else {
+            setIsListening(false);
+          }
+        };
+
+        recognitionRef.current = recognition;
+        recognition.start();
+      } catch (err) {
+        console.warn('Speech recognition init error:', err);
+        showToast('No se pudo inicializar el micrófono.', 'info');
+        isListeningRef.current = false;
         setIsListening(false);
-      };
+      }
+    };
 
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognitionRef.current = recognition;
-      recognition.start();
-    } catch (err) {
-      console.warn('Speech recognition error:', err);
-      showToast('No se pudo inicializar el micrófono.', 'info');
-      setIsListening(false);
-    }
+    startRecognitionSession();
   };
 
   const isSmall = size === 'sm';
