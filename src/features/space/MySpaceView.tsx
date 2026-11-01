@@ -67,6 +67,7 @@ export const MySpaceView: React.FC = () => {
 
         <button
           onClick={() => setSubTab('settings')}
+          data-testid="subtab-settings"
           className={`flex-1 py-2 px-2.5 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-all whitespace-nowrap ${
             subTab === 'settings'
               ? 'bg-manifest-ink text-white shadow-sm'

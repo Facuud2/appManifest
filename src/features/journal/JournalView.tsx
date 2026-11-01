@@ -19,6 +19,7 @@ import { es } from 'date-fns/locale';
 import { JournalEntry } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { JournalEntryDetailModal } from '@/components/journal/JournalEntryDetailModal';
+import { LiquidEmptyState } from '@/components/ui/LiquidEmptyState';
 
 export const JournalView: React.FC = () => {
   const {
@@ -167,30 +168,18 @@ export const JournalView: React.FC = () => {
 
       {/* Entries List */}
       {filteredEntries.length === 0 ? (
-        <div className="p-8 sm:p-10 rounded-3xl glass-card text-center space-y-3 border border-white/80">
-          <div className="w-12 h-12 mx-auto rounded-full bg-manifest-lavender/40 flex items-center justify-center text-manifest-ink">
-            <BookOpen className="w-6 h-6" />
-          </div>
-          <h3 className="font-serif text-base font-semibold text-manifest-ink">
-            {searchQuery
-              ? 'No encontramos entradas con esa búsqueda'
-              : 'Tu diario espera por ti'}
-          </h3>
-          <p className="text-xs text-manifest-inkMuted max-w-xs mx-auto">
-            {searchQuery
-              ? 'Prueba con otras palabras o limpia la barra de búsqueda.'
-              : 'Escribe tu primera nota de cuaderno o registra un avance para comenzar.'}
-          </p>
-          {!searchQuery && (
-            <button
-              onClick={() => handleOpenNew('manifestation')}
-              className="px-4 py-2 rounded-2xl primary-gradient-btn text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              Escribir primera entrada
-            </button>
-          )}
-        </div>
+        <LiquidEmptyState
+          icon={BookOpen}
+          badge={searchQuery ? 'Búsqueda' : 'Cuaderno'}
+          title={searchQuery ? 'Sin coincidencias' : 'Tu diario está en blanco'}
+          description={
+            searchQuery
+              ? 'No encontramos notas con esa búsqueda. Prueba con otras palabras o limpia el filtro.'
+              : 'Escribe avances de manifestación, notas reflexivas o historias de éxito para celebrar tu camino.'
+          }
+          actionLabel={searchQuery ? 'Limpiar búsqueda' : 'Escribir primera entrada'}
+          onAction={searchQuery ? () => setSearchQuery('') : () => handleOpenNew('manifestation')}
+        />
       ) : (
         <div className="grid grid-cols-1 gap-3.5">
           {filteredEntries.map((entry) => {

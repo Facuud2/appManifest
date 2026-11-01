@@ -180,6 +180,8 @@ export interface UserSettings {
   totalActionsCompleted: number;
   totalReleases: number;
   unlockedMilestones: string[];
+  etherFragments?: number;
+  isLiteMode?: boolean;
 }
 
 export interface BackupData {

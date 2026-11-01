@@ -6,6 +6,12 @@ import { AppHeader } from '@/components/layout/AppHeader';
 import { BottomNavigation } from '@/components/layout/BottomNavigation';
 import { DesktopSidebar } from '@/components/layout/DesktopSidebar';
 import { ToastContainer } from '@/components/ui/ToastContainer';
+import { OfflineBanner } from '@/components/ui/OfflineBanner';
+import { SlowNetworkBanner } from '@/components/ui/SlowNetworkBanner';
+import { CosmicOracleWheel } from '@/components/ui/CosmicOracleWheel';
+import { SuccessCelebrationModal } from '@/components/ui/SuccessCelebrationModal';
+import { ActionableErrorBoundary } from '@/components/ui/ActionableErrorBoundary';
+import { DashboardSkeleton } from '@/components/ui/LiquidSkeleton';
 import { JournalEditorModal } from '@/components/journal/JournalEditorModal';
 import { AffirmationEditorModal } from '@/components/goals/AffirmationEditorModal';
 import { RampageSetEditorModal } from '@/components/goals/RampageSetEditorModal';
@@ -21,6 +27,14 @@ import { Sparkles } from 'lucide-react';
 export default function Home() {
   const { isInitialized, init, activeTab } = useAppStore();
   const [isInstallGuideOpen, setIsInstallGuideOpen] = useState(false);
+  const [testSimulatedError, setTestSimulatedError] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__simulateError = () => setTestSimulatedError(true);
+      (window as any).__resetSimulatedError = () => setTestSimulatedError(false);
+    }
+  }, []);
 
   useEffect(() => {
     init();
@@ -42,27 +56,28 @@ export default function Home() {
 
   if (!isInitialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center aura-bg">
-        <motion.div
-          animate={{ scale: [0.95, 1.05, 0.95], opacity: [0.6, 1, 0.6] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          className="text-center space-y-3"
-        >
-          <div className="w-12 h-12 mx-auto rounded-3xl bg-gradient-to-tr from-manifest-pink via-manifest-lavender to-manifest-celeste flex items-center justify-center shadow-glass">
-            <Sparkles className="w-6 h-6 text-manifest-ink" />
-          </div>
-          <p className="text-sm font-semibold text-manifest-ink tracking-wide">
-            Abriendo tu santuario...
-          </p>
-        </motion.div>
+      <div className="min-h-screen aura-bg max-w-lg mx-auto p-4 flex flex-col justify-center">
+        <DashboardSkeleton />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen relative flex w-full aura-bg">
-      {/* Toast Feedback */}
+      {/* Toast Feedback (iOS Liquid Glass Capsule) */}
       <ToastContainer />
+
+      {/* Intelligent Offline Banner & Reconnection Pill */}
+      <OfflineBanner />
+
+      {/* Slow Network / Lite Mode Controller */}
+      <SlowNetworkBanner />
+
+      {/* Cosmic Oracle Wheel (Gacha / Gambling místico a 60fps) */}
+      <CosmicOracleWheel />
+
+      {/* Success Celebration & Micro-particles Modal */}
+      <SuccessCelebrationModal />
 
       {/* Global Journal Editor Modal */}
       <JournalEditorModal />
@@ -82,8 +97,12 @@ export default function Home() {
         <AppHeader onOpenInstallGuide={() => setIsInstallGuideOpen(true)} />
 
         <main className="flex-1 flex flex-col w-full max-w-full lg:max-w-6xl xl:max-w-7xl mx-auto px-3 sm:px-6 lg:px-10">
-          {/* Dynamic Content Canvas with View Crossfading */}
-          <div className="flex-1 pt-3 sm:pt-4 lg:pt-6 pb-[calc(env(safe-area-inset-bottom,0px)+7.5rem)] lg:pb-8">
+          <ActionableErrorBoundary
+            simulatedError={testSimulatedError ? 'storage' : null}
+            onReset={() => setTestSimulatedError(false)}
+          >
+            {/* Dynamic Content Canvas with View Crossfading */}
+            <div className="flex-1 pt-3 sm:pt-4 lg:pt-6 pb-[calc(env(safe-area-inset-bottom,0px)+7.5rem)] lg:pb-8">
           <AnimatePresence mode="wait">
             {activeTab === 'inicio' && (
               <motion.div
@@ -146,7 +165,8 @@ export default function Home() {
 
         {/* Interactive Spotlight Onboarding Tour */}
         <InteractiveTour />
-      </main>
+      </ActionableErrorBoundary>
+    </main>
     </div>
   </div>
 );

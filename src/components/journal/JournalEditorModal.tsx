@@ -5,7 +5,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAppStore } from '@/store';
-import { X, Target, Sparkles, Trophy, Mic } from 'lucide-react';
+import { X, Target, Sparkles, Trophy, Mic, Check, AlertCircle } from 'lucide-react';
 import { EntryType, JournalEntry, UserScope } from '@/types';
 import { UserScopeEnum } from '@/schemas';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,6 +28,10 @@ export const JournalEditorModal: React.FC = () => {
     activeScope,
     saveJournalEntry,
     closeJournalEditor,
+    addEtherFragments,
+    showToast,
+    triggerCelebration,
+    openOracle,
   } = useAppStore();
 
   const {
@@ -39,6 +43,7 @@ export const JournalEditorModal: React.FC = () => {
     formState: { errors },
   } = useForm<JournalFormData>({
     resolver: zodResolver(journalFormSchema),
+    mode: 'onChange',
     defaultValues: {
       content: '',
       userId: activeScope,
@@ -111,7 +116,18 @@ export const JournalEditorModal: React.FC = () => {
     };
 
     saveJournalEntry(entryToSave);
+    addEtherFragments(20);
+    showToast('¡Nota guardada en tu santuario! +20 Fragmentos de Éter', 'celebrate');
     closeJournalEditor();
+
+    triggerCelebration({
+      title: 'Registro anclado en tu realidad',
+      message: `"${trimmedContent.slice(0, 80)}${trimmedContent.length > 80 ? '...' : ''}"`,
+      fragments: 20,
+      nextStepLabel: 'Girar el Oráculo',
+      onNextStep: () => openOracle(),
+      secondaryLabel: 'Seguir en el Santuario',
+    });
   };
 
   const getModalTitle = () => {
@@ -297,12 +313,31 @@ export const JournalEditorModal: React.FC = () => {
                             ? 'Describe qué avance viste, qué sincronía percibiste o qué paso diste...'
                             : 'Describe con gratitud el hecho consumado, cómo se materializó tu manifestación...'
                         }
-                        className={`w-full p-3.5 pr-11 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight leading-relaxed ${
-                          errors.content ? 'border-rose-400 ring-1 ring-rose-400' : ''
+                        className={`w-full p-3.5 pr-12 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight leading-relaxed transition-all ${
+                          errors.content
+                            ? 'border-rose-400 ring-1 ring-rose-400/50'
+                            : currentContent.trim().length > 0
+                            ? 'border-emerald-400 ring-1 ring-emerald-400/40'
+                            : ''
                         }`}
                       />
                     )}
                   />
+
+                  {/* Inline Status Icon: Check or Alert */}
+                  <div className="absolute right-3 top-3 pointer-events-none">
+                    {currentContent.trim().length > 0 && !errors.content && (
+                      <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs animate-in zoom-in duration-200">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                    )}
+                    {errors.content && (
+                      <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center shadow-xs animate-in zoom-in duration-200">
+                        <AlertCircle className="w-3.5 h-3.5 stroke-[2.5]" />
+                      </div>
+                    )}
+                  </div>
+
                   <div className="absolute right-2.5 bottom-2.5">
                     <button
                       type="button"
@@ -316,9 +351,24 @@ export const JournalEditorModal: React.FC = () => {
                   </div>
                 </div>
               )}
-              {errors.content && (
-                <p className="text-[11px] text-rose-500 font-medium">{errors.content.message}</p>
-              )}
+
+              {/* Animated Inline Error Message */}
+              <AnimatePresence>
+                {errors.content && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0, y: -4 }}
+                    animate={{ opacity: 1, height: 'auto', y: 0 }}
+                    exit={{ opacity: 0, height: 0, y: -4 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex items-center gap-1.5 text-[11px] text-rose-500 font-medium pt-1 pl-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                      <span>{errors.content.message}</span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Footer Buttons */}

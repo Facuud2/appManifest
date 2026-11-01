@@ -196,6 +196,42 @@ h1, h2, h3, h4, .font-editorial {
   }
 }
 
+/* Lite Mode (Modo Ligero) overrides for 60fps instant performance on slow networks/devices */
+html.lite-mode,
+body.lite-mode,
+.lite-mode {
+  --lite-active: 1;
+}
+
+html.lite-mode .glass-card,
+html.lite-mode .glass-card-interactive,
+html.lite-mode .glass-pill,
+html.lite-mode .glass-input {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+html.lite-mode .aura-bg {
+  background: #FFFDF9 !important;
+  background-attachment: scroll !important;
+}
+
+/* Skeleton shimmer sweep */
+@keyframes shimmer-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer-sweep 1.8s infinite ease-in-out;
+}
+
 /* Netlify injected badge / drawer remover */
 #nl-badge-frame,
 [id*="nl-badge" i],

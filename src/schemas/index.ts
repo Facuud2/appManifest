@@ -174,6 +174,8 @@ export const UserSettingsSchema = z.object({
   totalActionsCompleted: z.number().default(0),
   totalReleases: z.number().default(0),
   unlockedMilestones: z.array(z.string()).default([]),
+  etherFragments: z.number().default(50),
+  isLiteMode: z.boolean().default(false),
 });
 
 export const BackupDataSchema = z.object({

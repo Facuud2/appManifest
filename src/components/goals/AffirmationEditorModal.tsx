@@ -5,7 +5,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAppStore } from '@/store';
-import { Sparkles, X, Mic } from 'lucide-react';
+import { Sparkles, X, Mic, Check, AlertCircle } from 'lucide-react';
 import { Affirmation, UserScope } from '@/types';
 import { UserScopeEnum } from '@/schemas';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,6 +26,10 @@ export const AffirmationEditorModal: React.FC = () => {
     activeScope,
     saveAffirmation,
     closeAffirmationEditor,
+    addEtherFragments,
+    showToast,
+    triggerCelebration,
+    openOracle,
   } = useAppStore();
 
   const {
@@ -37,6 +41,7 @@ export const AffirmationEditorModal: React.FC = () => {
     formState: { errors },
   } = useForm<AffirmationFormData>({
     resolver: zodResolver(affirmationFormSchema),
+    mode: 'onChange',
     defaultValues: {
       text: '',
       userId: activeScope,
@@ -95,9 +100,19 @@ export const AffirmationEditorModal: React.FC = () => {
     };
 
     saveAffirmation(itemToSave);
+    addEtherFragments(15);
+    showToast('¡Intención anclada! +15 Fragmentos de Éter', 'celebrate');
 
     if (editingAffirmation || !chainNext) {
       closeAffirmationEditor();
+      triggerCelebration({
+        title: 'Intención anclada en tu realidad',
+        message: `"${trimmed.slice(0, 80)}${trimmed.length > 80 ? '...' : ''}"`,
+        fragments: 15,
+        nextStepLabel: 'Girar el Oráculo',
+        onNextStep: () => openOracle(),
+        secondaryLabel: 'Seguir en el Santuario',
+      });
     } else {
       // Trello functionality: clear and keep focus ready for next affirmation
       setValue('text', '', { shouldValidate: false, shouldDirty: false });
@@ -236,12 +251,31 @@ export const AffirmationEditorModal: React.FC = () => {
                             ? 'Escribe otra afirmación y pulsa Enter para añadirla...'
                             : 'Escribe en tiempo presente... (Ej: Atraigo abundancia, tranquilidad y felicidad cada día)'
                         }
-                        className={`w-full p-3.5 pr-11 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight leading-relaxed ${
-                          errors.text ? 'border-rose-400 ring-1 ring-rose-400' : ''
+                        className={`w-full p-3.5 pr-12 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight leading-relaxed transition-all ${
+                          errors.text
+                            ? 'border-rose-400 ring-1 ring-rose-400/50'
+                            : currentText.trim().length > 0
+                            ? 'border-emerald-400 ring-1 ring-emerald-400/40'
+                            : ''
                         }`}
                       />
                     )}
                   />
+
+                  {/* Inline Status Icon: Check or Alert */}
+                  <div className="absolute right-3 top-3 pointer-events-none">
+                    {currentText.trim().length > 0 && !errors.text && (
+                      <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs animate-in zoom-in duration-200">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                    )}
+                    {errors.text && (
+                      <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center shadow-xs animate-in zoom-in duration-200">
+                        <AlertCircle className="w-3.5 h-3.5 stroke-[2.5]" />
+                      </div>
+                    )}
+                  </div>
+
                   <div className="absolute right-2.5 bottom-2.5">
                     <button
                       type="button"
@@ -255,9 +289,24 @@ export const AffirmationEditorModal: React.FC = () => {
                   </div>
                 </div>
               )}
-              {errors.text && (
-                <p className="text-[11px] text-rose-500 font-medium">{errors.text.message}</p>
-              )}
+
+              {/* Animated Inline Error Message */}
+              <AnimatePresence>
+                {errors.text && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0, y: -4 }}
+                    animate={{ opacity: 1, height: 'auto', y: 0 }}
+                    exit={{ opacity: 0, height: 0, y: -4 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex items-center gap-1.5 text-[11px] text-rose-500 font-medium pt-1 pl-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                      <span>{errors.text.message}</span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Footer Buttons */}

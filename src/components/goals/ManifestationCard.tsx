@@ -9,7 +9,7 @@ import {
   Trash2,
   Edit3,
   Sparkles,
-  GripVertical,
+  Equal,
 } from 'lucide-react';
 import { motion, Reorder, useDragControls } from 'framer-motion';
 import { useTapVsScroll } from '@/hooks/useTapVsScroll';
@@ -88,7 +88,7 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
               title="Arrastrar para reordenar prioridad"
               className="touch-none cursor-grab active:cursor-grabbing p-1 -ml-1 rounded-lg hover:bg-white/90 text-manifest-inkMuted/60 hover:text-manifest-ink transition-colors flex items-center justify-center shrink-0"
             >
-              <GripVertical className="w-3.5 h-3.5" />
+              <Equal className="w-3.5 h-3.5 stroke-[2.4]" />
             </button>
           )}
 

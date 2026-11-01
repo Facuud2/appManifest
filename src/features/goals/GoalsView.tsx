@@ -17,6 +17,7 @@ import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
 import { ManifestationCard } from '@/components/goals/ManifestationCard';
 import { RampageSetView } from '@/components/goals/RampageSetView';
+import { LiquidEmptyState } from '@/components/ui/LiquidEmptyState';
 
 export const GoalsView: React.FC = () => {
   const {
@@ -241,17 +242,12 @@ export const GoalsView: React.FC = () => {
             </div>
 
             {affirmations.length === 0 ? (
-              <div className="p-8 rounded-3xl glass-card text-center space-y-2.5 border border-white/80">
-                <div className="w-12 h-12 mx-auto rounded-full bg-manifest-lavender/40 flex items-center justify-center text-manifest-ink">
-                  <Sparkles className="w-6 h-6" />
-                </div>
-                <h4 className="font-serif text-base font-bold text-manifest-ink">
-                  Sin afirmaciones aún
-                </h4>
-                <p className="text-xs text-manifest-inkMuted max-w-xs mx-auto">
-                  Escribe abajo tu primera afirmación para comenzar a proyectar tu realidad.
-                </p>
-              </div>
+              <LiquidEmptyState
+                title="Espacio listo para tus decretos"
+                description="Aún no tienes afirmaciones en esta lista. Escribe tu primera afirmación para comenzar a proyectar tu realidad."
+                actionLabel="Añadir Afirmación"
+                onAction={() => openAffirmationEditor(null)}
+              />
             ) : unpinnedAffirmations.length === 0 && pinnedAffirmations.length > 0 ? (
               <p className="text-xs text-manifest-inkMuted text-center py-2">
                 Todas tus afirmaciones están fijadas como prioritarias arriba.

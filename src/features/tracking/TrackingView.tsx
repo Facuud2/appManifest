@@ -16,6 +16,7 @@ import {
   X,
   Target,
   Sun,
+  Compass,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -32,6 +33,8 @@ export const TrackingView: React.FC = () => {
     dailyReflections,
     saveDailyReflection,
     getAvailableMilestones,
+    openOracle,
+    etherFragments,
   } = useAppStore();
 
   const [isReflectionModalOpen, setIsReflectionModalOpen] = useState(false);
@@ -71,6 +74,37 @@ export const TrackingView: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Cosmic Oracle Banner & Ether Balance */}
+      <div className="p-4 sm:p-5 rounded-3xl glass-card border border-white/95 shadow-glass flex flex-col sm:flex-row items-center justify-between gap-3.5 relative overflow-hidden">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-manifest-pink via-manifest-lavender to-manifest-celeste flex items-center justify-center shrink-0 shadow-xs">
+            <Compass className="w-5 h-5 text-manifest-auraPurple" />
+          </div>
+          <div className="space-y-0.5 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="font-serif text-sm sm:text-base font-bold text-manifest-ink">
+                Oráculo de Sincronías Cósmicas
+              </h3>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-manifest-lavender/60 text-manifest-auraPurple border border-manifest-auraPurple/30">
+                ✨ {etherFragments} Éter
+              </span>
+            </div>
+            <p className="text-xs text-manifest-inkMuted">
+              Gira la ruleta de recompensas a 60 FPS para anclar sincronías y dones del camino.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={openOracle}
+          data-testid="open-oracle-from-tracking"
+          className="w-full sm:w-auto px-5 py-2.5 rounded-2xl primary-gradient-btn text-xs font-bold shadow-sm hover:shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+        >
+          <Sparkles className="w-4 h-4" />
+          <span>Girar Oráculo</span>
+        </button>
+      </div>
+
       {/* Overview Metric Cards (Bento Style, Anti-Slop, Non-Generic) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <div className="p-4 sm:p-5 rounded-3xl glass-card border border-white/95 shadow-glass space-y-1">

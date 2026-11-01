@@ -27,6 +27,7 @@ import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { ManifestationCard } from '@/components/goals/ManifestationCard';
 import { RampageSetView } from '@/components/goals/RampageSetView';
 import { JournalEntryDetailModal } from '@/components/journal/JournalEntryDetailModal';
+import { LiquidEmptyState } from '@/components/ui/LiquidEmptyState';
 
 export const DashboardView: React.FC = () => {
   const {
@@ -240,17 +241,12 @@ export const DashboardView: React.FC = () => {
         {viewMode === 'rampage' ? (
           <RampageSetView />
         ) : affirmations.length === 0 ? (
-          <div className="p-6 rounded-3xl glass-card text-center space-y-2 border border-white/80">
-            <p className="text-xs text-manifest-inkMuted">
-              Aún no tienes afirmaciones registradas en este espacio.
-            </p>
-            <button
-              onClick={() => openAffirmationEditor(null)}
-              className="text-xs font-semibold text-manifest-auraPurple underline underline-offset-4 cursor-pointer"
-            >
-              + Escribir tu primera afirmación
-            </button>
-          </div>
+          <LiquidEmptyState
+            title="Santuario en silencio fértil"
+            description="Aún no tienes afirmaciones o decretos registrados en este espacio. Ancla tu primera intención consciente para expandir tu realidad."
+            actionLabel="Crear mi primera afirmación"
+            onAction={() => openAffirmationEditor(null)}
+          />
         ) : (
           <div className="space-y-2.5">
             {/* Pinned Affirmations with Drag & Drop */}
@@ -449,17 +445,14 @@ export const DashboardView: React.FC = () => {
           </div>
 
           {recentEntries.length === 0 ? (
-            <div className="p-6 rounded-3xl glass-card text-center space-y-2 border border-white/80">
-              <p className="text-xs text-manifest-inkMuted">
-                Aún no tienes notas en tu cuaderno.
-              </p>
-              <button
-                onClick={() => openJournalEditor('manifestation', null)}
-                className="text-xs font-semibold text-manifest-auraPurple underline underline-offset-4 cursor-pointer"
-              >
-                + Escribir tu primera nota
-              </button>
-            </div>
+            <LiquidEmptyState
+              icon={BookOpen}
+              badge="Diario íntimo"
+              title="Tu cuaderno aguarda tus notas"
+              description="Aquí vivirán tus reflexiones personales, avances de manifestación e historias de éxito diario."
+              actionLabel="Escribir en el Cuaderno"
+              onAction={() => openJournalEditor('manifestation', null)}
+            />
           ) : (
             <div className="grid grid-cols-1 gap-2.5 sm:gap-3">
               {recentEntries.map((entry) => {

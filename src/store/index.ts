@@ -27,6 +27,16 @@ export interface ToastMessage {
   text: string;
 }
 
+export interface CelebrationData {
+  title: string;
+  message: string;
+  fragments?: number;
+  nextStepLabel?: string;
+  onNextStep?: () => void;
+  secondaryLabel?: string;
+  onSecondary?: () => void;
+}
+
 // Helper to filter entities strictly based on scope
 function filterByScope<T extends { userId: UserScope }>(
   items: T[],
@@ -109,6 +119,23 @@ interface AppState {
   editingRampageSet: RampageSet | null;
   openRampageSetEditor: (setToEdit?: RampageSet | null) => void;
   closeRampageSetEditor: () => void;
+
+  // Lite Mode (Modo Ligero)
+  isLiteMode: boolean;
+  toggleLiteMode: () => void;
+  setLiteMode: (enabled: boolean) => void;
+
+  // Cosmic Oracle & Ether Fragments (Gacha / Gambling místico)
+  etherFragments: number;
+  addEtherFragments: (amount: number) => void;
+  isOracleOpen: boolean;
+  openOracle: () => void;
+  closeOracle: () => void;
+
+  // Success Celebration & Next Step
+  celebrationData: CelebrationData | null;
+  triggerCelebration: (data: CelebrationData) => void;
+  closeCelebration: () => void;
 
   // Actions
   init: () => void;
@@ -234,6 +261,43 @@ export const useAppStore = create<AppState>((set, get) => {
       set({ isRampageSetEditorOpen: false, editingRampageSet: null });
     },
 
+    // Lite Mode
+    isLiteMode: initialSettings.isLiteMode || false,
+    toggleLiteMode: () => {
+      const current = get().isLiteMode;
+      const next = !current;
+      storage.saveUserSettings({ isLiteMode: next });
+      if (typeof document !== 'undefined') {
+        if (next) document.documentElement.classList.add('lite-mode');
+        else document.documentElement.classList.remove('lite-mode');
+      }
+      set({ isLiteMode: next, settings: { ...get().settings, isLiteMode: next } });
+    },
+    setLiteMode: (enabled: boolean) => {
+      storage.saveUserSettings({ isLiteMode: enabled });
+      if (typeof document !== 'undefined') {
+        if (enabled) document.documentElement.classList.add('lite-mode');
+        else document.documentElement.classList.remove('lite-mode');
+      }
+      set({ isLiteMode: enabled, settings: { ...get().settings, isLiteMode: enabled } });
+    },
+
+    // Cosmic Oracle & Ether Fragments
+    etherFragments: initialSettings.etherFragments ?? 50,
+    addEtherFragments: (amount: number) => {
+      const next = Math.max(0, (get().etherFragments || 0) + amount);
+      storage.saveUserSettings({ etherFragments: next });
+      set({ etherFragments: next, settings: { ...get().settings, etherFragments: next } });
+    },
+    isOracleOpen: false,
+    openOracle: () => set({ isOracleOpen: true }),
+    closeOracle: () => set({ isOracleOpen: false }),
+
+    // Success Celebration & Next Step
+    celebrationData: null,
+    triggerCelebration: (data: CelebrationData) => set({ celebrationData: data }),
+    closeCelebration: () => set({ celebrationData: null }),
+
     activeScope: initialScope,
     includeSharedInPersonal: false,
     isSyncing: false,
@@ -283,10 +347,16 @@ export const useAppStore = create<AppState>((set, get) => {
 
       const scoped = computeScopedState(scope, false);
 
+      if (settings.isLiteMode && typeof document !== 'undefined') {
+        document.documentElement.classList.add('lite-mode');
+      }
+
       set({
         ...scoped,
         activeScope: scope,
         settings: storage.getUserSettings(),
+        isLiteMode: settings.isLiteMode || false,
+        etherFragments: settings.etherFragments ?? 50,
         isInitialized: true,
       });
 

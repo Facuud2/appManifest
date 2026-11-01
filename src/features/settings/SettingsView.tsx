@@ -17,11 +17,12 @@ import {
   Plus,
   X,
   Compass,
+  Zap,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const SettingsView: React.FC = () => {
-  const { settings, updateSettings, restoreFromBackup, showToast } = useAppStore();
+  const { settings, updateSettings, restoreFromBackup, showToast, isLiteMode, toggleLiteMode } = useAppStore();
 
   const [nameInput, setNameInput] = useState(settings.userName);
   const [newAffirmation, setNewAffirmation] = useState('');
@@ -209,6 +210,41 @@ export const SettingsView: React.FC = () => {
         >
           <Compass className="w-3.5 h-3.5 text-manifest-auraPurple" />
           <span>Iniciar tutorial interactivo</span>
+        </button>
+      </div>
+
+      {/* Rendimiento & Modo Ligero */}
+      <div className="p-5 rounded-3xl glass-card border border-white/95 shadow-glass space-y-3">
+        <div className="flex items-center justify-between pb-2 border-b border-white/70">
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-manifest-auraPurple" />
+            <h3 className="font-serif text-sm font-bold text-manifest-ink">
+              Rendimiento y Modo Ligero (60 FPS)
+            </h3>
+          </div>
+          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+            isLiteMode ? 'bg-emerald-100 text-emerald-800' : 'bg-white/80 text-manifest-inkMuted'
+          }`}>
+            {isLiteMode ? 'Activado' : 'Estándar'}
+          </span>
+        </div>
+
+        <p className="text-xs text-manifest-inkMuted leading-relaxed">
+          Desactiva desenfoques intensos (`backdrop-filter`) y shaders pesados de Canvas para garantizar máxima velocidad y fluidez táctil en dispositivos con red lenta o batería baja.
+        </p>
+
+        <button
+          type="button"
+          onClick={toggleLiteMode}
+          data-testid="settings-toggle-lite-mode"
+          className={`w-full py-2.5 px-4 rounded-2xl font-semibold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-95 ${
+            isLiteMode
+              ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+              : 'primary-gradient-btn text-manifest-ink'
+          }`}
+        >
+          <Zap className="w-3.5 h-3.5" />
+          <span>{isLiteMode ? 'Desactivar Modo Ligero' : 'Activar Modo Ligero (Máxima Velocidad)'}</span>
         </button>
       </div>
 

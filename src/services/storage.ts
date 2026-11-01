@@ -65,6 +65,8 @@ export const DEFAULT_SETTINGS: UserSettings = {
   totalActionsCompleted: 0,
   totalReleases: 0,
   unlockedMilestones: [],
+  etherFragments: 50,
+  isLiteMode: false,
 };
 
 // Clean empty seed collections (no mock / test data)
