@@ -12,19 +12,30 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
 
-const rampageFormSchema = z.object({
-  title: z.string().min(1, 'El título del set es requerido'),
-  userId: UserScopeEnum,
-  affirmations: z
-    .array(
-      z.object({
-        id: z.string().min(1),
-        text: z.string().min(1, 'La afirmación no puede estar vacía'),
-        repeatCount: z.number().default(0),
-      })
-    )
-    .min(1, 'El set debe contener al menos una afirmación'),
-});
+const rampageFormSchema = z
+  .object({
+    title: z.string().trim().min(1, 'El título del set es requerido'),
+    userId: UserScopeEnum,
+    affirmations: z
+      .array(
+        z.object({
+          id: z.string().min(1),
+          text: z.string(),
+          repeatCount: z.number().default(0),
+        })
+      )
+      .min(1, 'El set debe contener al menos una afirmación'),
+  })
+  .superRefine((data, ctx) => {
+    const hasAtLeastOneValid = data.affirmations.some((a) => a.text.trim().length > 0);
+    if (!hasAtLeastOneValid) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Escribe al menos una afirmación para guardar el set',
+        path: ['affirmations', 0, 'text'],
+      });
+    }
+  });
 
 type RampageFormData = z.infer<typeof rampageFormSchema>;
 
@@ -114,6 +125,9 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
       if (index === fields.length - 1) {
         if (currentVal.trim()) {
           handleAddAffirmation();
+        } else if (fields.length > 1) {
+          // Estilo Trello: si la última tarjeta está vacía y se pulsa Enter, se elimina la tarjeta vacía
+          remove(index);
         }
       } else {
         const nextEl = textareaRefs.current[index + 1];
@@ -154,28 +168,42 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
     const author =
       data.userId === 'facu' ? 'Facu' : data.userId === 'maia' ? 'Maia' : 'Facu & Maia';
 
+    // QoL Estilo Trello: eliminar automáticamente cuadros de afirmación vacíos al guardar
+    const validAffirmations = data.affirmations
+      .filter((a) => a.text.trim().length > 0)
+      .map((a) => ({
+        id: a.id || `aff-item-${Math.random().toString(36).substring(2, 7)}`,
+        text: a.text.trim(),
+        repeatCount: a.repeatCount || 0,
+      }));
+
+    if (validAffirmations.length === 0) return;
+
+    const isEditing = Boolean(setOrNull);
+
     const newSet: RampageSet = {
       id: setOrNull?.id || `rampage-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       userId: data.userId,
       author,
       title: data.title.trim(),
-      affirmations: data.affirmations.map((a) => ({
-        id: a.id || `aff-item-${Math.random().toString(36).substring(2, 7)}`,
-        text: a.text.trim(),
-        repeatCount: a.repeatCount || 0,
-      })),
+      affirmations: validAffirmations,
       createdAt: setOrNull?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
     saveRampageSet(newSet);
     addEtherFragments(30);
-    showToast('¡Set de Rampage creado! +30 Fragmentos de Éter', 'celebrate');
+    showToast(
+      isEditing
+        ? '¡Set de Rampage actualizado! +30 Fragmentos de Éter'
+        : '¡Set de Rampage creado! +30 Fragmentos de Éter',
+      'celebrate'
+    );
     onClose();
 
     triggerCelebration({
-      title: 'Secuencia de Rampage Creada',
-      message: `Set "${data.title.trim()}" con ${data.affirmations.length} afirmaciones rítmicas.`,
+      title: isEditing ? 'Secuencia de Rampage Actualizada' : 'Secuencia de Rampage Creada',
+      message: `Set "${data.title.trim()}" con ${validAffirmations.length} ${validAffirmations.length === 1 ? 'afirmación rítmica' : 'afirmaciones rítmicas'}.`,
       fragments: 30,
       nextStepLabel: 'Girar el Oráculo',
       onNextStep: () => openOracle(),
@@ -396,7 +424,17 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                                 <Check className="w-2.5 h-2.5 stroke-[3]" />
                               </div>
                             )}
+                            {errors.affirmations?.[idx]?.text && (
+                              <div className="w-4 h-4 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center shadow-xs">
+                                <AlertCircle className="w-2.5 h-2.5 stroke-[2.5]" />
+                              </div>
+                            )}
                           </div>
+                          {errors.affirmations?.[idx]?.text && (
+                            <p className="text-[11px] text-rose-500 font-medium pt-1 pl-1">
+                              {errors.affirmations[idx]?.text?.message}
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>
@@ -412,7 +450,7 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                 className="w-full py-2.5 px-3 rounded-2xl border-2 border-dashed border-manifest-lavender hover:border-manifest-auraPurple/50 bg-white/50 hover:bg-white/80 active:scale-[0.99] flex items-center justify-center gap-1.5 text-xs font-semibold text-manifest-auraPurple transition-all cursor-pointer shadow-xs"
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
-                <span>+ Añadir afirmación</span>
+                <span>Añadir afirmación</span>
               </button>
             </div>
 
