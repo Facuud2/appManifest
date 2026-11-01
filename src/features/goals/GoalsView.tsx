@@ -24,6 +24,7 @@ export const GoalsView: React.FC = () => {
     affirmations,
     saveAffirmation,
     reorderAffirmations,
+    openAffirmationEditor,
     openRampageSetEditor,
     goalsViewMode,
     setGoalsViewMode,
@@ -166,14 +167,24 @@ export const GoalsView: React.FC = () => {
             </button>
           </div>
 
-          {viewMode === 'rampage' && (
+          {viewMode === 'rampage' ? (
             <button
               type="button"
               onClick={() => openRampageSetEditor(null)}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer active:scale-95 transition-transform"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Nuevo Set</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => openAffirmationEditor(null)}
+              data-testid="add-affirmation-top-btn"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer active:scale-95 transition-transform"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Nueva</span>
             </button>
           )}
         </div>
