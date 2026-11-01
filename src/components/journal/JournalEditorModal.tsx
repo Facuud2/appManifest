@@ -93,13 +93,38 @@ export const JournalEditorModal: React.FC = () => {
   if (!isJournalEditorOpen) return null;
 
   const onSubmit = (data: JournalFormData) => {
+    const trimmedContent = data.content.trim();
+
+    // Detección activa de cambios al editar: si no hubo modificaciones, cerrar silenciosamente
+    if (editingJournalEntry) {
+      const origContent = (editingJournalEntry.content || '').trim();
+      const origUserId = editingJournalEntry.userId || activeScope;
+      const origType: 'manifestation' | 'progress' | 'reflection' =
+        editingJournalEntry.entryType === 'progress'
+          ? 'progress'
+          : editingJournalEntry.entryType === 'reflection'
+          ? 'reflection'
+          : 'manifestation';
+
+      const hasChanges =
+        trimmedContent !== origContent ||
+        data.userId !== origUserId ||
+        data.entryType !== origType;
+
+      if (!hasChanges) {
+        closeJournalEditor();
+        return;
+      }
+    }
+
+    const isEditing = Boolean(editingJournalEntry);
+
     const author =
       data.userId === 'facu' ? 'Facu' : data.userId === 'maia' ? 'Maia' : 'Facu & Maia';
 
     const tags = editingJournalEntry?.tags || [];
 
     // Auto-derive clean title from content for DB storage and backwards compatibility
-    const trimmedContent = data.content.trim();
     const firstLine = trimmedContent.split('\n')[0].trim();
     const autoTitle = firstLine.length > 55 ? `${firstLine.slice(0, 52)}...` : firstLine;
 
@@ -117,11 +142,16 @@ export const JournalEditorModal: React.FC = () => {
 
     saveJournalEntry(entryToSave);
     addEtherFragments(20);
-    showToast('¡Nota guardada en tu santuario! +20 Fragmentos de Éter', 'celebrate');
+    showToast(
+      isEditing
+        ? '¡Entrada actualizada en tu santuario! +20 Fragmentos de Éter'
+        : '¡Nota guardada en tu santuario! +20 Fragmentos de Éter',
+      'celebrate'
+    );
     closeJournalEditor();
 
     triggerCelebration({
-      title: 'Registro anclado en tu realidad',
+      title: isEditing ? 'Entrada actualizada en tu realidad' : 'Registro anclado en tu realidad',
       message: `"${trimmedContent.slice(0, 80)}${trimmedContent.length > 80 ? '...' : ''}"`,
       fragments: 20,
       nextStepLabel: 'Girar el Oráculo',

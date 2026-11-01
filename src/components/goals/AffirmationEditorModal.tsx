@@ -84,6 +84,19 @@ export const AffirmationEditorModal: React.FC = () => {
       return false;
     }
 
+    // Detección activa de cambios al editar: si no hubo modificaciones, cerrar silenciosamente
+    if (editingAffirmation) {
+      const origText = (editingAffirmation.text || '').trim();
+      const origUserId = editingAffirmation.userId || activeScope;
+      const hasChanges = trimmed !== origText || selectedUserId !== origUserId;
+      if (!hasChanges) {
+        closeAffirmationEditor();
+        return true;
+      }
+    }
+
+    const isEditing = Boolean(editingAffirmation);
+
     const author =
       selectedUserId === 'facu' ? 'Facu' : selectedUserId === 'maia' ? 'Maia' : 'Facu & Maia';
 
@@ -101,12 +114,17 @@ export const AffirmationEditorModal: React.FC = () => {
 
     saveAffirmation(itemToSave);
     addEtherFragments(15);
-    showToast('¡Intención anclada! +15 Fragmentos de Éter', 'celebrate');
+    showToast(
+      isEditing
+        ? '¡Afirmación actualizada! +15 Fragmentos de Éter'
+        : '¡Intención anclada! +15 Fragmentos de Éter',
+      'celebrate'
+    );
 
     if (editingAffirmation || !chainNext) {
       closeAffirmationEditor();
       triggerCelebration({
-        title: 'Intención anclada en tu realidad',
+        title: isEditing ? 'Afirmación actualizada en tu realidad' : 'Intención anclada en tu realidad',
         message: `"${trimmed.slice(0, 80)}${trimmed.length > 80 ? '...' : ''}"`,
         fragments: 15,
         nextStepLabel: 'Girar el Oráculo',

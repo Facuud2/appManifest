@@ -530,7 +530,6 @@ export const useAppStore = create<AppState>((set, get) => {
     saveJournalEntry: (entry) => {
       const scope = entry.userId || get().activeScope;
       const author = entry.author || getAuthorForScope(scope);
-      const isExisting = storage.getJournalEntries().some((j) => j.id === entry.id);
       const enriched: JournalEntry = {
         ...entry,
         userId: scope,
@@ -540,16 +539,6 @@ export const useAppStore = create<AppState>((set, get) => {
 
       storage.saveJournalEntry(enriched);
       set(computeScopedState(get().activeScope, get().includeSharedInPersonal));
-
-      if (!isExisting) {
-        const toastMsg =
-          enriched.entryType === 'manifestation'
-            ? 'Nueva manifestación guardada ✨'
-            : enriched.entryType === 'progress'
-            ? 'Avance de manifestación registrado 🌱'
-            : '¡Success Story registrada con éxito! 🏆';
-        get().showToast(toastMsg, 'success');
-      }
 
       // Async Turso sync
       tursoSync.pushChange({ entity: 'journal', action: 'save', data: enriched });

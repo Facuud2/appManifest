@@ -77,6 +77,24 @@ export const AgendaView: React.FC = () => {
   const handleSave = () => {
     if (!title.trim() || !eventDate) return;
 
+    if (editingId) {
+      const existing = agendaEvents.find((e) => e.id === editingId);
+      if (existing) {
+        const hasChanges =
+          title.trim() !== (existing.title || '').trim() ||
+          (description.trim() || undefined) !== (existing.description || undefined) ||
+          eventDate !== existing.date ||
+          (eventTime.trim() || undefined) !== (existing.time || undefined) ||
+          agendaScope !== (existing.userId || activeScope) ||
+          (linkedGoalId || undefined) !== (existing.goalId || undefined);
+
+        if (!hasChanges) {
+          setIsModalOpen(false);
+          return;
+        }
+      }
+    }
+
     const author =
       agendaScope === 'facu' ? 'Facu' : agendaScope === 'maia' ? 'Maia' : 'Facu & Maia';
 

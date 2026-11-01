@@ -201,6 +201,27 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
 
     const isEditing = Boolean(setOrNull);
 
+    // Detección activa de cambios al editar: si no hubo modificaciones, cerrar silenciosamente
+    if (setOrNull) {
+      const origTitle = (setOrNull.title || '').trim();
+      const origUserId = setOrNull.userId || activeScope;
+      const origTexts = setOrNull.affirmations
+        .map((a) => (a.text || '').trim())
+        .filter((t) => t.length > 0);
+      const nextTexts = validAffirmations.map((a) => a.text);
+
+      const hasTitleChanged = data.title.trim() !== origTitle;
+      const hasScopeChanged = data.userId !== origUserId;
+      const hasAffirmationsChanged =
+        origTexts.length !== nextTexts.length ||
+        origTexts.some((t, idx) => t !== nextTexts[idx]);
+
+      if (!hasTitleChanged && !hasScopeChanged && !hasAffirmationsChanged) {
+        onClose();
+        return;
+      }
+    }
+
     const newSet: RampageSet = {
       id: setOrNull?.id || `rampage-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       userId: data.userId,
