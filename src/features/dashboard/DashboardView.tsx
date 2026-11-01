@@ -253,16 +253,15 @@ export const DashboardView: React.FC = () => {
             {pinnedAffirmations.length > 0 && (
               <div
                 ref={pinnedContainerRef}
-                style={{ contain: 'layout' }}
-                className="relative overflow-hidden w-full rounded-3xl space-y-2.5"
+                className="relative w-full rounded-3xl"
               >
                 <Reorder.Group
                   axis="y"
                   values={pinnedAffirmations}
                   onReorder={handleReorderPinned}
-                  className="space-y-2.5 list-none m-0 p-0"
+                  className="flex flex-col gap-2.5 list-none m-0 p-0"
                 >
-                  <AnimatePresence initial={false} mode="popLayout">
+                  <AnimatePresence initial={false}>
                     {pinnedAffirmations.map((aff) => (
                       <ManifestationCard
                         key={aff.id}

@@ -177,8 +177,7 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
         dragListener={false}
         dragControls={dragControls}
         dragConstraints={containerRef}
-        dragElastic={0.02}
-        layout
+        dragElastic={0.08}
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{

@@ -204,19 +204,18 @@ export const GoalsView: React.FC = () => {
                 </h3>
               </div>
 
-              {/* CRITICAL CONTAINER RESTRICTION: overflow-hidden & contain-layout */}
+              {/* Container for Pinned Drag & Drop */}
               <div
                 ref={pinnedContainerRef}
-                style={{ contain: 'layout' }}
-                className="relative overflow-hidden w-full rounded-3xl"
+                className="relative w-full rounded-3xl"
               >
                 <Reorder.Group
                   axis="y"
                   values={pinnedAffirmations}
                   onReorder={handleReorderPinned}
-                  className="space-y-2.5 list-none m-0 p-0"
+                  className="flex flex-col gap-2.5 list-none m-0 p-0"
                 >
-                  <AnimatePresence initial={false} mode="popLayout">
+                  <AnimatePresence initial={false}>
                     {pinnedAffirmations.map((item) => (
                       <ManifestationCard
                         key={item.id}
