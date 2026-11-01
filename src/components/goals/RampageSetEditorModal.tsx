@@ -76,9 +76,47 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
   });
 
   const [voiceActiveIdx, setVoiceActiveIdx] = useState<number | null>(null);
+  const [focusIndex, setFocusIndex] = useState<number | null>(null);
+  const textareaRefs = React.useRef<{ [key: number]: HTMLTextAreaElement | null }>({});
 
   const selectedUserId = watch('userId');
   const watchedAffirmations = watch('affirmations');
+
+  useEffect(() => {
+    if (focusIndex !== null) {
+      const el = textareaRefs.current[focusIndex];
+      if (el) {
+        el.focus();
+        setFocusIndex(null);
+      }
+    }
+  }, [focusIndex, fields.length]);
+
+  const handleAddAffirmation = () => {
+    append({
+      id: `aff-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      text: '',
+      repeatCount: 0,
+    });
+    setFocusIndex(fields.length);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>, index: number) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      const currentVal = watchedAffirmations?.[index]?.text || '';
+      if (index === fields.length - 1) {
+        if (currentVal.trim()) {
+          handleAddAffirmation();
+        }
+      } else {
+        const nextEl = textareaRefs.current[index + 1];
+        if (nextEl) {
+          nextEl.focus();
+        }
+      }
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -215,20 +253,9 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                 <label className="text-xs font-semibold text-manifest-ink">
                   Afirmaciones del Set ({fields.length})
                 </label>
-                <button
-                  type="button"
-                  onClick={() =>
-                    append({
-                      id: `aff-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-                      text: '',
-                      repeatCount: 0,
-                    })
-                  }
-                  className="flex items-center gap-1 text-[11px] font-semibold text-manifest-auraPurple hover:underline"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Añadir afirmación</span>
-                </button>
+                <span className="text-[10px] text-manifest-inkLight font-normal">
+                  Pulsa Enter para crear la siguiente
+                </span>
               </div>
 
               <div className="space-y-2">
@@ -295,6 +322,12 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                           render={({ field }) => (
                             <AutoResizeTextarea
                               {...field}
+                              ref={(el) => {
+                                field.ref(el);
+                                textareaRefs.current[idx] = el;
+                              }}
+                              enterKeyHint={idx === fields.length - 1 ? 'send' : 'next'}
+                              onKeyDown={(e) => handleKeyDown(e, idx)}
                               minRows={2}
                               placeholder="Escribe la afirmación para esta secuencia..."
                               className="w-full p-2.5 rounded-xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight"
@@ -306,6 +339,17 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                   );
                 })}
               </div>
+
+              {/* Botón Trello: Añadir afirmación debajo de la última */}
+              <button
+                type="button"
+                onClick={handleAddAffirmation}
+                data-testid="rampage-add-affirmation-btn"
+                className="w-full py-2.5 px-3 rounded-2xl border-2 border-dashed border-manifest-lavender hover:border-manifest-auraPurple/50 bg-white/50 hover:bg-white/80 active:scale-[0.99] flex items-center justify-center gap-1.5 text-xs font-semibold text-manifest-auraPurple transition-all cursor-pointer shadow-xs"
+              >
+                <Plus className="w-4 h-4 stroke-[2.5]" />
+                <span>+ Añadir afirmación</span>
+              </button>
             </div>
 
             {/* Footer Buttons */}

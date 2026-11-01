@@ -319,18 +319,18 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
       className={`w-full flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-200 ${className}`}
       data-testid="gemini-voice-visualizer"
     >
-      {/* Real-time transcribed text preview banner */}
-      <div className="flex items-center justify-between px-3.5 py-1 text-[11px] text-manifest-inkMuted min-h-[22px]">
-        <div className="flex items-center gap-1.5 truncate">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-          <span className="truncate">
-            {transcribedText ? transcribedText : placeholder}
+      {/* Real-time transcribed text preview banner (aparece cuando hay texto transcrito) */}
+      {transcribedText ? (
+        <div className="flex items-center justify-between px-3.5 py-1 text-[11px] text-manifest-inkMuted min-h-[20px] transition-all">
+          <div className="flex items-center gap-1.5 truncate">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <span className="truncate font-medium">{transcribedText}</span>
+          </div>
+          <span className="text-[10px] text-manifest-inkLight shrink-0 ml-2">
+            En vivo
           </span>
         </div>
-        <span className="text-[10px] text-manifest-inkLight shrink-0 ml-2 font-medium">
-          En vivo
-        </span>
-      </div>
+      ) : null}
 
       {/* Gemini Voice Pill Container */}
       <div className="w-full h-14 rounded-full bg-white border border-black/5 shadow-[0_4px_20px_rgba(0,0,0,0.06)] px-3.5 sm:px-4 flex items-center justify-between gap-3 select-none">

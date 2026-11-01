@@ -46,9 +46,12 @@ export const AffirmationEditorModal: React.FC = () => {
   const selectedUserId = watch('userId');
   const currentText = watch('text') || '';
   const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [sessionAddedCount, setSessionAddedCount] = useState(0);
+  const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     if (isAffirmationEditorOpen) {
+      setSessionAddedCount(0);
       if (editingAffirmation) {
         reset({
           text: editingAffirmation.text,
@@ -65,15 +68,25 @@ export const AffirmationEditorModal: React.FC = () => {
 
   if (!isAffirmationEditorOpen) return null;
 
-  const onSubmit = (data: AffirmationFormData) => {
+  const submitSingleAffirmation = (textToSave: string, chainNext = false) => {
+    const trimmed = textToSave.trim();
+    if (!trimmed) {
+      if (chainNext) return false;
+      if (sessionAddedCount > 0) {
+        closeAffirmationEditor();
+        return true;
+      }
+      return false;
+    }
+
     const author =
-      data.userId === 'facu' ? 'Facu' : data.userId === 'maia' ? 'Maia' : 'Facu & Maia';
+      selectedUserId === 'facu' ? 'Facu' : selectedUserId === 'maia' ? 'Maia' : 'Facu & Maia';
 
     const itemToSave: Affirmation = {
       id: editingAffirmation?.id || `aff-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      userId: data.userId,
+      userId: selectedUserId,
       author,
-      text: data.text.trim(),
+      text: trimmed,
       repeatCount: editingAffirmation?.repeatCount ?? 1,
       pinned: editingAffirmation?.pinned ?? false,
       order: editingAffirmation?.order,
@@ -82,11 +95,33 @@ export const AffirmationEditorModal: React.FC = () => {
     };
 
     saveAffirmation(itemToSave);
-    closeAffirmationEditor();
+
+    if (editingAffirmation || !chainNext) {
+      closeAffirmationEditor();
+    } else {
+      // Trello functionality: clear and keep focus ready for next affirmation
+      setValue('text', '', { shouldValidate: false, shouldDirty: false });
+      setSessionAddedCount((prev) => prev + 1);
+      requestAnimationFrame(() => {
+        textareaRef.current?.focus();
+      });
+    }
+    return true;
   };
 
-  const handleVoiceTranscript = (fullText: string) => {
-    setValue('text', fullText, { shouldValidate: true, shouldDirty: true });
+  const onSubmit = (data: AffirmationFormData) => {
+    submitSingleAffirmation(data.text, false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (editingAffirmation) {
+        handleSubmit(onSubmit)();
+      } else {
+        submitSingleAffirmation(currentText, true);
+      }
+    }
   };
 
   return (
@@ -157,9 +192,16 @@ export const AffirmationEditorModal: React.FC = () => {
 
             {/* Texto de Manifestación con AutoResize y Voz */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-manifest-ink block">
-                Decreto o Afirmación
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-manifest-ink block">
+                  Decreto o Afirmación
+                </label>
+                {sessionAddedCount > 0 && (
+                  <span className="text-[11px] font-semibold text-manifest-auraPurple px-2.5 py-0.5 rounded-full bg-manifest-lavender/50 border border-manifest-auraPurple/30 animate-pulse">
+                    ✨ {sessionAddedCount} {sessionAddedCount === 1 ? 'añadida' : 'añadidas'}
+                  </span>
+                )}
+              </div>
               {isVoiceActive ? (
                 <VoiceAudioVisualizer
                   initialText={currentText}
@@ -182,8 +224,18 @@ export const AffirmationEditorModal: React.FC = () => {
                     render={({ field }) => (
                       <AutoResizeTextarea
                         {...field}
+                        ref={(el) => {
+                          field.ref(el);
+                          textareaRef.current = el;
+                        }}
+                        enterKeyHint="send"
+                        onKeyDown={handleKeyDown}
                         minRows={3}
-                        placeholder="Escribe en tiempo presente... (Ej: Atraigo abundancia, tranquilidad y felicidad cada día)"
+                        placeholder={
+                          sessionAddedCount > 0
+                            ? 'Escribe otra afirmación y pulsa Enter para añadirla...'
+                            : 'Escribe en tiempo presente... (Ej: Atraigo abundancia, tranquilidad y felicidad cada día)'
+                        }
                         className={`w-full p-3.5 pr-11 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight leading-relaxed ${
                           errors.text ? 'border-rose-400 ring-1 ring-rose-400' : ''
                         }`}
@@ -209,20 +261,36 @@ export const AffirmationEditorModal: React.FC = () => {
             </div>
 
             {/* Footer Buttons */}
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={closeAffirmationEditor}
-                className="px-4 py-2.5 rounded-2xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/70 active:scale-95 transition-all cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="px-5 py-2.5 rounded-2xl primary-gradient-btn text-xs font-semibold shadow-sm active:scale-95 transition-transform cursor-pointer"
-              >
-                {editingAffirmation ? 'Guardar Cambios' : 'Guardar Afirmación'}
-              </button>
+            <div className="flex items-center justify-between gap-2 pt-2">
+              <span className="text-[11px] text-manifest-inkLight hidden sm:inline">
+                {!editingAffirmation && 'Pulsa Enter para añadir varias seguidas'}
+              </span>
+              <div className="flex items-center gap-2 ml-auto">
+                <button
+                  type="button"
+                  onClick={closeAffirmationEditor}
+                  className="px-4 py-2.5 rounded-2xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/70 active:scale-95 transition-all cursor-pointer"
+                >
+                  {sessionAddedCount > 0 ? 'Listo' : 'Cancelar'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!currentText.trim() && sessionAddedCount > 0) {
+                      closeAffirmationEditor();
+                    } else {
+                      handleSubmit(onSubmit)();
+                    }
+                  }}
+                  className="px-5 py-2.5 rounded-2xl primary-gradient-btn text-xs font-semibold shadow-sm active:scale-95 transition-transform cursor-pointer"
+                >
+                  {editingAffirmation
+                    ? 'Guardar Cambios'
+                    : sessionAddedCount > 0 && !currentText.trim()
+                    ? 'Finalizar'
+                    : 'Guardar Afirmación'}
+                </button>
+              </div>
             </div>
           </form>
         </motion.div>
