@@ -17,6 +17,8 @@ import {
   Trash2,
   RotateCcw,
   X,
+  Target,
+  Trophy,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -464,33 +466,58 @@ export const DashboardView: React.FC = () => {
                 const formattedEntryDate = format(new Date(entry.createdAt), "d 'de' MMMM", { locale: es });
                 const isProgress = entry.entryType === 'progress';
                 const isManifestation = entry.entryType === 'manifestation';
+                const hasCustomTitle =
+                  entry.title &&
+                  entry.title !== 'Entrada de diario' &&
+                  !entry.content.startsWith(entry.title.replace(/\.\.\.$/, ''));
 
                 return (
                   <div
                     key={entry.id}
                     onClick={() => setSelectedJournalEntryForView(entry)}
                     data-testid={`journal-card-${entry.id}`}
-                    className="p-3.5 sm:p-4 rounded-2xl glass-card-interactive cursor-pointer border border-white/90 space-y-2 hover:scale-[1.005] transition-transform select-none"
+                    className={`p-3.5 sm:p-4 rounded-2xl glass-card-interactive cursor-pointer border border-white/95 space-y-2.5 hover:scale-[1.006] transition-all select-none ${
+                      isProgress
+                        ? 'border-l-[3.5px] border-l-emerald-500/80 bg-gradient-to-r from-manifest-mint/20 via-white/80 to-white/70 shadow-xs'
+                        : isManifestation
+                        ? 'border-l-[3.5px] border-l-manifest-auraPurple/75 bg-gradient-to-r from-manifest-lavender/25 via-white/80 to-white/70 shadow-xs'
+                        : 'border-l-[3.5px] border-l-amber-500/80 bg-gradient-to-r from-amber-100/30 via-white/80 to-white/70 shadow-xs'
+                    }`}
                   >
                     <div className="flex items-center justify-between gap-1">
                       <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                         <span
-                          className={`text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 ${
+                          className={`inline-flex items-center gap-1 text-[9.5px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 ${
                             isProgress
-                              ? 'bg-manifest-mint/70 text-emerald-800'
+                              ? 'bg-manifest-mint/80 text-emerald-800 border border-emerald-300/60'
                               : isManifestation
                               ? 'bg-gradient-to-r from-manifest-pink/40 to-manifest-lavender/60 text-manifest-auraPurple border border-manifest-auraPurple/30'
-                              : 'bg-amber-100/80 text-amber-800 border border-amber-300/40'
+                              : 'bg-amber-100/90 text-amber-900 border border-amber-300/50'
                           }`}
                         >
-                          {isProgress ? 'Avance de manifestación' : isManifestation ? 'Manifestación' : 'Success Story'}
+                          {isProgress ? (
+                            <>
+                              <Sparkles className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+                              <span>Avance</span>
+                            </>
+                          ) : isManifestation ? (
+                            <>
+                              <Target className="w-2.5 h-2.5 text-manifest-auraPurple shrink-0" />
+                              <span>Manifestación</span>
+                            </>
+                          ) : (
+                            <>
+                              <Trophy className="w-2.5 h-2.5 text-amber-600 shrink-0" />
+                              <span>Success Story</span>
+                            </>
+                          )}
                         </span>
                         <span className="text-[10px] text-manifest-inkMuted whitespace-nowrap shrink-0">
                           {formattedEntryDate}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5 sm:gap-2">
-                        <span className="text-[10px] text-manifest-inkMuted">
+                        <span className="text-[10px] text-manifest-inkMuted font-medium px-2 py-0.5 rounded-full bg-white/75 border border-white/80">
                           {entry.userId === 'shared' ? '✨ Juntos' : entry.author || (entry.userId === 'facu' ? 'Facu' : 'Maia')}
                         </span>
 
@@ -507,7 +534,7 @@ export const DashboardView: React.FC = () => {
                             }}
                             title="Editar entrada"
                             data-testid={`edit-journal-card-${entry.id}`}
-                            className="w-7 h-7 rounded-xl flex items-center justify-center bg-white/70 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/80 shadow-xs active:scale-95 transition-all cursor-pointer"
+                            className="w-7 h-7 rounded-xl flex items-center justify-center bg-white/75 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/90 shadow-2xs active:scale-95 transition-all cursor-pointer"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
@@ -519,7 +546,7 @@ export const DashboardView: React.FC = () => {
                             }}
                             title="Eliminar entrada"
                             data-testid={`delete-journal-card-${entry.id}`}
-                            className="w-7 h-7 rounded-xl flex items-center justify-center bg-white/70 hover:bg-rose-50 text-manifest-inkMuted hover:text-rose-600 border border-white/80 shadow-xs active:scale-95 transition-all cursor-pointer"
+                            className="w-7 h-7 rounded-xl flex items-center justify-center bg-white/75 hover:bg-rose-50 text-manifest-inkMuted hover:text-rose-600 border border-white/90 shadow-2xs active:scale-95 transition-all cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -527,17 +554,35 @@ export const DashboardView: React.FC = () => {
                       </div>
                     </div>
 
-                    <div>
-                      {entry.title &&
-                        entry.title !== 'Entrada de diario' &&
-                        !entry.content.startsWith(entry.title.replace(/\.\.\.$/, '')) && (
-                          <h4 className="text-xs sm:text-sm font-serif font-bold text-manifest-ink line-clamp-1 mb-0.5">
+                    <div className="pt-0.5">
+                      {hasCustomTitle ? (
+                        <div>
+                          <h4 className="text-xs sm:text-sm font-serif font-bold text-manifest-ink line-clamp-1 leading-snug">
                             {entry.title}
                           </h4>
-                        )}
-                      <p className="text-[11px] text-manifest-inkMuted line-clamp-2 leading-relaxed">
-                        {entry.content}
-                      </p>
+                          <p className="text-[11.5px] text-manifest-inkMuted line-clamp-2 leading-relaxed mt-1">
+                            {entry.content}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="flex items-start gap-1.5">
+                          <span
+                            aria-hidden="true"
+                            className={`font-serif text-base sm:text-lg leading-none font-bold select-none shrink-0 -mt-0.5 ${
+                              isProgress
+                                ? 'text-emerald-500/60'
+                                : isManifestation
+                                ? 'text-manifest-auraPurple/60'
+                                : 'text-amber-500/70'
+                            }`}
+                          >
+                            “
+                          </span>
+                          <p className="text-xs sm:text-[13px] font-serif font-semibold text-manifest-ink leading-snug line-clamp-2 sm:line-clamp-3">
+                            {entry.content}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

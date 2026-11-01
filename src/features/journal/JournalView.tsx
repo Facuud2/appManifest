@@ -18,6 +18,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { JournalEntry } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
+import { JournalEntryDetailModal } from '@/components/journal/JournalEntryDetailModal';
 
 export const JournalView: React.FC = () => {
   const {
@@ -28,6 +29,7 @@ export const JournalView: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'manifestation' | 'reflection' | 'progress'>('all');
+  const [selectedEntryForView, setSelectedEntryForView] = useState<JournalEntry | null>(null);
 
   // Delete Confirm Modal State
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
@@ -195,6 +197,10 @@ export const JournalView: React.FC = () => {
             const formattedEntryDate = format(new Date(entry.createdAt), "d 'de' MMMM, yyyy", { locale: es });
             const isProgress = entry.entryType === 'progress';
             const isManifestation = entry.entryType === 'manifestation';
+            const hasCustomTitle =
+              entry.title &&
+              entry.title !== 'Entrada de diario' &&
+              !entry.content.startsWith(entry.title.replace(/\.\.\.$/, ''));
 
             return (
               <motion.article
@@ -202,21 +208,43 @@ export const JournalView: React.FC = () => {
                 layout
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-4 sm:p-5 rounded-3xl glass-card border border-white/95 shadow-sm space-y-2.5 hover:shadow-md transition-shadow"
+                onClick={() => setSelectedEntryForView(entry)}
+                className={`p-4 sm:p-5 rounded-3xl glass-card-interactive cursor-pointer border border-white/95 space-y-3 hover:scale-[1.005] transition-all select-none ${
+                  isProgress
+                    ? 'border-l-[3.5px] border-l-emerald-500/80 bg-gradient-to-r from-manifest-mint/20 via-white/80 to-white/70 shadow-xs'
+                    : isManifestation
+                    ? 'border-l-[3.5px] border-l-manifest-auraPurple/75 bg-gradient-to-r from-manifest-lavender/25 via-white/80 to-white/70 shadow-xs'
+                    : 'border-l-[3.5px] border-l-amber-500/80 bg-gradient-to-r from-amber-100/30 via-white/80 to-white/70 shadow-xs'
+                }`}
               >
                 {/* Card Meta Header */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
                     <span
-                      className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 ${
+                      className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 ${
                         isProgress
                           ? 'bg-manifest-mint/80 text-emerald-800 border border-emerald-300/60'
                           : isManifestation
                           ? 'bg-gradient-to-r from-manifest-pink/50 to-manifest-lavender/70 text-manifest-auraPurple border border-manifest-auraPurple/30'
-                          : 'bg-amber-100/90 text-amber-800 border border-amber-300/50'
+                          : 'bg-amber-100/90 text-amber-900 border border-amber-300/50'
                       }`}
                     >
-                      {isProgress ? 'Avance de manifestación' : isManifestation ? 'Manifestación' : 'Success Story'}
+                      {isProgress ? (
+                        <>
+                          <Sparkles className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+                          <span>Avance</span>
+                        </>
+                      ) : isManifestation ? (
+                        <>
+                          <Target className="w-2.5 h-2.5 text-manifest-auraPurple shrink-0" />
+                          <span>Manifestación</span>
+                        </>
+                      ) : (
+                        <>
+                          <Trophy className="w-2.5 h-2.5 text-amber-600 shrink-0" />
+                          <span>Success Story</span>
+                        </>
+                      )}
                     </span>
                     <span className="text-[11px] text-manifest-inkMuted flex items-center gap-1 whitespace-nowrap shrink-0">
                       <Calendar className="w-3 h-3 text-manifest-inkMuted/70" />
@@ -233,7 +261,10 @@ export const JournalView: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-0.5 shrink-0 -mr-1 -mt-1">
+                  <div
+                    className="flex items-center gap-0.5 shrink-0 -mr-1 -mt-1"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <button
                       onClick={() => handleEditEntry(entry)}
                       className="p-1.5 rounded-xl hover:bg-white text-manifest-inkMuted hover:text-manifest-ink active:scale-95 transition-all cursor-pointer"
@@ -251,23 +282,50 @@ export const JournalView: React.FC = () => {
                   </div>
                 </div>
 
-                <div>
-                  {entry.title &&
-                    entry.title !== 'Entrada de diario' &&
-                    !entry.content.startsWith(entry.title.replace(/\.\.\.$/, '')) && (
+                <div className="pt-0.5">
+                  {hasCustomTitle ? (
+                    <div>
                       <h3 className="font-serif text-base font-bold text-manifest-ink leading-snug mb-1">
                         {entry.title}
                       </h3>
-                    )}
-                  <p className="text-xs text-manifest-ink/80 leading-relaxed whitespace-pre-line">
-                    {entry.content}
-                  </p>
+                      <p className="text-xs text-manifest-ink/80 leading-relaxed whitespace-pre-line">
+                        {entry.content}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2">
+                      <span
+                        aria-hidden="true"
+                        className={`font-serif text-lg sm:text-xl leading-none font-bold select-none shrink-0 -mt-0.5 ${
+                          isProgress
+                            ? 'text-emerald-500/60'
+                            : isManifestation
+                            ? 'text-manifest-auraPurple/60'
+                            : 'text-amber-500/70'
+                        }`}
+                      >
+                        “
+                      </span>
+                      <p className="text-xs sm:text-[13.5px] font-serif font-semibold text-manifest-ink leading-relaxed whitespace-pre-line">
+                        {entry.content}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </motion.article>
             );
           })}
         </div>
       )}
+
+      {/* Detail View Modal for full journal entry presentation */}
+      <JournalEntryDetailModal
+        isOpen={!!selectedEntryForView}
+        entry={selectedEntryForView}
+        onClose={() => setSelectedEntryForView(null)}
+        onEdit={(entry) => openJournalEditor(entry.entryType, entry)}
+        onDelete={(id) => deleteJournalEntry(id)}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AnimatePresence>
