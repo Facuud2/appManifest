@@ -25,20 +25,49 @@ export const AutoResizeTextarea = forwardRef<
   const resize = useCallback(() => {
     const el = innerRef.current;
     if (!el) return;
+
+    const scrollParent = el.closest('.overflow-y-auto') as HTMLElement | null;
+    const prevScrollTop = scrollParent ? scrollParent.scrollTop : null;
+
     el.style.height = 'auto';
-    el.style.height = `${Math.max(el.scrollHeight, minRows * 24)}px`;
+    const nextHeight = Math.max(el.scrollHeight + 2, minRows * 24);
+    el.style.height = `${nextHeight}px`;
+
+    if (scrollParent && prevScrollTop !== null) {
+      scrollParent.scrollTop = prevScrollTop;
+
+      // If this textarea is currently focused, ensure its card stays fully visible inside the scroll container
+      if (typeof document !== 'undefined' && document.activeElement === el) {
+        const cardEl = (el.closest('[data-rampage-card]') as HTMLElement) || el;
+        const cardRect = cardEl.getBoundingClientRect();
+        const parentRect = scrollParent.getBoundingClientRect();
+
+        if (cardRect.bottom > parentRect.bottom - 12) {
+          scrollParent.scrollTop += cardRect.bottom - parentRect.bottom + 16;
+        } else if (cardRect.top < parentRect.top + 12) {
+          scrollParent.scrollTop -= parentRect.top - cardRect.top + 16;
+        }
+      }
+    }
   }, [minRows]);
 
   useEffect(() => {
     resize();
+    // Secondary frame measurement in case modal animation or font layout finishes right after mount
+    const raf = requestAnimationFrame(() => resize());
+    return () => cancelAnimationFrame(raf);
   }, [value, defaultValue, resize]);
 
   useEffect(() => {
     // Initial resize on mount
     resize();
+    const timer = setTimeout(resize, 60);
     const handleWindowResize = () => resize();
     window.addEventListener('resize', handleWindowResize);
-    return () => window.removeEventListener('resize', handleWindowResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', handleWindowResize);
+    };
   }, [resize]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -65,7 +94,7 @@ export const AutoResizeTextarea = forwardRef<
         boxSizing: 'border-box',
         ...style,
       }}
-      className={`resize-none overflow-hidden transition-[height] duration-75 ${className}`}
+      className={`resize-none overflow-hidden leading-relaxed ${className}`}
       {...props}
     />
   );
