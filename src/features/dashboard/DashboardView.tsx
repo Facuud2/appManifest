@@ -23,8 +23,9 @@ import {
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Affirmation, JournalEntry } from '@/types';
-import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ManifestationCard } from '@/components/goals/ManifestationCard';
+import { PinnedAffirmationsList } from '@/components/goals/PinnedAffirmationsList';
 import { RampageSetView } from '@/components/goals/RampageSetView';
 import { JournalEntryDetailModal } from '@/components/journal/JournalEntryDetailModal';
 import { LiquidEmptyState } from '@/components/ui/LiquidEmptyState';
@@ -251,44 +252,24 @@ export const DashboardView: React.FC = () => {
           <div className="space-y-2.5">
             {/* Pinned Affirmations with Drag & Drop */}
             {pinnedAffirmations.length > 0 && (
-              <div
-                ref={pinnedContainerRef}
-                className="relative w-full rounded-3xl"
-              >
-                <Reorder.Group
-                  axis="y"
-                  values={pinnedAffirmations}
-                  onReorder={handleReorderPinned}
-                  className="flex flex-col gap-2.5 list-none m-0 p-0"
-                >
-                  <AnimatePresence initial={false}>
-                    {pinnedAffirmations.map((aff) => (
-                      <ManifestationCard
-                        key={aff.id}
-                        affirmation={aff}
-                        isPinnedMode={true}
-                        containerRef={pinnedContainerRef}
-                        onDeleteRequest={(targetAff) => setAffirmationToDelete(targetAff)}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </Reorder.Group>
-              </div>
+              <PinnedAffirmationsList
+                pinnedAffirmations={pinnedAffirmations}
+                onReorder={handleReorderPinned}
+                onDeleteRequest={(targetAff) => setAffirmationToDelete(targetAff)}
+              />
             )}
 
             {/* Unpinned Affirmations - NEVER hidden when others are pinned */}
             {unpinnedAffirmations.length > 0 && (
-              <div className="grid grid-cols-1 gap-2.5">
-                <AnimatePresence initial={false} mode="popLayout">
-                  {unpinnedAffirmations.slice(0, 6).map((aff) => (
-                    <ManifestationCard
-                      key={aff.id}
-                      affirmation={aff}
-                      isPinnedMode={false}
-                      onDeleteRequest={(targetAff) => setAffirmationToDelete(targetAff)}
-                    />
-                  ))}
-                </AnimatePresence>
+              <div className="flex flex-col gap-2.5">
+                {unpinnedAffirmations.slice(0, 6).map((aff) => (
+                  <ManifestationCard
+                    key={aff.id}
+                    affirmation={aff}
+                    isPinnedMode={false}
+                    onDeleteRequest={(targetAff) => setAffirmationToDelete(targetAff)}
+                  />
+                ))}
               </div>
             )}
           </div>

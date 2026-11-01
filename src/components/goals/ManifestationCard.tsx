@@ -8,16 +8,15 @@ import {
   Flame,
   Trash2,
   Edit3,
-  Sparkles,
   Equal,
 } from 'lucide-react';
-import { motion, Reorder, useDragControls } from 'framer-motion';
 import { useTapVsScroll } from '@/hooks/useTapVsScroll';
 
 interface ManifestationCardProps {
   affirmation: Affirmation;
   isPinnedMode?: boolean;
   containerRef?: React.RefObject<HTMLDivElement | null>;
+  onDragHandlePointerDown?: (e: React.PointerEvent<HTMLButtonElement>) => void;
   onEdit?: (aff: Affirmation) => void;
   onDeleteRequest?: (aff: Affirmation) => void;
 }
@@ -25,7 +24,7 @@ interface ManifestationCardProps {
 export const ManifestationCard: React.FC<ManifestationCardProps> = ({
   affirmation,
   isPinnedMode = false,
-  containerRef,
+  onDragHandlePointerDown,
   onEdit,
   onDeleteRequest,
 }) => {
@@ -35,8 +34,6 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
     deleteAffirmation,
     openAffirmationEditor,
   } = useAppStore();
-
-  const dragControls = useDragControls();
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -70,10 +67,11 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
     onTap: () => incrementAffirmationRepeat(affirmation.id),
   });
 
-  const cardContent = (
+  return (
     <div
+      data-testid={`manifestation-card-${affirmation.id}`}
       {...cardTapHandlers}
-      className="p-4 sm:p-4.5 rounded-3xl glass-card-interactive border border-white/95 shadow-sm space-y-2.5 transition-all select-none cursor-pointer hover:shadow-md touch-pan-y"
+      className="w-full p-4 sm:p-4.5 rounded-3xl glass-card-interactive border border-white/95 shadow-sm space-y-2.5 select-none cursor-pointer hover:shadow-md touch-pan-y"
     >
       {/* Top Meta Bar */}
       <div className="flex items-center justify-between gap-2">
@@ -81,9 +79,11 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
           {isPinnedMode && (
             <button
               type="button"
+              data-testid={`drag-handle-${affirmation.id}`}
               onPointerDown={(e) => {
-                e.stopPropagation();
-                dragControls.start(e);
+                if (onDragHandlePointerDown) {
+                  onDragHandlePointerDown(e);
+                }
               }}
               title="Arrastrar para reordenar prioridad"
               className="touch-none cursor-grab active:cursor-grabbing p-1 -ml-1 rounded-lg hover:bg-white/90 text-manifest-inkMuted/60 hover:text-manifest-ink transition-colors flex items-center justify-center shrink-0"
@@ -167,72 +167,5 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
         {affirmation.text}
       </p>
     </div>
-  );
-
-  if (isPinnedMode && containerRef) {
-    return (
-      <Reorder.Item
-        value={affirmation}
-        id={affirmation.id}
-        dragListener={false}
-        dragControls={dragControls}
-        dragConstraints={containerRef}
-        dragElastic={0.08}
-        initial={{ opacity: 0, scale: 0.97 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{
-          opacity: 0,
-          scale: 0.96,
-          filter: 'blur(3px)',
-          transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
-        }}
-        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full relative select-none list-none touch-pan-y"
-      >
-        {cardContent}
-      </Reorder.Item>
-    );
-  }
-
-  const isNew = affirmation.createdAt && Date.now() - new Date(affirmation.createdAt).getTime() < 3500;
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: -20, scale: 0.95 }}
-      animate={{
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        boxShadow: isNew
-          ? [
-              '0px 0px 0px rgba(184, 165, 255, 0)',
-              '0px 0px 24px rgba(184, 165, 255, 0.45)',
-              '0px 2px 8px rgba(0, 0, 0, 0.04)',
-            ]
-          : '0px 2px 8px rgba(0, 0, 0, 0.04)',
-      }}
-      exit={{
-        opacity: 0,
-        scale: 0.96,
-        filter: 'blur(3px)',
-        transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
-      }}
-      transition={{
-        type: 'spring',
-        stiffness: 420,
-        damping: 28,
-        mass: 0.8,
-        boxShadow: { duration: 1.8, ease: 'easeOut' },
-        layout: {
-          type: 'spring',
-          stiffness: 420,
-          damping: 32,
-        },
-      }}
-      className="w-full list-none"
-    >
-      {cardContent}
-    </motion.div>
   );
 };

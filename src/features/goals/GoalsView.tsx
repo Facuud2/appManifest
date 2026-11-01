@@ -12,10 +12,11 @@ import {
   Mic,
 } from 'lucide-react';
 import { UserScope, Affirmation } from '@/types';
-import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
 import { ManifestationCard } from '@/components/goals/ManifestationCard';
+import { PinnedAffirmationsList } from '@/components/goals/PinnedAffirmationsList';
 import { RampageSetView } from '@/components/goals/RampageSetView';
 import { LiquidEmptyState } from '@/components/ui/LiquidEmptyState';
 
@@ -205,28 +206,10 @@ export const GoalsView: React.FC = () => {
               </div>
 
               {/* Container for Pinned Drag & Drop */}
-              <div
-                ref={pinnedContainerRef}
-                className="relative w-full rounded-3xl"
-              >
-                <Reorder.Group
-                  axis="y"
-                  values={pinnedAffirmations}
-                  onReorder={handleReorderPinned}
-                  className="flex flex-col gap-2.5 list-none m-0 p-0"
-                >
-                  <AnimatePresence initial={false}>
-                    {pinnedAffirmations.map((item) => (
-                      <ManifestationCard
-                        key={item.id}
-                        affirmation={item}
-                        isPinnedMode={true}
-                        containerRef={pinnedContainerRef}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </Reorder.Group>
-              </div>
+              <PinnedAffirmationsList
+                pinnedAffirmations={pinnedAffirmations}
+                onReorder={handleReorderPinned}
+              />
             </div>
           )}
 
@@ -252,16 +235,14 @@ export const GoalsView: React.FC = () => {
                 Todas tus afirmaciones están fijadas como prioritarias arriba.
               </p>
             ) : (
-              <div className="grid grid-cols-1 gap-2.5">
-                <AnimatePresence initial={false} mode="popLayout">
-                  {unpinnedAffirmations.map((item) => (
-                    <ManifestationCard
-                      key={item.id}
-                      affirmation={item}
-                      isPinnedMode={false}
-                    />
-                  ))}
-                </AnimatePresence>
+              <div className="flex flex-col gap-2.5">
+                {unpinnedAffirmations.map((item) => (
+                  <ManifestationCard
+                    key={item.id}
+                    affirmation={item}
+                    isPinnedMode={false}
+                  />
+                ))}
               </div>
             )}
 

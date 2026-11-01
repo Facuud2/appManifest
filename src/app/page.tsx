@@ -103,55 +103,31 @@ export default function Home() {
           >
             {/* Dynamic Content Canvas with View Crossfading */}
             <div className="flex-1 pt-3 sm:pt-4 lg:pt-6 pb-[calc(env(safe-area-inset-bottom,0px)+7.5rem)] lg:pb-8">
-          <AnimatePresence mode="wait">
+          <div>
             {activeTab === 'inicio' && (
-              <motion.div
-                key="inicio"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.2 }}
-              >
+              <div key="inicio">
                 <DashboardView />
-              </motion.div>
+              </div>
             )}
 
             {activeTab === 'diario' && (
-              <motion.div
-                key="diario"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.2 }}
-              >
+              <div key="diario">
                 <JournalView />
-              </motion.div>
+              </div>
             )}
 
             {activeTab === 'objetivos' && (
-              <motion.div
-                key="objetivos"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.2 }}
-              >
+              <div key="objetivos">
                 <GoalsView />
-              </motion.div>
+              </div>
             )}
 
             {activeTab === 'espacio' && (
-              <motion.div
-                key="espacio"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.2 }}
-              >
+              <div key="espacio">
                 <MySpaceView />
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
+          </div>
         </div>
 
         {/* Mobile Fixed Glass Bottom Navigation (< 1024px) */}
