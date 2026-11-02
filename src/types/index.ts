@@ -182,6 +182,7 @@ export interface UserSettings {
   unlockedMilestones: string[];
   etherFragments?: number;
   isLiteMode?: boolean;
+  aiSandboxMode?: boolean;
 }
 
 export interface BackupData {

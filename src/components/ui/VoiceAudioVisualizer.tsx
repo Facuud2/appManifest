@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus, ArrowUp } from 'lucide-react';
+import { Plus, ArrowUp, Loader2 } from 'lucide-react';
 import { useAppStore } from '@/store';
+import { logAiTelemetry } from '@/lib/gemini';
 
 interface VoiceAudioVisualizerProps {
   initialText?: string;
@@ -26,19 +27,26 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
   className = '',
   placeholder = 'Habla ahora...',
 }) => {
-  const { showToast } = useAppStore();
+  const { showToast, aiSandboxMode } = useAppStore();
   const [transcribedText, setTranscribedText] = useState(initialText);
+  const [isTranscribing, setIsTranscribing] = useState(false);
 
   const baseTextRef = useRef<string>((initialText || '').trim());
   const currentFullTextRef = useRef<string>((initialText || '').trim());
   const isListeningRef = useRef<boolean>(true);
 
-  // References for Web Audio API
+  // References for Web Audio API & MediaRecorder
   const audioContextRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animFrameRef = useRef<number | null>(null);
   const recognitionRef = useRef<any>(null);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingStartTimeRef = useRef<number>(0);
+  const maxTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const recordedMimeTypeRef = useRef<string>('audio/webm');
 
   // References for the 13 CAVA bars
   const barRefs = useRef<(HTMLSpanElement | null)[]>([]);
@@ -47,6 +55,11 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
   // Cleanup all audio and speech resources
   const cleanup = useCallback(() => {
     isListeningRef.current = false;
+
+    if (maxTimerRef.current) {
+      clearTimeout(maxTimerRef.current);
+      maxTimerRef.current = null;
+    }
 
     if (animFrameRef.current) {
       cancelAnimationFrame(animFrameRef.current);
@@ -58,6 +71,12 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
         recognitionRef.current.abort();
       } catch (_) {}
       recognitionRef.current = null;
+    }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (_) {}
     }
 
     if (mediaStreamRef.current) {
@@ -79,25 +98,98 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
     }
   }, []);
 
-  // Handle Stop button (⏹): commits current transcribed text and closes visualizer
-  const handleStop = () => {
-    const finalText = currentFullTextRef.current.trim();
-    cleanup();
-    onCommit(finalText);
-  };
+  // Process recorded audio with Gemini AI transcript
+  const processRecordedAudio = async (isSendAction: boolean) => {
+    if (isTranscribing) return;
 
-  // Handle Send button (↑): commits and triggers onSend (or fallback onCommit)
-  const handleSend = () => {
-    const finalText = currentFullTextRef.current.trim();
+    const duration = Date.now() - recordingStartTimeRef.current;
     cleanup();
-    if (onSend) {
-      onSend(finalText);
-    } else {
+
+    // Collect blobs
+    const audioBlob = new Blob(audioChunksRef.current, {
+      type: recordedMimeTypeRef.current || 'audio/webm',
+    });
+
+    // Guardrail: Cancel locally if < 1.0 second or < 2 KB (2048 bytes)
+    if (duration < 1000 || audioBlob.size < 2048) {
+      showToast('Grabación demasiado corta', 'info');
+      onCancel();
+      return;
+    }
+
+    setIsTranscribing(true);
+
+    try {
+      const isSandboxActive =
+        aiSandboxMode ||
+        (typeof window !== 'undefined' && (window.navigator as any)?.webdriver === true);
+
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.webm');
+      formData.append('previousTextTail', baseTextRef.current.slice(-60));
+
+      const res = await fetch('/api/ai/transcribe', {
+        method: 'POST',
+        headers: isSandboxActive ? { 'x-ai-sandbox': 'true' } : {},
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      logAiTelemetry('/api/ai/transcribe', data.source, data.totalTokens || 0, {
+        durationMs: duration,
+        blobSize: audioBlob.size,
+      });
+
+      const editorialText = (data.text || '').trim();
+      let combinedText = '';
+
+      if (baseTextRef.current) {
+        const lastChar = baseTextRef.current.slice(-1);
+        const needsPeriod = !['.', '!', '?', ';', '\n', ':'].includes(lastChar);
+        const prefix = needsPeriod
+          ? `${baseTextRef.current}. `
+          : baseTextRef.current.endsWith(' ')
+          ? baseTextRef.current
+          : `${baseTextRef.current} `;
+        combinedText = `${prefix}${editorialText}`;
+      } else {
+        combinedText = editorialText;
+      }
+
+      const finalText = combinedText.trim() || currentFullTextRef.current.trim();
       onCommit(finalText);
+      if (isSendAction && onSend) {
+        onSend(finalText);
+      }
+    } catch (err) {
+      console.warn('[AI Transcribe] Error falling back to speech recognition:', err);
+      const fallback = currentFullTextRef.current.trim();
+      if (fallback) {
+        onCommit(fallback);
+        if (isSendAction && onSend) onSend(fallback);
+      } else {
+        onCancel();
+      }
+    } finally {
+      setIsTranscribing(false);
     }
   };
 
-  // Handle Cancel button (+): cancels and closes visualizer
+  const processRecordedAudioRef = useRef(processRecordedAudio);
+  processRecordedAudioRef.current = processRecordedAudio;
+
+  const handleStop = () => {
+    processRecordedAudio(false);
+  };
+
+  const handleSend = () => {
+    processRecordedAudio(true);
+  };
+
   const handleCancel = useCallback(() => {
     cleanup();
     onCancel();
@@ -108,11 +200,13 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
     baseTextRef.current = (initialText || '').trim();
     currentFullTextRef.current = baseTextRef.current;
     setTranscribedText(baseTextRef.current);
+    audioChunksRef.current = [];
+    recordingStartTimeRef.current = Date.now();
 
     if (typeof window === 'undefined') return;
 
-    // 1. Initialize Web Audio API for Real-Time Sound Analysis
-    const startAudioAnalysis = async () => {
+    // 1. Initialize Web Audio API and MediaRecorder
+    const startAudioSystem = async () => {
       try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
           console.warn('getUserMedia not supported in this environment');
@@ -134,6 +228,48 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
 
         mediaStreamRef.current = stream;
 
+        // Determine compatible MIME type (iOS WebKit compatibility: audio/mp4 or audio/webm)
+        let mimeType = 'audio/webm';
+        if (typeof MediaRecorder !== 'undefined') {
+          if (MediaRecorder.isTypeSupported('audio/mp4')) {
+            mimeType = 'audio/mp4';
+          } else if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+            mimeType = 'audio/webm;codecs=opus';
+          } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+            mimeType = 'audio/webm';
+          }
+        }
+        recordedMimeTypeRef.current = mimeType;
+
+        // Initialize MediaRecorder at low speech bitrate (32000 bps)
+        try {
+          const recorder = new MediaRecorder(stream, {
+            mimeType,
+            audioBitsPerSecond: 32000,
+          });
+
+          recorder.ondataavailable = (e) => {
+            if (e.data && e.data.size > 0) {
+              audioChunksRef.current.push(e.data);
+            }
+          };
+
+          recorder.start(250); // collect chunks every 250ms
+          mediaRecorderRef.current = recorder;
+          recordingStartTimeRef.current = Date.now();
+
+          // Limit continuous recording to a maximum of 90 seconds
+          maxTimerRef.current = setTimeout(() => {
+            if (isListeningRef.current) {
+              showToast('Límite de grabación de 90s alcanzado', 'info');
+              processRecordedAudioRef.current(false);
+            }
+          }, 90000);
+        } catch (recorderErr) {
+          console.warn('MediaRecorder init error:', recorderErr);
+        }
+
+        // Setup Web Audio Analyser for CAVA 13 bars
         const AudioContextClass =
           window.AudioContext || (window as any).webkitAudioContext;
         const audioCtx = new AudioContextClass();
@@ -158,44 +294,34 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
 
           analyserRef.current.getByteFrequencyData(dataArray);
 
-          // Compute average volume across speech fundamental frequencies
           let sum = 0;
           let count = 0;
           for (let i = 1; i < Math.min(dataArray.length, 16); i++) {
             sum += dataArray[i];
             count++;
           }
-          const avg = count > 0 ? sum / count : 0; // 0 to 255
-          // Noise gate: ignore low background hiss (below 12)
+          const avg = count > 0 ? sum / count : 0;
           const normalizedVol = Math.max(0, (avg - 12) / (255 - 12));
 
           for (let i = 0; i < BAR_COUNT; i++) {
             const bar = barRefs.current[i];
             if (!bar) continue;
 
-            // Distance from center: 0 at center (bar 6), 1 at edges (bar 0 & 12)
             const distFromCenter = Math.abs(i - CENTER_INDEX) / CENTER_INDEX;
-            // Cosine bell-curve weight: center gets 1.0, edges get ~0.2
             const bellWeight = Math.max(
               0.15,
               Math.cos(distFromCenter * (Math.PI * 0.46))
             );
 
-            // Frequency variation based on bar index
             const binIdx = Math.min(
               dataArray.length - 1,
               Math.max(1, Math.round(2 + (1 - distFromCenter) * 5 + (i % 2)))
             );
             const binEnergy = (dataArray[binIdx] || 0) / 255;
-
-            // Combined energy driving the wave height
             const waveEnergy = (normalizedVol * 0.75 + binEnergy * 0.25) * bellWeight;
-
-            // Target height for the bar
             const targetHeight =
               MIN_HEIGHT + waveEnergy * (MAX_HEIGHT - MIN_HEIGHT);
 
-            // Smooth physical response
             const prevHeight = barHeightsRef.current[i] || MIN_HEIGHT;
             const smoothedHeight =
               prevHeight + (targetHeight - prevHeight) * 0.4;
@@ -210,7 +336,6 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
         animFrameRef.current = requestAnimationFrame(renderFrame);
       } catch (err: any) {
         console.warn('Audio analysis init:', err);
-        // If permission error, notify user
         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
           showToast(
             'Permiso de micrófono denegado. Permite el acceso para dictar.',
@@ -220,19 +345,13 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
       }
     };
 
-    // 2. Initialize Speech Recognition
+    // 2. Initialize Real-Time Speech Recognition for instant visual feedback
     const startSpeechRecognition = () => {
       const SpeechRecognition =
         (window as any).SpeechRecognition ||
         (window as any).webkitSpeechRecognition;
 
-      if (!SpeechRecognition) {
-        showToast(
-          'El dictado por voz no es compatible con este navegador.',
-          'info'
-        );
-        return;
-      }
+      if (!SpeechRecognition) return;
 
       try {
         const recognition = new SpeechRecognition();
@@ -277,8 +396,6 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
               'info'
             );
             handleCancel();
-          } else if (event.error === 'no-speech') {
-            // Silence detected: continue listening smoothly
           }
         };
 
@@ -306,7 +423,7 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
       }
     };
 
-    startAudioAnalysis();
+    startAudioSystem();
     startSpeechRecognition();
 
     return () => {
@@ -319,8 +436,18 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
       className={`w-full flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-200 ${className}`}
       data-testid="gemini-voice-visualizer"
     >
-      {/* Real-time transcribed text preview banner (aparece cuando hay texto transcrito) */}
-      {transcribedText ? (
+      {/* Real-time transcribed text preview banner or transcribing spinner */}
+      {isTranscribing ? (
+        <div className="flex items-center justify-between px-3.5 py-1 text-[11px] text-manifest-auraPurple min-h-[20px] transition-all">
+          <div className="flex items-center gap-1.5 truncate">
+            <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0 text-manifest-auraPurple" />
+            <span className="font-semibold">Transcribiendo y puntuando con Gemini...</span>
+          </div>
+          <span className="text-[10px] text-manifest-inkLight shrink-0 ml-2">
+            Editorial AI
+          </span>
+        </div>
+      ) : transcribedText ? (
         <div className="flex items-center justify-between px-3.5 py-1 text-[11px] text-manifest-inkMuted min-h-[20px] transition-all">
           <div className="flex items-center gap-1.5 truncate">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
@@ -338,9 +465,10 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
         <button
           type="button"
           onClick={handleCancel}
+          disabled={isTranscribing}
           title="Cancelar dictado"
           aria-label="Cancelar dictado"
-          className="w-10 h-10 rounded-full flex items-center justify-center text-neutral-800 hover:text-black hover:bg-neutral-100 active:scale-95 transition-all cursor-pointer shrink-0"
+          className="w-10 h-10 rounded-full flex items-center justify-center text-neutral-800 hover:text-black hover:bg-neutral-100 active:scale-95 transition-all cursor-pointer shrink-0 disabled:opacity-50"
         >
           <Plus className="w-5 h-5 stroke-[2.2]" />
         </button>
@@ -368,24 +496,34 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
           <button
             type="button"
             onClick={handleStop}
-            title="Detener y conservar texto"
-            aria-label="Detener y conservar texto"
+            disabled={isTranscribing}
+            title="Detener y transcribir"
+            aria-label="Detener y transcribir"
             data-testid="voice-stop-btn"
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#E8EAED] hover:bg-[#DCE0E5] active:scale-95 flex items-center justify-center transition-all cursor-pointer text-neutral-900 shadow-sm"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#E8EAED] hover:bg-[#DCE0E5] active:scale-95 flex items-center justify-center transition-all cursor-pointer text-neutral-900 shadow-sm disabled:opacity-50"
           >
-            <span className="w-3.5 h-3.5 rounded-[3px] border-[2px] border-neutral-900 bg-transparent block" />
+            {isTranscribing ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <span className="w-3.5 h-3.5 rounded-[3px] border-[2px] border-neutral-900 bg-transparent block" />
+            )}
           </button>
 
           {/* Send / Commit Button (↑) */}
           <button
             type="button"
             onClick={handleSend}
+            disabled={isTranscribing}
             title="Enviar / Aceptar"
             aria-label="Enviar"
             data-testid="voice-send-btn"
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#A8D4FE] hover:bg-[#92c6fd] active:scale-95 flex items-center justify-center transition-all cursor-pointer text-neutral-900 shadow-sm"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#A8D4FE] hover:bg-[#92c6fd] active:scale-95 flex items-center justify-center transition-all cursor-pointer text-neutral-900 shadow-sm disabled:opacity-50"
           >
-            <ArrowUp className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+            {isTranscribing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ArrowUp className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+            )}
           </button>
         </div>
       </div>

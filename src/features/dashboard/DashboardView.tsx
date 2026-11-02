@@ -41,6 +41,7 @@ export const DashboardView: React.FC = () => {
     openJournalEditor,
     openAffirmationEditor,
     openRampageSetEditor,
+    openRampageConfig,
     journalEntries,
     deleteJournalEntry,
     affirmations,
@@ -213,7 +214,7 @@ export const DashboardView: React.FC = () => {
             {viewMode === 'rampage' ? (
               <motion.button
                 whileTap={IOS_TAP_SPRING}
-                onClick={() => openRampageSetEditor(null)}
+                onClick={() => openRampageConfig()}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />

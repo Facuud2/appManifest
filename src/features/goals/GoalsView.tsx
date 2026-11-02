@@ -30,6 +30,7 @@ export const GoalsView: React.FC = () => {
     reorderAffirmations,
     openAffirmationEditor,
     openRampageSetEditor,
+    openRampageConfig,
     goalsViewMode,
     setGoalsViewMode,
     checkAndUnlockMilestones,
@@ -166,7 +167,7 @@ export const GoalsView: React.FC = () => {
             <motion.button
               type="button"
               whileTap={IOS_TAP_SPRING}
-              onClick={() => openRampageSetEditor(null)}
+              onClick={() => openRampageConfig()}
               data-testid="open-rampage-modal-btn"
               className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer"
             >

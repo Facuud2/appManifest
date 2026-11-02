@@ -67,6 +67,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   unlockedMilestones: [],
   etherFragments: 50,
   isLiteMode: false,
+  aiSandboxMode: false,
 };
 
 // Clean empty seed collections (no mock / test data)
@@ -710,10 +711,11 @@ class LocalStorageService implements IStorageService {
   public getUserSettings(): UserSettings {
     const raw = this.safeGet<unknown>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
     const parsed = UserSettingsSchema.safeParse(raw);
-    if (parsed.success) {
-      return parsed.data as UserSettings;
+    const data = (parsed.success ? parsed.data : DEFAULT_SETTINGS) as UserSettings;
+    if (typeof window !== 'undefined' && (window.navigator as any)?.webdriver === true) {
+      data.aiSandboxMode = true;
     }
-    return DEFAULT_SETTINGS;
+    return data;
   }
 
   public saveUserSettings(partial: Partial<UserSettings>): UserSettings {

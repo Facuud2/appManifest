@@ -125,6 +125,16 @@ interface AppState {
   toggleLiteMode: () => void;
   setLiteMode: (enabled: boolean) => void;
 
+  // AI Sandbox Mode (Cero consumo de API)
+  aiSandboxMode: boolean;
+  toggleAiSandboxMode: () => void;
+  setAiSandboxMode: (enabled: boolean) => void;
+
+  // AI Rampage Config Modal
+  isRampageConfigOpen: boolean;
+  openRampageConfig: () => void;
+  closeRampageConfig: () => void;
+
   // Cosmic Oracle & Ether Fragments (Gacha / Gambling místico)
   etherFragments: number;
   addEtherFragments: (amount: number) => void;
@@ -282,6 +292,27 @@ export const useAppStore = create<AppState>((set, get) => {
       }
       set({ isLiteMode: enabled, settings: { ...get().settings, isLiteMode: enabled } });
     },
+
+    // AI Sandbox Mode (Cero consumo de API)
+    aiSandboxMode: Boolean(
+      initialSettings.aiSandboxMode ||
+      (typeof window !== 'undefined' && (window.navigator as any)?.webdriver === true)
+    ),
+    toggleAiSandboxMode: () => {
+      const current = get().aiSandboxMode;
+      const next = !current;
+      storage.saveUserSettings({ aiSandboxMode: next });
+      set({ aiSandboxMode: next, settings: { ...get().settings, aiSandboxMode: next } });
+    },
+    setAiSandboxMode: (enabled: boolean) => {
+      storage.saveUserSettings({ aiSandboxMode: enabled });
+      set({ aiSandboxMode: enabled, settings: { ...get().settings, aiSandboxMode: enabled } });
+    },
+
+    // AI Rampage Config Modal
+    isRampageConfigOpen: false,
+    openRampageConfig: () => set({ isRampageConfigOpen: true }),
+    closeRampageConfig: () => set({ isRampageConfigOpen: false }),
 
     // Cosmic Oracle & Ether Fragments
     etherFragments: initialSettings.etherFragments ?? 50,

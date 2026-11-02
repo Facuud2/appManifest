@@ -23,7 +23,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
 
 export const SettingsView: React.FC = () => {
-  const { settings, updateSettings, restoreFromBackup, showToast, isLiteMode, toggleLiteMode } = useAppStore();
+  const {
+    settings,
+    updateSettings,
+    restoreFromBackup,
+    showToast,
+    isLiteMode,
+    toggleLiteMode,
+    aiSandboxMode,
+    toggleAiSandboxMode,
+  } = useAppStore();
 
   const [nameInput, setNameInput] = useState(settings.userName);
   const [newAffirmation, setNewAffirmation] = useState('');
@@ -138,6 +147,38 @@ export const SettingsView: React.FC = () => {
                 onChange={() => toggleLiteMode()}
                 colors={{
                   checkedBgIos: 'bg-emerald-500',
+                }}
+              />
+            </div>
+          }
+        />
+
+        <ListItem
+          title={
+            <span className="font-serif text-sm font-bold text-manifest-ink flex items-center gap-2">
+              <Shield className="w-4 h-4 text-manifest-auraPurple shrink-0" />
+              <span>Modo Sandbox IA (Sin consumo de API)</span>
+            </span>
+          }
+          subtitle={
+            <span className="text-[11px] font-medium text-slate-700 block mt-0.5">
+              {aiSandboxMode
+                ? 'Activado — Respuestas simuladas sin consumo de cuota'
+                : 'Desactivado — Conexión en vivo con Google Gemini'}
+            </span>
+          }
+          text={
+            <p className="text-xs text-slate-600 font-normal leading-relaxed mt-0.5">
+              Simula respuestas realistas de IA (500ms) para pruebas continuas y testing sin agotar la cuota de API.
+            </p>
+          }
+          after={
+            <div data-testid="settings-toggle-ai-sandbox" onClick={toggleAiSandboxMode} className="cursor-pointer">
+              <Toggle
+                checked={aiSandboxMode}
+                onChange={() => toggleAiSandboxMode()}
+                colors={{
+                  checkedBgIos: 'bg-manifest-auraPurple',
                 }}
               />
             </div>

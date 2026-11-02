@@ -176,6 +176,7 @@ export const UserSettingsSchema = z.object({
   unlockedMilestones: z.array(z.string()).default([]),
   etherFragments: z.number().default(50),
   isLiteMode: z.boolean().default(false),
+  aiSandboxMode: z.boolean().default(false),
 });
 
 export const BackupDataSchema = z.object({
