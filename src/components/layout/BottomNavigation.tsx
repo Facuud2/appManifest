@@ -20,8 +20,8 @@ const NAV_ITEMS: NavItem[] = [
 
 const TAB_SPRING_TRANSITION: Transition = {
   type: 'spring',
-  stiffness: 400,
-  damping: 32,
+  stiffness: 420,
+  damping: 30,
   mass: 0.8,
 };
 
@@ -43,7 +43,7 @@ export const BottomNavigation: React.FC = () => {
         <nav
           role="navigation"
           aria-label="Navegación principal"
-          className="relative max-w-md mx-auto pointer-events-auto h-14 rounded-3xl bg-white/70 backdrop-blur-2xl border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.85),0_12px_36px_-4px_rgba(184,163,248,0.22)] px-1.5 py-1 flex items-center justify-between overflow-hidden"
+          className="relative max-w-md mx-auto pointer-events-auto h-14 rounded-3xl bg-white/75 backdrop-blur-2xl border border-white/70 shadow-[inset_0_1px_1px_rgba(255,255,255,0.85),0_12px_36px_-4px_rgba(184,163,248,0.22)] px-2 py-1 flex items-center justify-between overflow-hidden"
         >
           {NAV_ITEMS.map((item) => {
             const isActive = activeTab === item.key;
@@ -57,44 +57,39 @@ export const BottomNavigation: React.FC = () => {
                 aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
                 onClick={() => setActiveTab(item.key)}
-                className="relative flex-1 h-full flex flex-col items-center justify-center select-none cursor-pointer outline-none rounded-2xl group transition-colors duration-150 py-1"
+                className="relative flex-1 h-full flex flex-col items-center justify-center select-none cursor-pointer outline-none group py-0.5"
               >
-                {/* Cápsula deslizante Liquid Glass con layoutId único */}
-                {isActive && (
-                  <motion.div
-                    layoutId="mobile-tabbar-active-pill"
-                    className="absolute inset-1 rounded-2xl bg-white/85 shadow-[0_4px_16px_rgba(139,92,246,0.14)] border border-purple-200/60 pointer-events-none z-0"
-                    transition={TAB_SPRING_TRANSITION}
-                  >
-                    {/* Indicador de acento en borde superior en gradiente pastel */}
+                {/* Contenedor del ícono con la cápsula deslizante Liquid Glass */}
+                <div className="relative flex items-center justify-center w-13 h-7">
+                  {isActive && (
                     <motion.div
-                      layoutId="mobile-tabbar-accent"
-                      className="absolute top-1 inset-x-3.5 h-[2px] rounded-full bg-gradient-to-r from-manifest-pink via-purple-400 to-manifest-celeste shadow-[0_1px_4px_rgba(168,85,247,0.35)]"
+                      layoutId="mobile-tabbar-active-pill"
+                      className="absolute inset-0 rounded-full bg-gradient-to-tr from-manifest-pink/65 via-manifest-lavender/75 to-manifest-celeste/65 border border-white/90 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.95),0_3px_12px_rgba(184,163,248,0.28)]"
                       transition={TAB_SPRING_TRANSITION}
                     />
+                  )}
+
+                  {/* Ícono con micro-interacción y física táctil háptica */}
+                  <motion.div
+                    animate={{
+                      scale: isActive ? 1.08 : 1,
+                      y: isActive ? -0.5 : 0,
+                    }}
+                    whileTap={{ scale: 0.92 }}
+                    transition={{ type: 'spring', stiffness: 450, damping: 25 }}
+                    className="relative z-10 flex items-center justify-center"
+                  >
+                    <Icon
+                      className={`w-[17px] h-[17px] transition-colors duration-200 ${
+                        isActive ? 'text-manifest-ink stroke-[2.3]' : 'text-manifest-inkMuted opacity-75 group-hover:opacity-90'
+                      }`}
+                    />
                   </motion.div>
-                )}
+                </div>
 
-                {/* Ícono con micro-interacción, escala y rebote elástico estilo iOS */}
-                <motion.div
-                  animate={{
-                    scale: isActive ? 1.1 : 1,
-                    y: isActive ? -1 : 0,
-                  }}
-                  whileTap={{ scale: 0.92 }}
-                  transition={{ type: 'spring', stiffness: 450, damping: 25 }}
-                  className="relative z-10 flex items-center justify-center w-6 h-5"
-                >
-                  <Icon
-                    className={`w-4 h-4 transition-colors duration-200 ${
-                      isActive ? 'text-manifest-ink stroke-[2.3]' : 'text-manifest-inkMuted opacity-75 group-hover:opacity-90'
-                    }`}
-                  />
-                </motion.div>
-
-                {/* Etiqueta de texto */}
+                {/* Etiqueta de texto debajo del ícono, siempre legible */}
                 <span
-                  className={`relative z-10 text-[10px] tracking-tight block select-none mt-0.5 transition-colors duration-200 ${
+                  className={`text-[10px] tracking-tight block mt-0.5 select-none transition-colors duration-200 leading-tight ${
                     isActive ? 'font-semibold text-manifest-ink' : 'font-medium text-manifest-inkMuted'
                   }`}
                 >

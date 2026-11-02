@@ -119,34 +119,9 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
                 }`}
               />
 
-              {/* macOS Window Chrome / Titlebar */}
-              <div className="relative shrink-0 flex items-center justify-between px-5 py-3.5 border-b border-manifest-ink/[0.07] bg-white/60 backdrop-blur-md select-none z-10">
-                {/* Mac Traffic Lights */}
+              {/* Modal Header */}
+              <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-manifest-ink/[0.07] bg-white/60 backdrop-blur-md select-none z-10">
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowDeleteConfirm(false);
-                      onClose();
-                    }}
-                    title="Cerrar (Esc)"
-                    aria-label="Cerrar ventana"
-                    className="group relative w-3.5 h-3.5 rounded-full bg-[#FF5F56] border border-[#E0443E]/60 flex items-center justify-center hover:brightness-90 transition-all cursor-pointer"
-                  >
-                    <X className="w-2 h-2 text-[#7F0000] opacity-0 group-hover:opacity-100 transition-opacity stroke-[3]" />
-                  </button>
-                  <div
-                    className="w-3.5 h-3.5 rounded-full bg-[#FFBD2E] border border-[#DEA123]/60 cursor-default opacity-85"
-                    title="Minimizar"
-                  />
-                  <div
-                    className="w-3.5 h-3.5 rounded-full bg-[#27C93F] border border-[#1AAB29]/60 cursor-default opacity-85"
-                    title="Zoom"
-                  />
-                </div>
-
-                {/* Centered Badge / Title */}
-                <div className="absolute inset-x-0 mx-auto text-center pointer-events-none flex items-center justify-center gap-2">
                   {isManifestation ? (
                     <span
                       data-testid="entry-type-manifestation"
@@ -182,8 +157,9 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
                     onClose();
                   }}
                   data-testid="close-detail-modal-btn"
-                  className="p-1 rounded-lg text-manifest-inkMuted hover:text-manifest-ink hover:bg-manifest-ink/5 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-xl text-manifest-inkMuted hover:text-manifest-ink hover:bg-manifest-ink/5 transition-colors cursor-pointer"
                   title="Cerrar (Esc)"
+                  aria-label="Cerrar ventana"
                 >
                   <X className="w-4 h-4" />
                 </button>
