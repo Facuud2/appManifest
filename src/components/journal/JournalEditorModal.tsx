@@ -10,10 +10,11 @@ import { useAppStore } from '@/store';
 import { X, Target, Sparkles, Trophy, Mic, Check, AlertCircle } from 'lucide-react';
 import { EntryType, JournalEntry, UserScope } from '@/types';
 import { UserScopeEnum } from '@/schemas';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 
 const journalFormSchema = z.object({
   content: z.string().min(1, 'Describe tu entrada antes de guardar'),
@@ -24,6 +25,7 @@ const journalFormSchema = z.object({
 type JournalFormData = z.infer<typeof journalFormSchema>;
 
 export const JournalEditorModal: React.FC = () => {
+  const isDesktop = useIsDesktop();
   const {
     isJournalEditorOpen,
     journalEditorInitialMode,
@@ -58,6 +60,7 @@ export const JournalEditorModal: React.FC = () => {
 
   const [isVoiceActiveContent, setIsVoiceActiveContent] = useState(false);
   const [validationContainerRef] = useAutoAnimate<HTMLDivElement>({ duration: 180 });
+  const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
 
   // Hydrate form whenever modal opens or editing entry changes
   useEffect(() => {
@@ -89,8 +92,33 @@ export const JournalEditorModal: React.FC = () => {
           entryType: initialType,
         });
       }
+
+      // En PC: auto-enfocar y resaltar automáticamente el campo para comenzar a escribir de inmediato
+      if (isDesktop) {
+        const timer = setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.focus();
+            const len = textareaRef.current.value.length;
+            textareaRef.current.setSelectionRange(len, len);
+          }
+        }, 60);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [isJournalEditorOpen, editingJournalEntry, journalEditorInitialMode, activeScope, reset]);
+  }, [isJournalEditorOpen, editingJournalEntry, journalEditorInitialMode, activeScope, reset, isDesktop]);
+
+  // Tecla Escape para cerrar en PC
+  useEffect(() => {
+    if (!isJournalEditorOpen || !isDesktop) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeJournalEditor();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isJournalEditorOpen, isDesktop, closeJournalEditor]);
 
   const onSubmit = (data: JournalFormData) => {
     const trimmedContent = data.content.trim();
@@ -164,6 +192,311 @@ export const JournalEditorModal: React.FC = () => {
     return 'Nueva Success Story';
   };
 
+  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit(onSubmit)();
+    }
+  };
+
+  // ==========================================
+  // VISTA PC: Pop-up centrado estilo macOS
+  // ==========================================
+  if (isDesktop) {
+    return (
+      <AnimatePresence>
+        {isJournalEditorOpen && (
+          <div
+            data-testid="journal-desktop-backdrop"
+            onClick={closeJournalEditor}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-manifest-ink/35 backdrop-blur-md"
+          >
+            <motion.div
+              data-testid="journal-desktop-modal"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 30, mass: 0.8 }}
+              className="w-full max-w-xl rounded-3xl bg-[#FCFAF8]/95 backdrop-blur-2xl border border-white/90 shadow-[0_24px_70px_rgba(40,30,60,0.22),0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.95)] flex flex-col max-h-[88vh] overflow-hidden"
+            >
+              {/* macOS Window Chrome / Titlebar */}
+              <div className="relative shrink-0 flex items-center justify-between px-5 py-3.5 border-b border-manifest-ink/[0.07] bg-white/60 backdrop-blur-md select-none">
+                {/* Mac Traffic Lights */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={closeJournalEditor}
+                    title="Cerrar (Esc)"
+                    aria-label="Cerrar ventana"
+                    className="group relative w-3.5 h-3.5 rounded-full bg-[#FF5F56] border border-[#E0443E]/60 flex items-center justify-center hover:brightness-90 transition-all cursor-pointer"
+                  >
+                    <X className="w-2 h-2 text-[#7F0000] opacity-0 group-hover:opacity-100 transition-opacity stroke-[3]" />
+                  </button>
+                  <div
+                    className="w-3.5 h-3.5 rounded-full bg-[#FFBD2E] border border-[#DEA123]/60 cursor-default opacity-85"
+                    title="Minimizar"
+                  />
+                  <div
+                    className="w-3.5 h-3.5 rounded-full bg-[#27C93F] border border-[#1AAB29]/60 cursor-default opacity-85"
+                    title="Zoom"
+                  />
+                </div>
+
+                {/* Centered Mac Window Title */}
+                <div className="absolute inset-x-0 mx-auto text-center pointer-events-none flex items-center justify-center gap-2">
+                  {selectedEntryType === 'manifestation' ? (
+                    <Sparkles className="w-3.5 h-3.5 text-manifest-auraPurple" />
+                  ) : selectedEntryType === 'progress' ? (
+                    <Target className="w-3.5 h-3.5 text-manifest-auraRose" />
+                  ) : (
+                    <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                  )}
+                  <span className="font-serif font-bold text-sm text-manifest-ink tracking-tight">
+                    {getModalTitle()}
+                  </span>
+                </div>
+
+                {/* Right: Quick close */}
+                <button
+                  type="button"
+                  onClick={closeJournalEditor}
+                  className="p-1 rounded-lg text-manifest-inkMuted hover:text-manifest-ink hover:bg-manifest-ink/5 transition-colors cursor-pointer"
+                  title="Cerrar (Esc)"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Form Content */}
+              <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4"
+              >
+                {/* Espacio Selector (Mac-style Segmented Control) */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-manifest-ink block tracking-tight">
+                    Espacio
+                  </label>
+                  <div className="p-1 rounded-xl bg-manifest-ink/[0.05] border border-manifest-ink/[0.06] grid grid-cols-3 gap-1 shadow-inner">
+                    {[
+                      { key: 'facu' as UserScope, label: 'Facu' },
+                      { key: 'maia' as UserScope, label: 'Maia' },
+                      { key: 'shared' as UserScope, label: '✨ Juntos' },
+                    ].map((sc) => (
+                      <button
+                        key={sc.key}
+                        type="button"
+                        onClick={() => setValue('userId', sc.key, { shouldDirty: true })}
+                        className={`py-1.5 px-3 rounded-lg text-xs transition-all duration-150 cursor-pointer ${
+                          selectedUserId === sc.key
+                            ? 'bg-white text-manifest-ink shadow-sm font-semibold border border-white/80'
+                            : 'text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/40 font-medium'
+                        }`}
+                      >
+                        {sc.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tipo de Entrada (Mac-style Segmented Control) */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-manifest-ink block tracking-tight">
+                    Tipo de Registro
+                  </label>
+                  <div className="p-1 rounded-xl bg-manifest-ink/[0.05] border border-manifest-ink/[0.06] grid grid-cols-3 gap-1 shadow-inner">
+                    {[
+                      {
+                        key: 'manifestation' as const,
+                        label: 'Manifestación',
+                        icon: Sparkles,
+                      },
+                      {
+                        key: 'progress' as const,
+                        label: 'Avance',
+                        icon: Target,
+                      },
+                      {
+                        key: 'reflection' as const,
+                        label: 'Success Story',
+                        icon: Trophy,
+                      },
+                    ].map((t) => {
+                      const Icon = t.icon;
+                      const isSel = selectedEntryType === t.key;
+                      return (
+                        <button
+                          key={t.key}
+                          type="button"
+                          onClick={() => setValue('entryType', t.key, { shouldDirty: true })}
+                          className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs transition-all duration-150 cursor-pointer ${
+                            isSel
+                              ? 'bg-white text-manifest-ink shadow-sm font-semibold border border-white/80'
+                              : 'text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/40 font-medium'
+                          }`}
+                        >
+                          <Icon className={`w-3.5 h-3.5 ${isSel ? 'text-manifest-auraPurple' : 'text-manifest-inkMuted'}`} />
+                          <span className="truncate">{t.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Textarea Field with Auto-Focus and Resaltado Mac */}
+                <div ref={validationContainerRef} className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-manifest-ink block tracking-tight">
+                      Contenido de la Entrada
+                    </label>
+                    <span className="text-[11px] text-manifest-inkMuted">
+                      {currentContent.length > 0 ? `${currentContent.length} caracteres` : 'Escribe tu entrada'}
+                    </span>
+                  </div>
+
+                  {isVoiceActiveContent ? (
+                    <VoiceAudioVisualizer
+                      initialText={currentContent}
+                      placeholder={
+                        selectedEntryType === 'manifestation'
+                          ? 'Describe tu manifestación...'
+                          : selectedEntryType === 'progress'
+                          ? 'Describe tu avance o sincronía...'
+                          : 'Describe tu Success Story...'
+                      }
+                      onCommit={(fullText) => {
+                        setValue('content', fullText, { shouldValidate: true, shouldDirty: true });
+                        setIsVoiceActiveContent(false);
+                      }}
+                      onSend={(fullText) => {
+                        setValue('content', fullText, { shouldValidate: true, shouldDirty: true });
+                        setIsVoiceActiveContent(false);
+                      }}
+                      onCancel={() => setIsVoiceActiveContent(false)}
+                    />
+                  ) : (
+                    <div className="relative group">
+                      <Controller
+                        name="content"
+                        control={control}
+                        render={({ field }) => (
+                          <AutoResizeTextarea
+                            {...field}
+                            ref={(el) => {
+                              field.ref(el);
+                              textareaRef.current = el;
+                            }}
+                            autoFocus
+                            data-testid="journal-content-input"
+                            onKeyDown={handleTextareaKeyDown}
+                            minRows={4}
+                            maxHeight={260}
+                            placeholder={
+                              selectedEntryType === 'manifestation'
+                                ? 'Describe con total certeza y detalle sensorial lo que ya es tuyo en la realidad...'
+                                : selectedEntryType === 'progress'
+                                ? 'Describe qué avance viste, qué sincronía percibiste o qué paso diste...'
+                                : 'Describe con gratitud el hecho consumado, cómo se materializó tu manifestación...'
+                            }
+                            className={`w-full p-4 pr-12 rounded-2xl glass-input text-xs sm:text-sm placeholder:text-manifest-inkLight leading-relaxed transition-all focus:outline-none ${
+                              errors.content
+                                ? 'border-rose-400 ring-2 ring-rose-400/50'
+                                : currentContent.trim().length > 0
+                                ? 'border-emerald-400 ring-2 ring-emerald-400/40'
+                                : 'border-manifest-auraPurple/80 ring-2 ring-manifest-auraPurple/30 shadow-[0_0_16px_rgba(184,163,248,0.25)]'
+                            }`}
+                          />
+                        )}
+                      />
+
+                      {/* Status Icon */}
+                      <div className="absolute right-3.5 top-3.5 pointer-events-none">
+                        {currentContent.trim().length > 0 && !errors.content && (
+                          <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs">
+                            <Check className="w-3 h-3 stroke-[3]" />
+                          </div>
+                        )}
+                        {errors.content && (
+                          <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center shadow-xs">
+                            <AlertCircle className="w-3.5 h-3.5 stroke-[2.5]" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Mic Button */}
+                      <div className="absolute right-3 bottom-3">
+                        <button
+                          type="button"
+                          onClick={() => setIsVoiceActiveContent(true)}
+                          title="Dictar contenido con micrófono"
+                          aria-label="Dictar contenido con micrófono"
+                          className="w-8 h-8 rounded-xl bg-white/80 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/90 shadow-sm flex items-center justify-center transition-colors cursor-pointer"
+                        >
+                          <Mic className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Inline Error */}
+                  {errors.content && (
+                    <div
+                      data-testid="journal-content-error"
+                      className="flex items-center gap-1.5 text-[11px] text-rose-500 font-medium pt-1 pl-1"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                      <span>{errors.content.message}</span>
+                    </div>
+                  )}
+                </div>
+              </form>
+
+              {/* Mac Dialog Footer */}
+              <div className="shrink-0 flex items-center justify-between px-6 py-4 bg-manifest-ink/[0.02] border-t border-manifest-ink/[0.07]">
+                <div className="flex items-center gap-2 text-[11px] text-manifest-inkLight">
+                  <span>💡 <strong>⌘↵</strong> o <strong>Ctrl+Enter</strong> para guardar</span>
+                  <span>•</span>
+                  <span><strong>Esc</strong> para salir</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={closeJournalEditor}
+                    className="px-4 py-2 rounded-xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/80 border border-manifest-ink/10 shadow-xs transition-colors cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="submit-journal-btn"
+                    onClick={handleSubmit(onSubmit)}
+                    className="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-manifest-auraPurple via-purple-600 to-indigo-600 hover:opacity-95 shadow-[0_2px_8px_rgba(184,163,248,0.35)] active:scale-[0.98] transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>
+                      {editingJournalEntry
+                        ? 'Guardar Cambios'
+                        : selectedEntryType === 'manifestation'
+                        ? 'Guardar Manifestación'
+                        : selectedEntryType === 'progress'
+                        ? 'Guardar Avance'
+                        : 'Guardar Success Story'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    );
+  }
+
+  // ==========================================
+  // VISTA MÓVIL: Drawer nativo iOS (Vaul)
+  // ESTRICTAMENTE INTACTO PARA DISPOSITIVOS MÓVILES
+  // ==========================================
   return (
     <Drawer.Root
       open={isJournalEditorOpen}
@@ -250,73 +583,64 @@ export const JournalEditorModal: React.FC = () => {
               </div>
             </div>
 
-            {/* Tipo de Entrada: Manifestación vs Avance de manifestación vs Success Story */}
+            {/* Tipo de entrada */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-manifest-ink">
-                Tipo de entrada
+                Tipo de Entrada
               </label>
-              <div className="grid grid-cols-3 gap-1 sm:gap-2 p-1 rounded-2xl bg-white/60 border border-white/80">
-                <motion.button
-                  type="button"
-                  whileTap={IOS_TAP_SPRING}
-                  onClick={() => setValue('entryType', 'manifestation', { shouldDirty: true })}
-                  className={`flex items-center justify-center gap-1 py-2 px-1 rounded-xl text-[10.5px] sm:text-xs font-semibold tracking-tight transition-colors cursor-pointer whitespace-nowrap ${
-                    selectedEntryType === 'manifestation'
-                      ? 'bg-gradient-to-tr from-manifest-pink/50 to-manifest-lavender text-manifest-auraPurple border border-manifest-auraPurple/40 shadow-sm'
-                      : 'hover:bg-white/80 text-manifest-inkMuted'
-                  }`}
-                >
-                  <Target className="w-3.5 h-3.5 shrink-0" />
-                  <span>Manifestación</span>
-                </motion.button>
-
-                <motion.button
-                  type="button"
-                  whileTap={IOS_TAP_SPRING}
-                  onClick={() => setValue('entryType', 'progress', { shouldDirty: true })}
-                  className={`flex items-center justify-center gap-1 py-2 px-1 rounded-xl text-[10.5px] sm:text-xs font-semibold tracking-tight transition-colors cursor-pointer whitespace-nowrap ${
-                    selectedEntryType === 'progress'
-                      ? 'bg-manifest-mint text-emerald-800 border border-emerald-400/50 shadow-sm'
-                      : 'hover:bg-white/80 text-manifest-inkMuted'
-                  }`}
-                >
-                  <Sparkles className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
-                  <span>Avance</span>
-                </motion.button>
-
-                <motion.button
-                  type="button"
-                  whileTap={IOS_TAP_SPRING}
-                  onClick={() => setValue('entryType', 'reflection', { shouldDirty: true })}
-                  className={`flex items-center justify-center gap-1 py-2 px-1 rounded-xl text-[10.5px] sm:text-xs font-semibold tracking-tight transition-colors cursor-pointer whitespace-nowrap ${
-                    selectedEntryType === 'reflection'
-                      ? 'bg-amber-100/90 text-amber-900 border border-amber-300 shadow-sm'
-                      : 'hover:bg-white/80 text-manifest-inkMuted'
-                  }`}
-                >
-                  <Trophy className="w-3.5 h-3.5 shrink-0 text-amber-600" />
-                  <span>Success Story</span>
-                </motion.button>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  {
+                    key: 'manifestation' as const,
+                    label: 'Manifestación',
+                    icon: Sparkles,
+                  },
+                  {
+                    key: 'progress' as const,
+                    label: 'Avance',
+                    icon: Target,
+                  },
+                  {
+                    key: 'reflection' as const,
+                    label: 'Success Story',
+                    icon: Trophy,
+                  },
+                ].map((t) => {
+                  const Icon = t.icon;
+                  const isSelected = selectedEntryType === t.key;
+                  return (
+                    <motion.button
+                      key={t.key}
+                      type="button"
+                      whileTap={IOS_TAP_SPRING}
+                      onClick={() => setValue('entryType', t.key, { shouldDirty: true })}
+                      className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-semibold transition-colors border cursor-pointer ${
+                        isSelected
+                          ? 'bg-manifest-ink text-white border-manifest-ink shadow-sm'
+                          : 'bg-white/70 hover:bg-white text-manifest-inkMuted border-white/80'
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{t.label}</span>
+                    </motion.button>
+                  );
+                })}
               </div>
             </div>
 
             {/* Contenido con AutoResizeTextarea y Micrófono */}
             <div ref={validationContainerRef} className="space-y-1.5">
               <label className="text-xs font-semibold text-manifest-ink block">
-                {selectedEntryType === 'manifestation'
-                  ? 'Describe tu manifestación'
-                  : selectedEntryType === 'progress'
-                  ? 'Describe el avance de manifestación'
-                  : 'Describe tu Success Story'}
+                Contenido de tu entrada
               </label>
               {isVoiceActiveContent ? (
                 <VoiceAudioVisualizer
                   initialText={currentContent}
                   placeholder={
                     selectedEntryType === 'manifestation'
-                      ? 'Describe tu manifestación en tiempo presente...'
+                      ? 'Describe tu manifestación...'
                       : selectedEntryType === 'progress'
-                      ? 'Describe el avance de manifestación...'
+                      ? 'Describe tu avance o sincronía...'
                       : 'Describe tu Success Story...'
                   }
                   onCommit={(fullText) => {

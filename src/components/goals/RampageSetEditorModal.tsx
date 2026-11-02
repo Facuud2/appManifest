@@ -9,10 +9,11 @@ import { useAppStore } from '@/store';
 import { Sparkles, X, Plus, Trash2, Mic, Check, AlertCircle } from 'lucide-react';
 import { RampageSet, UserScope } from '@/types';
 import { UserScopeEnum } from '@/schemas';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 
 const rampageFormSchema = z
   .object({
@@ -63,6 +64,7 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
   onClose: propOnClose,
   setOrNull: propSetOrNull,
 }) => {
+  const isDesktop = useIsDesktop();
   const {
     activeScope,
     saveRampageSet,
@@ -105,6 +107,7 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
   const [voiceActiveIdx, setVoiceActiveIdx] = useState<number | null>(null);
   const [focusIndex, setFocusIndex] = useState<number | null>(null);
   const textareaRefs = React.useRef<{ [key: number]: HTMLTextAreaElement | null }>({});
+  const titleInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const selectedUserId = watch('userId');
   const watchedAffirmations = watch('affirmations');
@@ -188,8 +191,29 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
           ],
         });
       }
+
+      // En PC: auto-enfocar título al abrir
+      if (isDesktop) {
+        const timer = setTimeout(() => {
+          titleInputRef.current?.focus();
+        }, 60);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [isOpen, setOrNull, activeScope, reset]);
+  }, [isOpen, setOrNull, activeScope, reset, isDesktop]);
+
+  // Tecla Escape para cerrar en PC
+  useEffect(() => {
+    if (!isOpen || !isDesktop) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isOpen, isDesktop, onClose]);
 
   const onSubmit = (data: RampageFormData) => {
     const author =
@@ -243,10 +267,8 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
     onClose();
 
     if (isEditing) {
-      // Al editar: no activar gambling/logros repetidos, solo notificación limpia
       showToast('Set de Rampage actualizado', 'gentle');
     } else {
-      // Al crear: solo si genuinamente se desbloquea un nuevo hito de gambling
       const unlocked = checkAndUnlockMilestones();
       if (unlocked.length === 0) {
         showToast('Set de Rampage guardado', 'gentle');
@@ -257,7 +279,6 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
   const handlePreSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const currentAffs = watch('affirmations') || [];
-    // Si la última afirmación está vacía y ya tenemos al menos una válida, eliminar la vacía estilo Trello
     const lastIdx = currentAffs.length - 1;
     if (lastIdx > 0 && (!currentAffs[lastIdx]?.text || currentAffs[lastIdx].text.trim() === '')) {
       remove(lastIdx);
@@ -265,6 +286,278 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
     handleSubmit(onSubmit)(e);
   };
 
+  // ==========================================
+  // VISTA PC: Pop-up centrado estilo macOS
+  // ==========================================
+  if (isDesktop) {
+    return (
+      <AnimatePresence>
+        {isOpen && (
+          <div
+            data-testid="rampage-desktop-backdrop"
+            onClick={onClose}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-manifest-ink/35 backdrop-blur-md"
+          >
+            <motion.div
+              data-testid="rampage-desktop-modal"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 30, mass: 0.8 }}
+              className="w-full max-w-xl rounded-3xl bg-[#FCFAF8]/95 backdrop-blur-2xl border border-white/90 shadow-[0_24px_70px_rgba(40,30,60,0.22),0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.95)] flex flex-col max-h-[88vh] overflow-hidden"
+            >
+              {/* macOS Window Chrome / Titlebar */}
+              <div className="relative shrink-0 flex items-center justify-between px-5 py-3.5 border-b border-manifest-ink/[0.07] bg-white/60 backdrop-blur-md select-none">
+                {/* Mac Traffic Lights */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    title="Cerrar (Esc)"
+                    aria-label="Cerrar ventana"
+                    className="group relative w-3.5 h-3.5 rounded-full bg-[#FF5F56] border border-[#E0443E]/60 flex items-center justify-center hover:brightness-90 transition-all cursor-pointer"
+                  >
+                    <X className="w-2 h-2 text-[#7F0000] opacity-0 group-hover:opacity-100 transition-opacity stroke-[3]" />
+                  </button>
+                  <div
+                    className="w-3.5 h-3.5 rounded-full bg-[#FFBD2E] border border-[#DEA123]/60 cursor-default opacity-85"
+                    title="Minimizar"
+                  />
+                  <div
+                    className="w-3.5 h-3.5 rounded-full bg-[#27C93F] border border-[#1AAB29]/60 cursor-default opacity-85"
+                    title="Zoom"
+                  />
+                </div>
+
+                {/* Centered Mac Window Title */}
+                <div className="absolute inset-x-0 mx-auto text-center pointer-events-none flex items-center justify-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-manifest-auraPurple" />
+                  <span className="font-serif font-bold text-sm text-manifest-ink tracking-tight">
+                    {setOrNull ? 'Editar Set de Rampage' : 'Nuevo Set de Rampage'}
+                  </span>
+                </div>
+
+                {/* Right: Counter pill */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-semibold text-manifest-auraPurple px-2.5 py-0.5 rounded-full bg-manifest-lavender/40 border border-manifest-auraPurple/30 shadow-2xs">
+                    {fields.length} {fields.length === 1 ? 'afirmación' : 'afirmaciones'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="p-1 rounded-lg text-manifest-inkMuted hover:text-manifest-ink hover:bg-manifest-ink/5 transition-colors cursor-pointer"
+                    title="Cerrar (Esc)"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Form Content */}
+              <form
+                onSubmit={handlePreSubmit}
+                className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4"
+              >
+                {/* Espacio Selector (Mac-style Segmented Control) */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-manifest-ink block tracking-tight">
+                    Espacio
+                  </label>
+                  <div className="p-1 rounded-xl bg-manifest-ink/[0.05] border border-manifest-ink/[0.06] grid grid-cols-3 gap-1 shadow-inner">
+                    {[
+                      { key: 'facu' as UserScope, label: 'Facu' },
+                      { key: 'maia' as UserScope, label: 'Maia' },
+                      { key: 'shared' as UserScope, label: '✨ Juntos' },
+                    ].map((sc) => (
+                      <button
+                        key={sc.key}
+                        type="button"
+                        onClick={() => setValue('userId', sc.key, { shouldDirty: true })}
+                        className={`py-1.5 px-3 rounded-lg text-xs transition-all duration-150 cursor-pointer ${
+                          selectedUserId === sc.key
+                            ? 'bg-white text-manifest-ink shadow-sm font-semibold border border-white/80'
+                            : 'text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/40 font-medium'
+                        }`}
+                      >
+                        {sc.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Título del Set with Auto-Focus and Resaltado Mac */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-manifest-ink block tracking-tight">
+                    Título del Set
+                  </label>
+                  <div className="relative">
+                    <input
+                      {...register('title')}
+                      ref={(el) => {
+                        register('title').ref(el);
+                        titleInputRef.current = el;
+                      }}
+                      type="text"
+                      autoFocus
+                      placeholder="Ej: Abundancia, Paz Serena, Éxito"
+                      className={`w-full p-3.5 pr-10 rounded-2xl glass-input text-xs sm:text-sm placeholder:text-manifest-inkLight transition-all focus:outline-none ${
+                        errors.title
+                          ? 'border-rose-400 ring-2 ring-rose-400/50'
+                          : watch('title')?.trim().length > 0
+                          ? 'border-emerald-400 ring-2 ring-emerald-400/40'
+                          : 'border-manifest-auraPurple/80 ring-2 ring-manifest-auraPurple/30 shadow-[0_0_16px_rgba(184,163,248,0.25)]'
+                      }`}
+                    />
+                    {watch('title')?.trim().length > 0 && !errors.title && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                    )}
+                  </div>
+                  {errors.title && (
+                    <p className="text-[11px] text-rose-500 font-medium pt-0.5 pl-1">
+                      {errors.title.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Secuencia de Afirmaciones */}
+                <div className="space-y-2.5 pt-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-manifest-ink block tracking-tight">
+                      Secuencia de Afirmaciones
+                    </label>
+                    <span className="text-[11px] text-manifest-inkMuted">
+                      Mínimo 1 para activar
+                    </span>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {fields.map((field, idx) => {
+                      const currentVal = watchedAffirmations?.[idx]?.text || '';
+                      return (
+                        <div
+                          key={field.id}
+                          data-rampage-card={idx}
+                          className="p-3 sm:p-3.5 rounded-2xl bg-white/70 border border-white/90 shadow-sm space-y-2"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold text-manifest-auraPurple bg-manifest-lavender/40 px-2 py-0.5 rounded-md">
+                              #{idx + 1}
+                            </span>
+                            {fields.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => remove(idx)}
+                                title="Eliminar afirmación"
+                                className="p-1 rounded-lg text-manifest-inkMuted hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="relative">
+                            <Controller
+                              name={`affirmations.${idx}.text`}
+                              control={control}
+                              render={({ field: subField }) => (
+                                <AutoResizeTextarea
+                                  {...subField}
+                                  ref={(el) => {
+                                    subField.ref(el);
+                                    textareaRefs.current[idx] = el;
+                                  }}
+                                  enterKeyHint={idx === fields.length - 1 ? 'send' : 'next'}
+                                  onKeyDown={(e) => handleKeyDown(e, idx)}
+                                  minRows={2}
+                                  maxHeight={180}
+                                  placeholder="Escribe la afirmación para esta secuencia..."
+                                  className={`w-full p-3 pr-10 rounded-xl glass-input text-xs sm:text-sm placeholder:text-manifest-inkLight transition-all focus:outline-none focus:ring-1 focus:ring-manifest-auraPurple/50 ${
+                                    errors.affirmations?.[idx]?.text
+                                      ? 'border-rose-400 ring-1 ring-rose-400/50'
+                                      : currentVal.trim().length > 0
+                                      ? 'border-emerald-400 ring-1 ring-emerald-400/40'
+                                      : ''
+                                  }`}
+                                />
+                              )}
+                            />
+
+                            <div className="absolute right-2.5 top-2.5 pointer-events-none">
+                              {currentVal.trim().length > 0 && !errors.affirmations?.[idx]?.text && (
+                                <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs">
+                                  <Check className="w-2.5 h-2.5 stroke-[3]" />
+                                </div>
+                              )}
+                              {errors.affirmations?.[idx]?.text && (
+                                <div className="w-4 h-4 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center shadow-xs">
+                                  <AlertCircle className="w-2.5 h-2.5 stroke-[2.5]" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {errors.affirmations?.[idx]?.text && (
+                            <p className="text-[11px] text-rose-500 font-medium pt-0.5 pl-1">
+                              {errors.affirmations[idx]?.text?.message}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Botón Añadir afirmación */}
+                  <button
+                    type="button"
+                    onClick={handleAddAffirmation}
+                    data-testid="rampage-add-affirmation-btn"
+                    className="w-full py-2.5 px-3 rounded-2xl border-2 border-dashed border-manifest-lavender hover:border-manifest-auraPurple/50 bg-white/50 hover:bg-white/80 flex items-center justify-center gap-1.5 text-xs font-semibold text-manifest-auraPurple transition-colors cursor-pointer shadow-xs"
+                  >
+                    <Plus className="w-4 h-4 stroke-[2.5]" />
+                    <span>Añadir afirmación</span>
+                  </button>
+                </div>
+              </form>
+
+              {/* Mac Dialog Footer */}
+              <div className="shrink-0 flex items-center justify-between px-6 py-4 bg-manifest-ink/[0.02] border-t border-manifest-ink/[0.07]">
+                <div className="flex items-center gap-2 text-[11px] text-manifest-inkLight">
+                  <span>💡 <strong>Enter</strong> para añadir afirmación</span>
+                  <span>•</span>
+                  <span><strong>Esc</strong> para salir</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 rounded-xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/80 border border-manifest-ink/10 shadow-xs transition-colors cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="rampage-submit-flow-btn"
+                    onClick={handlePreSubmit}
+                    className="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-manifest-auraPurple via-purple-600 to-indigo-600 hover:opacity-95 shadow-[0_2px_8px_rgba(184,163,248,0.35)] active:scale-[0.98] transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>{setOrNull ? 'Guardar Cambios del Set' : 'Crear Set de Rampage'}</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    );
+  }
+
+  // ==========================================
+  // VISTA MÓVIL: Drawer nativo iOS (Vaul)
+  // ESTRICTAMENTE INTACTO PARA DISPOSITIVOS MÓVILES
+  // ==========================================
   return (
     <Drawer.Root
       open={isOpen}
@@ -364,101 +657,75 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
 
               {/* Título del Set */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-manifest-ink">
+                <label className="text-xs font-semibold text-manifest-ink block">
                   Título del Set
                 </label>
                 <div className="relative">
                   <input
-                    type="text"
                     {...register('title')}
-                    data-vaul-no-drag=""
-                    onFocus={(e) => {
-                      const el = e.currentTarget;
-                      setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
-                    }}
+                    type="text"
                     placeholder="Ej: Abundancia, Paz Serena, Éxito"
-                    className={`w-full px-3.5 py-2.5 pr-10 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight overscroll-contain touch-pan-y transition-colors ${
+                    className={`w-full p-3.5 pr-10 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight transition-colors ${
                       errors.title
                         ? 'border-rose-400 ring-1 ring-rose-400/50'
-                        : watch('title')?.trim()
+                        : watch('title')?.trim().length > 0
                         ? 'border-emerald-400 ring-1 ring-emerald-400/40'
                         : ''
                     }`}
                   />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    {watch('title')?.trim() && !errors.title && (
-                      <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs">
-                        <Check className="w-3 h-3 stroke-[3]" />
-                      </div>
-                    )}
-                    {errors.title && (
-                      <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center shadow-xs">
-                        <AlertCircle className="w-3.5 h-3.5 stroke-[2.5]" />
-                      </div>
-                    )}
-                  </div>
+                  {watch('title')?.trim().length > 0 && !errors.title && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs">
+                      <Check className="w-3 h-3 stroke-[3]" />
+                    </div>
+                  )}
                 </div>
                 {errors.title && (
-                  <div className="flex items-center gap-1.5 text-[11px] text-rose-500 font-medium pt-0.5 pl-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                    <span>{errors.title.message}</span>
-                  </div>
+                  <p className="text-[11px] text-rose-500 font-medium pt-0.5 pl-1">
+                    {errors.title.message}
+                  </p>
                 )}
               </div>
 
-              {/* Lista de Afirmaciones del Set */}
-              <div className="space-y-2.5 pb-1">
-                <div className="flex items-center justify-between px-0.5">
-                  <label className="text-xs font-semibold text-manifest-ink">
-                    Afirmaciones del Set ({fields.length})
+              {/* Secuencia de Afirmaciones */}
+              <div className="space-y-2.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-manifest-ink block">
+                    Secuencia de Afirmaciones
                   </label>
-                  <span className="text-[10px] text-manifest-inkLight font-normal">
-                    Pulsa Enter para crear la siguiente
+                  <span className="text-[11px] text-manifest-inkMuted">
+                    Mínimo 1 para activar
                   </span>
                 </div>
 
-                <div className="flex flex-col gap-3">
-                  {fields.map((fieldItem, idx) => {
-                    const currentText = watchedAffirmations?.[idx]?.text || '';
+                <div className="space-y-2.5">
+                  {fields.map((field, idx) => {
+                    const currentVal = watchedAffirmations?.[idx]?.text || '';
                     return (
                       <div
-                        key={fieldItem.id}
+                        key={field.id}
                         data-rampage-card={idx}
-                        className="p-3.5 rounded-2xl bg-white border border-manifest-lavender/50 shadow-xs space-y-2.5"
+                        className="p-3 sm:p-3.5 rounded-2xl bg-white/70 border border-white/90 shadow-sm space-y-2"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-manifest-inkMuted">
-                            Afirmación #{idx + 1}
+                          <span className="text-[11px] font-bold text-manifest-auraPurple bg-manifest-lavender/40 px-2 py-0.5 rounded-md">
+                            #{idx + 1}
                           </span>
-                          <div className="flex items-center gap-1.5">
+                          {fields.length > 1 && (
                             <button
                               type="button"
-                              onClick={() =>
-                                setVoiceActiveIdx(voiceActiveIdx === idx ? null : idx)
-                              }
-                              title="Dictar con micrófono"
-                              aria-label="Dictar con micrófono"
-                              className="w-7 h-7 rounded-xl bg-white/90 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white shadow-xs flex items-center justify-center transition-colors cursor-pointer"
+                              onClick={() => remove(idx)}
+                              title="Eliminar afirmación"
+                              className="p-1 rounded-lg text-manifest-inkMuted hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                             >
-                              <Mic className="w-3.5 h-3.5" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
-                            {fields.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => remove(idx)}
-                                className="w-7 h-7 rounded-xl bg-white/90 hover:bg-rose-50 text-manifest-inkMuted hover:text-rose-500 border border-white shadow-xs flex items-center justify-center transition-colors cursor-pointer"
-                                title="Eliminar afirmación"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
+                          )}
                         </div>
 
                         {voiceActiveIdx === idx ? (
                           <VoiceAudioVisualizer
-                            initialText={currentText}
-                            placeholder={`Habla ahora para la afirmación #${idx + 1}...`}
+                            initialText={currentVal}
+                            placeholder="Habla tu afirmación..."
                             onCommit={(fullText) => {
                               setValue(`affirmations.${idx}.text`, fullText, {
                                 shouldValidate: true,
@@ -476,48 +743,50 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                             onCancel={() => setVoiceActiveIdx(null)}
                           />
                         ) : (
-                          <div className="relative">
-                            <Controller
-                              name={`affirmations.${idx}.text`}
-                              control={control}
-                              render={({ field }) => (
-                                <AutoResizeTextarea
-                                  {...field}
-                                  ref={(el) => {
-                                    field.ref(el);
-                                    textareaRefs.current[idx] = el;
-                                  }}
-                                  enterKeyHint={idx === fields.length - 1 ? 'send' : 'next'}
-                                  onFocus={(e) => {
-                                    ensureCardVisible(idx);
-                                    const el = e.currentTarget;
-                                    setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
-                                  }}
-                                  onKeyDown={(e) => handleKeyDown(e, idx)}
-                                  minRows={2}
-                                  maxHeight={200}
-                                  placeholder="Escribe la afirmación para esta secuencia..."
-                                  className={`w-full p-2.5 pr-8 rounded-xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight transition-colors ${
-                                    errors.affirmations?.[idx]?.text
-                                      ? 'border-rose-400 ring-1 ring-rose-400/50'
-                                      : currentText.trim().length > 0
-                                      ? 'border-emerald-400 ring-1 ring-emerald-400/40'
-                                      : ''
-                                  }`}
-                                />
-                              )}
-                            />
-                            <div className="absolute right-2.5 top-2.5 pointer-events-none">
-                              {currentText.trim().length > 0 && !errors.affirmations?.[idx]?.text && (
-                                <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs">
-                                  <Check className="w-2.5 h-2.5 stroke-[3]" />
-                                </div>
-                              )}
-                              {errors.affirmations?.[idx]?.text && (
-                                <div className="w-4 h-4 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center shadow-xs">
-                                  <AlertCircle className="w-2.5 h-2.5 stroke-[2.5]" />
-                                </div>
-                              )}
+                          <div className="space-y-1">
+                            <div className="relative">
+                              <Controller
+                                name={`affirmations.${idx}.text`}
+                                control={control}
+                                render={({ field: subField }) => (
+                                  <AutoResizeTextarea
+                                    {...subField}
+                                    ref={(el) => {
+                                      subField.ref(el);
+                                      textareaRefs.current[idx] = el;
+                                    }}
+                                    enterKeyHint={idx === fields.length - 1 ? 'send' : 'next'}
+                                    onFocus={(e) => {
+                                      ensureCardVisible(idx);
+                                      const el = e.currentTarget;
+                                      setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
+                                    }}
+                                    onKeyDown={(e) => handleKeyDown(e, idx)}
+                                    minRows={2}
+                                    maxHeight={200}
+                                    placeholder="Escribe la afirmación para esta secuencia..."
+                                    className={`w-full p-2.5 pr-8 rounded-xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight transition-colors ${
+                                      errors.affirmations?.[idx]?.text
+                                        ? 'border-rose-400 ring-1 ring-rose-400/50'
+                                        : currentVal.trim().length > 0
+                                        ? 'border-emerald-400 ring-1 ring-emerald-400/40'
+                                        : ''
+                                    }`}
+                                  />
+                                )}
+                              />
+                              <div className="absolute right-2.5 top-2.5 pointer-events-none">
+                                {currentVal.trim().length > 0 && !errors.affirmations?.[idx]?.text && (
+                                  <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs">
+                                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                                  </div>
+                                )}
+                                {errors.affirmations?.[idx]?.text && (
+                                  <div className="w-4 h-4 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center shadow-xs">
+                                    <AlertCircle className="w-2.5 h-2.5 stroke-[2.5]" />
+                                  </div>
+                                )}
+                              </div>
                             </div>
                             {errors.affirmations?.[idx]?.text && (
                               <p className="text-[11px] text-rose-500 font-medium pt-1 pl-1">
@@ -543,7 +812,7 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                   <span>Añadir afirmación</span>
                 </motion.button>
 
-                {/* Botón principal dentro del flujo final del scroll (NO fixed ni sticky sobre el teclado) */}
+                {/* Botón principal dentro del flujo final del scroll */}
                 <div className="pt-4 pb-4">
                   <motion.button
                     type="submit"

@@ -94,17 +94,17 @@ export default function Home() {
       <div
         vaul-drawer-wrapper=""
         data-testid="vaul-background-wrapper"
-        className="min-h-screen relative flex w-full aura-bg overflow-x-hidden"
+        className="min-h-screen lg:h-screen lg:overflow-hidden relative flex flex-col lg:flex-row w-full aura-bg"
       >
         {/* Desktop Left Sidebar (>= 1024px) */}
         <DesktopSidebar onOpenInstallGuide={() => setIsInstallGuideOpen(true)} />
 
         {/* Main Responsive Content Shell */}
-        <div className="flex-1 flex flex-col w-full min-w-0">
+        <div className="flex-1 flex flex-col w-full min-w-0 lg:h-screen lg:overflow-y-auto">
           {/* Mobile Konsta Large Title Collapsible Navbar (< 1024px) */}
           <AppHeader onOpenInstallGuide={() => setIsInstallGuideOpen(true)} />
 
-          <main className="flex-1 flex flex-col w-full max-w-full lg:max-w-6xl xl:max-w-7xl mx-auto px-3 sm:px-6 lg:px-10">
+          <main className="flex-1 flex flex-col w-full max-w-full lg:max-w-5xl xl:max-w-6xl mx-auto px-3 sm:px-6 lg:px-8">
             <ActionableErrorBoundary
               simulatedError={testSimulatedError ? 'storage' : null}
               onReset={() => setTestSimulatedError(false)}
