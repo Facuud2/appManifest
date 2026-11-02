@@ -92,24 +92,21 @@ export const RampageSetView: React.FC = () => {
 
   const slideVariants = {
     enter: (dir: number) => ({
-      x: dir > 0 ? 50 : -50,
+      x: dir > 0 ? 110 : -110,
       opacity: 0,
-      scale: 0.96,
-      filter: 'blur(3px)',
+      scale: 0.94,
     }),
     center: {
       x: dragOffsetX,
       opacity: 1,
       scale: 1,
-      filter: 'blur(0px)',
-      transition: IOS_VIEW_SPRING,
+      transition: { type: 'spring', stiffness: 380, damping: 32 },
     },
     exit: (dir: number) => ({
-      x: dir > 0 ? -50 : 50,
+      x: dir > 0 ? -110 : 110,
       opacity: 0,
-      scale: 0.96,
-      filter: 'blur(3px)',
-      transition: IOS_VIEW_SPRING,
+      scale: 0.94,
+      transition: { type: 'spring', stiffness: 380, damping: 32 },
     }),
   };
 
@@ -150,18 +147,16 @@ export const RampageSetView: React.FC = () => {
           <ChevronLeft className="w-4 h-4" />
         </motion.button>
 
-        {/* Set Title & Dynamic 1/X Indicator */}
+        {/* Set Title & Dynamic Set X de Y Indicator */}
         <div className="flex-1 text-center min-w-0 px-2">
-          <div className="flex items-center justify-center gap-2">
-            <h3 className="text-sm sm:text-base font-serif font-bold text-manifest-ink truncate">
-              {currentSet.title}
-            </h3>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-manifest-lavender/60 text-manifest-auraPurple shrink-0">
-              {safeSetIndex + 1}/{totalSets}
-            </span>
-          </div>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-manifest-auraPurple block">
+            Set {safeSetIndex + 1} de {totalSets}
+          </span>
+          <h3 className="text-sm sm:text-base font-serif font-bold text-manifest-ink truncate mt-0.5">
+            “{currentSet.title}”
+          </h3>
           <p className="text-[11px] text-manifest-inkMuted mt-0.5">
-            {totalAffirmationsInSet} afirmaciones
+            Secuencia de {totalAffirmationsInSet} afirmaciones
           </p>
         </div>
 
@@ -180,16 +175,31 @@ export const RampageSetView: React.FC = () => {
         </div>
       </div>
 
-      {/* Subheader: Affirmation index and Edit Set */}
-      <div className="flex items-center justify-between px-2">
-        <span className="text-[11px] font-semibold text-manifest-inkMuted">
-          Afirmación {safeAffirmationIndex + 1}
-        </span>
+      {/* Subheader: Progreso claro de Afirmaciones dentro del set */}
+      <div className="flex items-center justify-between px-2 pt-0.5">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-manifest-ink">
+            Afirmación {safeAffirmationIndex + 1} de {totalAffirmationsInSet}
+          </span>
+          {/* Dots de progreso dentro del set */}
+          <div className="flex items-center gap-1">
+            {currentSet.affirmations.map((_, dotIdx) => (
+              <span
+                key={dotIdx}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  dotIdx === safeAffirmationIndex
+                    ? 'w-4 bg-manifest-auraPurple'
+                    : 'w-1.5 bg-manifest-ink/20'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
         <motion.button
           type="button"
           whileTap={IOS_TAP_SPRING}
           onClick={() => openRampageSetEditor(currentSet)}
-          className="flex items-center gap-1 text-[11px] font-semibold text-manifest-inkMuted hover:text-manifest-ink transition-colors cursor-pointer"
+          className="flex items-center gap-1 text-[11px] font-semibold text-manifest-auraPurple hover:text-manifest-ink transition-colors cursor-pointer"
         >
           <Edit3 className="w-3 h-3" />
           <span>Editar Set</span>
@@ -270,6 +280,14 @@ export const RampageSetView: React.FC = () => {
                 <p className="text-base sm:text-xl md:text-2xl font-serif font-bold text-manifest-ink leading-relaxed tracking-tight">
                   {currentAffirmation.text}
                 </p>
+              </div>
+
+              {/* Bottom Tactile Affordance Hint */}
+              <div className="relative z-10 flex items-center justify-center pt-2">
+                <span className="text-[10px] font-medium text-manifest-inkMuted/70 flex items-center gap-1">
+                  <span>Toca la tarjeta o desliza para avanzar</span>
+                  <span>→</span>
+                </span>
               </div>
             </motion.div>
           )}

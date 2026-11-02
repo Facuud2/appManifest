@@ -18,8 +18,8 @@ export const MySpaceView: React.FC = () => {
 
   return (
     <div className="space-y-6 pt-1">
-      {/* Top Header */}
-      <div className="px-1">
+      {/* Top Header - Hidden on Mobile because Konsta Navbar shows Large Title 'Mi Espacio' */}
+      <div className="hidden lg:block px-1">
         <h2 className="text-xl font-serif font-bold text-manifest-ink flex items-center gap-2">
           <Compass className="w-5 h-5 text-manifest-auraPurple" />
           Mi Espacio Sagrado

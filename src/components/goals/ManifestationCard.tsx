@@ -17,6 +17,7 @@ import { IOS_TAP_SPRING } from '@/lib/iosSprings';
 interface ManifestationCardProps {
   affirmation: Affirmation;
   isPinnedMode?: boolean;
+  isDragging?: boolean;
   containerRef?: React.RefObject<HTMLDivElement | null>;
   onDragHandlePointerDown?: (e: React.PointerEvent<HTMLButtonElement>) => void;
   onEdit?: (aff: Affirmation) => void;
@@ -26,6 +27,7 @@ interface ManifestationCardProps {
 export const ManifestationCard: React.FC<ManifestationCardProps> = ({
   affirmation,
   isPinnedMode = false,
+  isDragging = false,
   onDragHandlePointerDown,
   onEdit,
   onDeleteRequest,
@@ -73,7 +75,11 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
     <div
       data-testid={`manifestation-card-${affirmation.id}`}
       {...cardTapHandlers}
-      className="w-full p-4 sm:p-4.5 rounded-3xl glass-card-interactive border border-white/95 shadow-sm space-y-2.5 select-none cursor-pointer hover:shadow-md touch-pan-y"
+      className={`w-full p-4 sm:p-4.5 rounded-3xl border border-white/95 space-y-2.5 select-none cursor-pointer transition-shadow touch-pan-y ${
+        isDragging
+          ? 'bg-[#FFFDF9]/98 shadow-[0_16px_36px_rgba(184,163,248,0.35)] ring-2 ring-manifest-lavender/60'
+          : 'glass-card-interactive shadow-sm hover:shadow-md'
+      }`}
     >
       {/* Top Meta Bar */}
       <div className="flex items-center justify-between gap-2">

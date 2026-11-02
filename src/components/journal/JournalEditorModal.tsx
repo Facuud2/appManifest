@@ -142,12 +142,14 @@ export const JournalEditorModal: React.FC = () => {
     saveJournalEntry(entryToSave);
     closeJournalEditor();
 
-    const unlocked = checkAndUnlockMilestones();
-    if (unlocked.length === 0) {
-      showToast(
-        isEditing ? 'Entrada actualizada' : 'Entrada guardada en tu diario',
-        'gentle'
-      );
+    if (isEditing) {
+      // Al editar: no re-evaluar ni disparar modales de recompensas / gambling
+      showToast('Entrada actualizada', 'gentle');
+    } else {
+      const unlocked = checkAndUnlockMilestones();
+      if (unlocked.length === 0) {
+        showToast('Entrada guardada en tu diario', 'gentle');
+      }
     }
   };
 
@@ -342,6 +344,7 @@ export const JournalEditorModal: React.FC = () => {
                       <AutoResizeTextarea
                         {...field}
                         data-testid="journal-content-input"
+                        onFocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                         minRows={4}
                         placeholder={
                           selectedEntryType === 'manifestation'

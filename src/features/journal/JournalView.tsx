@@ -18,7 +18,6 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { JournalEntry } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { IOS_TAP_SPRING } from '@/lib/iosSprings';
 import { JournalEntryDetailModal } from '@/components/journal/JournalEntryDetailModal';
 import { LiquidEmptyState } from '@/components/ui/LiquidEmptyState';
@@ -36,7 +35,6 @@ export const JournalView: React.FC = () => {
 
   // Delete Confirm Modal State
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
-  const [journalListRef] = useAutoAnimate<HTMLDivElement>({ duration: 240 });
 
   const handleOpenNew = (type: 'manifestation' | 'progress' | 'reflection' = 'manifestation') => {
     openJournalEditor(type);
@@ -84,11 +82,11 @@ export const JournalView: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto space-y-4 pt-1">
-      {/* Header */}
+      {/* Header: Visible with title on Desktop; on mobile actions only to prevent duplicate Large Title */}
       <div className="flex items-center justify-between px-1">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-manifest-auraPurple" />
+        <div className="hidden lg:flex items-center gap-2">
+          <BookOpen className="w-5 h-5 text-manifest-auraPurple" />
+          <h2 className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink">
             Diario & Cuaderno
           </h2>
         </div>
@@ -96,18 +94,18 @@ export const JournalView: React.FC = () => {
         <motion.button
           whileTap={IOS_TAP_SPRING}
           onClick={() => handleOpenNew('manifestation')}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl primary-gradient-btn text-xs font-semibold shadow-sm cursor-pointer"
+          className="ml-auto flex items-center gap-1.5 px-3.5 py-2 rounded-2xl primary-gradient-btn text-xs font-semibold shadow-sm cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Escribir</span>
         </motion.button>
       </div>
 
-      {/* Filter Tabs: Todas / Manifestaciones / Notas / Avances */}
-      <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none pb-0.5">
+      {/* Filter Tabs: Edge-to-edge full bleed horizontal scroll without clipping */}
+      <div className="-mx-3 px-3 flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth pb-1">
         <button
           onClick={() => setSelectedFilter('all')}
-          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             selectedFilter === 'all'
               ? 'bg-manifest-ink text-white shadow-sm'
               : 'glass-pill text-manifest-inkMuted hover:text-manifest-ink'
@@ -117,7 +115,7 @@ export const JournalView: React.FC = () => {
         </button>
         <button
           onClick={() => setSelectedFilter('manifestation')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             selectedFilter === 'manifestation'
               ? 'bg-manifest-ink text-white shadow-sm'
               : 'glass-pill text-manifest-inkMuted hover:text-manifest-ink'
@@ -128,18 +126,18 @@ export const JournalView: React.FC = () => {
         </button>
         <button
           onClick={() => setSelectedFilter('progress')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             selectedFilter === 'progress'
               ? 'bg-manifest-ink text-white shadow-sm'
               : 'glass-pill text-manifest-inkMuted hover:text-manifest-ink'
           }`}
         >
           <Sparkles className="w-3.5 h-3.5" />
-          <span>Avances de manifestación ({progressCount})</span>
+          <span>Avances ({progressCount})</span>
         </button>
         <button
           onClick={() => setSelectedFilter('reflection')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             selectedFilter === 'reflection'
               ? 'bg-manifest-ink text-white shadow-sm'
               : 'glass-pill text-manifest-inkMuted hover:text-manifest-ink'
@@ -185,7 +183,7 @@ export const JournalView: React.FC = () => {
           onAction={searchQuery ? () => setSearchQuery('') : () => handleOpenNew('manifestation')}
         />
       ) : (
-        <div ref={journalListRef} className="grid grid-cols-1 gap-3.5">
+        <div className="grid grid-cols-1 gap-3.5">
           {filteredEntries.map((entry) => {
             const formattedEntryDate = format(new Date(entry.createdAt), "d 'de' MMMM, yyyy", { locale: es });
             const isProgress = entry.entryType === 'progress';

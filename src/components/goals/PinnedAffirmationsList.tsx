@@ -60,6 +60,11 @@ export const PinnedAffirmationsList: React.FC<PinnedAffirmationsListProps> = ({
       const itemRect = itemEl.getBoundingClientRect();
       const pointerOffsetInCard = e.clientY - itemRect.top;
 
+      const targetEl = e.currentTarget;
+      try {
+        targetEl.setPointerCapture(e.pointerId);
+      } catch (_) {}
+
       setDraggedId(affirmationId);
       setDragOffsetY(0);
 
@@ -135,7 +140,12 @@ export const PinnedAffirmationsList: React.FC<PinnedAffirmationsListProps> = ({
         setDragOffsetY(nextOffsetY);
       };
 
-      const handlePointerEnd = () => {
+      const handlePointerEnd = (endEvent?: Event) => {
+        if (endEvent && 'pointerId' in endEvent) {
+          try {
+            ((endEvent as PointerEvent).target as HTMLElement)?.releasePointerCapture?.((endEvent as PointerEvent).pointerId);
+          } catch (_) {}
+        }
         if (dragSessionRef.current) {
           dragSessionRef.current.cleanup();
           dragSessionRef.current = null;
@@ -147,6 +157,7 @@ export const PinnedAffirmationsList: React.FC<PinnedAffirmationsListProps> = ({
       window.addEventListener('pointermove', handlePointerMove, { passive: false });
       window.addEventListener('pointerup', handlePointerEnd);
       window.addEventListener('pointercancel', handlePointerEnd);
+      window.addEventListener('blur', handlePointerEnd);
 
       dragSessionRef.current = {
         id: affirmationId,
@@ -157,6 +168,7 @@ export const PinnedAffirmationsList: React.FC<PinnedAffirmationsListProps> = ({
           window.removeEventListener('pointermove', handlePointerMove);
           window.removeEventListener('pointerup', handlePointerEnd);
           window.removeEventListener('pointercancel', handlePointerEnd);
+          window.removeEventListener('blur', handlePointerEnd);
         },
       };
     },
@@ -181,19 +193,22 @@ export const PinnedAffirmationsList: React.FC<PinnedAffirmationsListProps> = ({
               style={
                 isDragging
                   ? {
-                      transform: `translate3d(0px, ${dragOffsetY}px, 0px)`,
-                      zIndex: 30,
+                      transform: `translate3d(0px, ${dragOffsetY}px, 0px) scale(1.02)`,
+                      zIndex: 50,
                       position: 'relative',
                     }
                   : undefined
               }
-              className={`w-full relative select-none list-none ${
-                isDragging ? 'shadow-lg' : ''
+              className={`w-full relative select-none list-none transition-shadow ${
+                isDragging
+                  ? 'shadow-[0_16px_36px_rgba(184,163,248,0.35)] opacity-100 rounded-3xl'
+                  : ''
               }`}
             >
               <ManifestationCard
                 affirmation={aff}
                 isPinnedMode={true}
+                isDragging={isDragging}
                 onDragHandlePointerDown={(e) => handleDragStart(e, aff.id)}
                 onDeleteRequest={onDeleteRequest}
               />

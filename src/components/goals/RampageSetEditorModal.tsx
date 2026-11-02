@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { Drawer } from 'vaul';
-import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -17,7 +16,7 @@ import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
 
 const rampageFormSchema = z
   .object({
-    title: z.string().trim().min(1, 'El título del set es requerido'),
+    title: z.string().trim().min(3, 'El título debe tener al menos 3 caracteres'),
     userId: UserScopeEnum,
     affirmations: z
       .array(
@@ -30,12 +29,23 @@ const rampageFormSchema = z
       .min(1, 'El set debe contener al menos una afirmación'),
   })
   .superRefine((data, ctx) => {
-    const hasAtLeastOneValid = data.affirmations.some((a) => a.text.trim().length > 0);
-    if (!hasAtLeastOneValid) {
+    const nonEmpties = data.affirmations.filter((a) => a.text.trim().length > 0);
+    if (nonEmpties.length === 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Escribe al menos una afirmación para guardar el set',
+        message: 'Escribe al menos una afirmación (mínimo 4 caracteres)',
         path: ['affirmations', 0, 'text'],
+      });
+    } else {
+      data.affirmations.forEach((a, idx) => {
+        const trimmed = a.text.trim();
+        if (trimmed.length > 0 && trimmed.length < 4) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'La afirmación debe tener al menos 4 caracteres',
+            path: ['affirmations', idx, 'text'],
+          });
+        }
       });
     }
   });
@@ -95,8 +105,6 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
   const [voiceActiveIdx, setVoiceActiveIdx] = useState<number | null>(null);
   const [focusIndex, setFocusIndex] = useState<number | null>(null);
   const textareaRefs = React.useRef<{ [key: number]: HTMLTextAreaElement | null }>({});
-  const [cardsListRef] = useAutoAnimate<HTMLDivElement>({ duration: 200 });
-  const [titleValidationRef] = useAutoAnimate<HTMLDivElement>({ duration: 180 });
 
   const selectedUserId = watch('userId');
   const watchedAffirmations = watch('affirmations');
@@ -145,9 +153,9 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
       e.preventDefault();
       const currentVal = watchedAffirmations?.[index]?.text || '';
       if (index === fields.length - 1) {
-        if (currentVal.trim()) {
+        if (currentVal.trim().length >= 3) {
           handleAddAffirmation();
-        } else if (fields.length > 1) {
+        } else if (fields.length > 1 && currentVal.trim().length === 0) {
           remove(index);
         }
       } else {
@@ -234,13 +242,27 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
     saveRampageSet(newSet);
     onClose();
 
-    const unlocked = checkAndUnlockMilestones();
-    if (unlocked.length === 0) {
-      showToast(
-        isEditing ? 'Set de Rampage actualizado' : 'Set de Rampage guardado',
-        'gentle'
-      );
+    if (isEditing) {
+      // Al editar: no activar gambling/logros repetidos, solo notificación limpia
+      showToast('Set de Rampage actualizado', 'gentle');
+    } else {
+      // Al crear: solo si genuinamente se desbloquea un nuevo hito de gambling
+      const unlocked = checkAndUnlockMilestones();
+      if (unlocked.length === 0) {
+        showToast('Set de Rampage guardado', 'gentle');
+      }
     }
+  };
+
+  const handlePreSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const currentAffs = watch('affirmations') || [];
+    // Si la última afirmación está vacía y ya tenemos al menos una válida, eliminar la vacía estilo Trello
+    const lastIdx = currentAffs.length - 1;
+    if (lastIdx > 0 && (!currentAffs[lastIdx]?.text || currentAffs[lastIdx].text.trim() === '')) {
+      remove(lastIdx);
+    }
+    handleSubmit(onSubmit)(e);
   };
 
   return (
@@ -255,10 +277,10 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
         <Drawer.Overlay className="fixed inset-0 z-50 bg-manifest-ink/40 backdrop-blur-sm" />
         <Drawer.Content
           data-testid="rampage-vaul-drawer"
-          className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg max-h-[90dvh] flex flex-col rounded-t-[2.25rem] ${LIQUID_GLASS_SPECULAR} bg-white/90 shadow-liquid outline-none overflow-hidden`}
+          className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg max-h-[92dvh] h-[90dvh] flex flex-col rounded-t-[2.25rem] ${LIQUID_GLASS_SPECULAR} bg-white/95 shadow-liquid outline-none overflow-hidden`}
         >
           {/* iOS Native Grabber Handle */}
-          <div className="pt-3 pb-1 bg-white/90 shrink-0">
+          <div className="pt-3 pb-1 bg-white/95 shrink-0">
             <div
               data-testid="ios-sheet-grabber"
               className="mx-auto w-12 h-1.5 rounded-full bg-manifest-ink/20 cursor-grab active:cursor-grabbing"
@@ -273,7 +295,7 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
           </Drawer.Description>
 
           {/* Fixed Header (shrink-0) */}
-          <div className="shrink-0 flex items-center justify-between px-5 pt-2 pb-3 border-b border-manifest-lavender/40 bg-white/90 backdrop-blur-md z-10">
+          <div className="shrink-0 flex items-center justify-between px-5 pt-2 pb-3 border-b border-manifest-lavender/40 bg-white/95 z-10">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-manifest-pink via-manifest-lavender to-manifest-celeste flex items-center justify-center shadow-sm">
                 <Sparkles className="w-4 h-4 text-manifest-auraPurple" />
@@ -297,11 +319,11 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
           </div>
 
           <form
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={handlePreSubmit}
             className="flex flex-col flex-1 min-h-0 overflow-hidden"
           >
             {/* Scrollable Body (flex-1 min-h-0 overflow-y-auto) */}
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-5 py-4 space-y-4">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-5 py-4 space-y-4 pb-28">
               {/* Espacio / Perfil */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-manifest-ink">
@@ -331,7 +353,7 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
               </div>
 
               {/* Título del Set */}
-              <div ref={titleValidationRef} className="space-y-1.5">
+              <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-manifest-ink">
                   Título del Set
                 </label>
@@ -339,7 +361,8 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                   <input
                     type="text"
                     {...register('title')}
-                    placeholder="Ej: Abundancia Ilimitada, Paz Serena, Éxito..."
+                    onFocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                    placeholder="Ej: Abundancia, Paz Serena, Éxito"
                     className={`w-full px-3.5 py-2.5 pr-10 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight transition-colors ${
                       errors.title
                         ? 'border-rose-400 ring-1 ring-rose-400/50'
@@ -380,14 +403,14 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                   </span>
                 </div>
 
-                <div ref={cardsListRef} className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-3">
                   {fields.map((fieldItem, idx) => {
                     const currentText = watchedAffirmations?.[idx]?.text || '';
                     return (
                       <div
                         key={fieldItem.id}
                         data-rampage-card={idx}
-                        className="p-3.5 rounded-2xl bg-white border border-manifest-lavender/45 shadow-sm space-y-2"
+                        className="p-3.5 rounded-2xl bg-white border border-manifest-lavender/50 shadow-xs space-y-2.5"
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] font-bold text-manifest-inkMuted">
@@ -451,7 +474,10 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                                     textareaRefs.current[idx] = el;
                                   }}
                                   enterKeyHint={idx === fields.length - 1 ? 'send' : 'next'}
-                                  onFocus={() => ensureCardVisible(idx)}
+                                  onFocus={(e) => {
+                                    ensureCardVisible(idx);
+                                    e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                  }}
                                   onKeyDown={(e) => handleKeyDown(e, idx)}
                                   minRows={2}
                                   placeholder="Escribe la afirmación para esta secuencia..."

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navbar } from 'konsta/react';
 import { useAppStore } from '@/store';
 import { Flame, Download, Sparkles } from 'lucide-react';
@@ -14,22 +14,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onOpenInstallGuide }) => {
   const { settings, activeScope, activeTab } = useAppStore();
   const [isStandalone, setIsStandalone] = useState(false);
 
-  // Proxy scroll element so Konsta's large/transparent Navbar reacts to window scrolling
-  const scrollListenersRef = useRef<Set<(e: { target: { scrollTop: number } }) => void>>(new Set());
-  const scrollProxyRef = useRef({
-    scrollTop: 0,
-    addEventListener: (type: string, cb: (e: { target: { scrollTop: number } }) => void) => {
-      if (type === 'scroll') {
-        scrollListenersRef.current.add(cb);
-      }
-    },
-    removeEventListener: (type: string, cb: (e: { target: { scrollTop: number } }) => void) => {
-      if (type === 'scroll') {
-        scrollListenersRef.current.delete(cb);
-      }
-    },
-  });
-
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const isStandaloneMode =
@@ -38,22 +22,6 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onOpenInstallGuide }) => {
       setIsStandalone(isStandaloneMode);
     }
   }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const handleWindowScroll = () => {
-      const y = Math.max(0, window.scrollY || document.documentElement.scrollTop || 0);
-      scrollProxyRef.current.scrollTop = y;
-      scrollListenersRef.current.forEach((cb) => {
-        cb({ target: { scrollTop: y } });
-      });
-    };
-
-    handleWindowScroll();
-    window.addEventListener('scroll', handleWindowScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleWindowScroll);
-  }, [activeTab, activeScope]);
 
   const getScopeSubtitle = () => {
     switch (activeScope) {
@@ -86,18 +54,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onOpenInstallGuide }) => {
   return (
     <div
       data-testid="dynamic-app-header"
-      className="lg:hidden sticky top-0 z-30 w-full bg-[#FDFBF7]/75 backdrop-blur-2xl border-b border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.85),0_4px_20px_-4px_rgba(184,163,248,0.12)]"
+      className="lg:hidden sticky top-0 z-30 w-full bg-[#FDFBF7]/85 backdrop-blur-2xl border-b border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.85),0_4px_20px_-4px_rgba(184,163,248,0.12)]"
     >
       <Navbar
         data-testid="ios-collapsible-navbar"
-        large
-        transparent
         translucent
         centerTitle
-        scrollEl={scrollProxyRef}
         title={getLargeSectionTitle()}
-        titleFontSizeIos="text-[16px]"
-        titleLargeFontSizeIos="text-[26px] sm:text-[28px]"
+        titleFontSizeIos="text-[17px]"
         colors={{
           bgIos: 'bg-white/80',
           textIos: 'text-manifest-ink',

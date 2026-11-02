@@ -93,7 +93,7 @@ export default function Home() {
       <div
         vaul-drawer-wrapper=""
         data-testid="vaul-background-wrapper"
-        className="min-h-screen relative flex w-full aura-bg"
+        className="min-h-screen relative flex w-full aura-bg overflow-x-hidden"
       >
         {/* Desktop Left Sidebar (>= 1024px) */}
         <DesktopSidebar onOpenInstallGuide={() => setIsInstallGuideOpen(true)} />

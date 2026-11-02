@@ -14,7 +14,6 @@ import {
 import { UserScope, Affirmation } from '@/types';
 import { motion } from 'framer-motion';
 import { Segmented, SegmentedButton } from 'konsta/react';
-import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
@@ -42,10 +41,8 @@ export const GoalsView: React.FC = () => {
   const [isDictating, setIsDictating] = useState(false);
   const [scope, setScope] = useState<UserScope>(activeScope);
 
-  const pinnedContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
-  const [unpinnedListRef] = useAutoAnimate<HTMLDivElement>({ duration: 240 });
 
   // Split pinned and unpinned manifestations
   const pinnedAffirmations = affirmations.filter((a) => a.pinned);
@@ -121,7 +118,7 @@ export const GoalsView: React.FC = () => {
     <div className="max-w-2xl mx-auto space-y-4 pt-1">
       {/* Header with iOS Segmented Control */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
-        <div>
+        <div className="hidden lg:block">
           <h2 className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-manifest-auraPurple" />
             Afirmaciones
@@ -234,7 +231,7 @@ export const GoalsView: React.FC = () => {
                 Todas tus afirmaciones están fijadas como prioritarias arriba.
               </p>
             ) : (
-              <div ref={unpinnedListRef} className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-2.5">
                 {unpinnedAffirmations.map((item) => (
                   <ManifestationCard
                     key={item.id}

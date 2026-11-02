@@ -15,6 +15,7 @@ import {
   Compass,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { VoiceDictationButton } from '@/components/ui/VoiceDictationButton';
 
 type RitualStage = 'write' | 'reflect' | 'burning' | 'released';
 
@@ -90,9 +91,17 @@ export const ReleaseRitual: React.FC = () => {
                   <Feather className="w-3.5 h-3.5 text-amber-700" />
                   Hoja de desahogo y verdad
                 </span>
-                <span className="text-[10px] text-amber-800/60 uppercase tracking-widest">
-                  Paso 1 de 3
-                </span>
+                <div className="flex items-center gap-2">
+                  <VoiceDictationButton
+                    onTranscript={(text) => setFearContent(text)}
+                    initialText={fearContent}
+                    size="sm"
+                    title="Dictar desahogo por voz"
+                  />
+                  <span className="text-[10px] text-amber-800/60 uppercase tracking-widest">
+                    Paso 1 de 3
+                  </span>
+                </div>
               </div>
 
               <textarea

@@ -19,13 +19,13 @@ import {
   X,
   Target,
   Trophy,
+  ChevronDown,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Affirmation, JournalEntry } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Segmented, SegmentedButton } from 'konsta/react';
-import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
 import { ManifestationCard } from '@/components/goals/ManifestationCard';
 import { PinnedAffirmationsList } from '@/components/goals/PinnedAffirmationsList';
@@ -50,14 +50,11 @@ export const DashboardView: React.FC = () => {
   } = useAppStore();
 
   const [viewMode, setViewMode] = useState<'list' | 'rampage'>('list');
+  const [showAllPinnedInDashboard, setShowAllPinnedInDashboard] = useState(false);
   const [selectedJournalEntryForView, setSelectedJournalEntryForView] = useState<JournalEntry | null>(null);
   const [journalEntryToDelete, setJournalEntryToDelete] = useState<JournalEntry | null>(null);
   const [affirmationToDelete, setAffirmationToDelete] = useState<Affirmation | null>(null);
   const [recentlyDeletedAffirmation, setRecentlyDeletedAffirmation] = useState<Affirmation | null>(null);
-
-  const pinnedContainerRef = useRef<HTMLDivElement>(null);
-  const [unpinnedListRef] = useAutoAnimate<HTMLDivElement>({ duration: 240 });
-  const [recentJournalListRef] = useAutoAnimate<HTMLDivElement>({ duration: 240 });
 
   // Auto-clear recently deleted undo after 7 seconds
   useEffect(() => {
@@ -170,7 +167,7 @@ export const DashboardView: React.FC = () => {
             >
               <span className="flex items-center justify-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-manifest-auraPurple shrink-0" />
-                <span>Mis Fijadas ({affirmations.length})</span>
+                <span>Mis Fijadas ({pinnedAffirmations.length})</span>
               </span>
             </SegmentedButton>
 
@@ -200,7 +197,7 @@ export const DashboardView: React.FC = () => {
             ) : (
               <>
                 <Pin className="w-3.5 h-3.5 text-manifest-auraPurple fill-manifest-auraPurple" />
-                <span>{pinnedAffirmations.length > 0 ? 'Afirmaciones Fijadas' : 'Afirmaciones'}</span>
+                <span>Afirmaciones Fijadas ({pinnedAffirmations.length})</span>
               </>
             )}
           </h3>
@@ -237,36 +234,44 @@ export const DashboardView: React.FC = () => {
 
         {viewMode === 'rampage' ? (
           <RampageSetView />
-        ) : affirmations.length === 0 ? (
+        ) : pinnedAffirmations.length === 0 ? (
           <LiquidEmptyState
-            title="Santuario en silencio fértil"
-            description="Aún no tienes afirmaciones o decretos registrados en este espacio. Ancla tu primera intención consciente para expandir tu realidad."
-            actionLabel="Crear mi primera afirmación"
-            onAction={() => openAffirmationEditor(null)}
+            title="Sin afirmaciones fijadas"
+            description="Fija tus afirmaciones prioritarias con el icono de chincheta para tenerlas siempre presentes en tu pantalla de inicio."
+            actionLabel="Explorar todas mis afirmaciones"
+            onAction={() => navigateToGoals('list')}
           />
         ) : (
           <div className="space-y-2.5">
-            {/* Pinned Affirmations with Drag & Drop */}
-            {pinnedAffirmations.length > 0 && (
-              <PinnedAffirmationsList
-                pinnedAffirmations={pinnedAffirmations}
-                onReorder={handleReorderPinned}
-                onDeleteRequest={(targetAff) => setAffirmationToDelete(targetAff)}
-              />
-            )}
+            {/* Pinned Affirmations with Drag & Drop - compact and capped */}
+            <PinnedAffirmationsList
+              pinnedAffirmations={
+                showAllPinnedInDashboard
+                  ? pinnedAffirmations
+                  : pinnedAffirmations.slice(0, 4)
+              }
+              onReorder={handleReorderPinned}
+              onDeleteRequest={(targetAff) => setAffirmationToDelete(targetAff)}
+            />
 
-            {/* Unpinned Affirmations - NEVER hidden when others are pinned */}
-            {unpinnedAffirmations.length > 0 && (
-              <div ref={unpinnedListRef} className="flex flex-col gap-2.5">
-                {unpinnedAffirmations.slice(0, 6).map((aff) => (
-                  <ManifestationCard
-                    key={aff.id}
-                    affirmation={aff}
-                    isPinnedMode={false}
-                    onDeleteRequest={(targetAff) => setAffirmationToDelete(targetAff)}
-                  />
-                ))}
-              </div>
+            {pinnedAffirmations.length > 4 && (
+              <motion.button
+                type="button"
+                whileTap={IOS_TAP_SPRING}
+                onClick={() => setShowAllPinnedInDashboard((prev) => !prev)}
+                className="w-full py-2.5 px-3 rounded-2xl glass-pill border border-white/80 text-xs font-semibold text-manifest-auraPurple flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <span>
+                  {showAllPinnedInDashboard
+                    ? 'Mostrar menos afirmaciones'
+                    : `Ver las ${pinnedAffirmations.length} afirmaciones fijadas`}
+                </span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                    showAllPinnedInDashboard ? 'rotate-180' : ''
+                  }`}
+                />
+              </motion.button>
             )}
           </div>
         )}
@@ -432,7 +437,7 @@ export const DashboardView: React.FC = () => {
               onAction={() => openJournalEditor('manifestation', null)}
             />
           ) : (
-            <div ref={recentJournalListRef} className="grid grid-cols-1 gap-2.5 sm:gap-3">
+            <div className="grid grid-cols-1 gap-2.5 sm:gap-3">
               {recentEntries.map((entry) => {
                 const formattedEntryDate = format(new Date(entry.createdAt), "d 'de' MMMM", { locale: es });
                 const isProgress = entry.entryType === 'progress';

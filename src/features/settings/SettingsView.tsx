@@ -122,11 +122,15 @@ export const SettingsView: React.FC = () => {
             </span>
           }
           subtitle={
-            <span className="text-[11px] text-manifest-inkMuted">
+            <span className="text-[11px] font-medium text-slate-700 block mt-0.5">
               {isLiteMode ? 'Activado — Máxima fluidez sin blur' : 'Estándar — Efecto Liquid Glass completo'}
             </span>
           }
-          text="Reduce desenfoques pesados y prioriza velocidad instantánea en redes lentas o ahorro de batería."
+          text={
+            <p className="text-xs text-slate-600 font-normal leading-relaxed mt-0.5">
+              Reduce desenfoques pesados y prioriza velocidad instantánea en redes lentas o ahorro de batería.
+            </p>
+          }
           after={
             <div data-testid="settings-toggle-lite-mode" onClick={toggleLiteMode} className="cursor-pointer">
               <Toggle
@@ -157,7 +161,11 @@ export const SettingsView: React.FC = () => {
               Recorrido Interactivo del Santuario
             </span>
           }
-          subtitle="Volver a abrir la guía paso a paso con láminas de foco"
+          subtitle={
+            <span className="text-xs text-slate-600 block mt-0.5">
+              Volver a abrir la guía paso a paso con láminas de foco
+            </span>
+          }
         />
       </List>
 
@@ -278,7 +286,11 @@ export const SettingsView: React.FC = () => {
               Copias de Seguridad & Restauración
             </span>
           }
-          text="Exporta o restaura tus registros locales en formato JSON."
+          text={
+            <p className="text-xs text-slate-600 font-normal leading-relaxed mt-0.5">
+              Exporta o restaura tus registros locales en formato JSON.
+            </p>
+          }
           footer={
             <div className="pt-3 space-y-2 w-full">
               {importError && (
@@ -330,7 +342,11 @@ export const SettingsView: React.FC = () => {
               Privacidad Absoluta & Almacenamiento Local
             </span>
           }
-          text="Tus manifestaciones y diario operan en tu dispositivo con sincronización segura."
+          text={
+            <p className="text-xs text-slate-600 font-normal leading-relaxed mt-0.5">
+              Tus manifestaciones y diario operan en tu dispositivo con sincronización segura.
+            </p>
+          }
         />
       </List>
 

@@ -168,17 +168,17 @@ export const TrackingView: React.FC = () => {
           {milestones.map((milestone) => (
             <div
               key={milestone.id}
-              className={`p-3.5 sm:p-4 rounded-2xl glass-card border flex items-center gap-3 transition-opacity ${
+              className={`p-3.5 sm:p-4 rounded-2xl border flex items-center gap-3 transition-colors ${
                 milestone.unlocked
-                  ? 'border-white/95 shadow-glass'
-                  : 'border-white/50 opacity-50 bg-white/30'
+                  ? 'glass-card border-white/95 shadow-glass bg-white/70'
+                  : 'bg-white/90 border-manifest-lavender/50 shadow-xs'
               }`}
             >
               <div
                 className={`w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 ${
                   milestone.unlocked
                     ? 'bg-gradient-to-tr from-manifest-pink via-manifest-lavender to-manifest-celeste text-manifest-ink shadow-sm'
-                    : 'bg-white/50 text-manifest-inkMuted'
+                    : 'bg-manifest-lavender/30 text-manifest-inkMuted border border-manifest-lavender/40'
                 }`}
               >
                 {milestone.category === 'writing' ? (
@@ -195,7 +195,7 @@ export const TrackingView: React.FC = () => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <div className="flex items-center gap-2">
-                    <h4 className="text-xs font-bold text-manifest-ink">
+                    <h4 className="text-xs font-bold text-slate-800">
                       {milestone.title}
                     </h4>
                     {milestone.unlocked ? (
@@ -203,16 +203,20 @@ export const TrackingView: React.FC = () => {
                         Conseguido
                       </span>
                     ) : milestone.progress ? (
-                      <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-white/70 text-manifest-inkMuted">
+                      <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-manifest-lavender/40 text-slate-700 border border-manifest-lavender/60">
                         {milestone.progress.current}/{milestone.progress.target}
                       </span>
-                    ) : null}
+                    ) : (
+                      <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                        Por desbloquear
+                      </span>
+                    )}
                   </div>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-manifest-lavender/50 text-manifest-auraPurple border border-manifest-auraPurple/20">
                     +{milestone.rewardFragments} Éter
                   </span>
                 </div>
-                <p className="text-[11px] text-manifest-inkMuted mt-0.5 leading-relaxed">
+                <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-normal">
                   {milestone.description}
                 </p>
               </div>

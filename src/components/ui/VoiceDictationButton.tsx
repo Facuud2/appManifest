@@ -70,8 +70,7 @@ export const VoiceDictationButton: React.FC<VoiceDictationButtonProps> = ({
       return;
     }
 
-    isListeningRef.current = true;
-    setIsListening(true);
+    // Save initial text reference, but DO NOT show listening pulse until onstart fires
     baseTextRef.current = (initialText || '').trim();
     currentFullTextRef.current = baseTextRef.current;
 
@@ -83,6 +82,7 @@ export const VoiceDictationButton: React.FC<VoiceDictationButtonProps> = ({
         recognition.interimResults = true;
 
         recognition.onstart = () => {
+          isListeningRef.current = true;
           setIsListening(true);
         };
 
@@ -103,11 +103,24 @@ export const VoiceDictationButton: React.FC<VoiceDictationButtonProps> = ({
             }
           }
 
-          const sessionSpoken = [sessionFinal, sessionInterim].filter(Boolean).join(' ');
+          let sessionSpoken = [sessionFinal, sessionInterim].filter(Boolean).join(' ').trim();
           if (sessionSpoken) {
+            // Strip colloquial Spanish fillers at beginning ("y bueno", "eh", "este", "o sea")
+            sessionSpoken = sessionSpoken.replace(/^(y\s+bueno|bueno|eh|este|o\s+sea)[,\s]*/i, '');
+            if (!sessionSpoken) return;
+
             const base = baseTextRef.current;
-            const separator = base && !base.endsWith(' ') ? ' ' : '';
-            const fullText = base ? `${base}${separator}${sessionSpoken}` : sessionSpoken;
+            let fullText = '';
+            if (base) {
+              const lastChar = base.slice(-1);
+              const needsPeriod = !['.', '!', '?', ';', '\n', ':'].includes(lastChar);
+              const prefix = needsPeriod ? `${base}. ` : base.endsWith(' ') ? base : `${base} `;
+              const capitalizedSpoken = sessionSpoken.charAt(0).toUpperCase() + sessionSpoken.slice(1);
+              fullText = `${prefix}${capitalizedSpoken}`;
+            } else {
+              fullText = sessionSpoken.charAt(0).toUpperCase() + sessionSpoken.slice(1);
+            }
+
             currentFullTextRef.current = fullText;
             onTranscript(fullText);
           }

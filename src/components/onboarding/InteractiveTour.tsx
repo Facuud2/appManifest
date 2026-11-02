@@ -34,55 +34,44 @@ const TOUR_STEPS: TourStep[] = [
     title: 'Inicio: Tu Santuario Diario',
     subtitle: 'Presencia, energía y afirmación viva',
     description:
-      'En este botón accedes a tu centro principal. Aquí descubres la afirmación consciente del día, registras tu energía vibracional y vigilas tus compromisos del día e intenciones activas.',
+      'En este botón accedes a tu centro principal. Aquí descubres tus afirmaciones fijadas, navegas sets de rampage y accedes a tu cuaderno.',
     mobileSelector: '[data-tour="mobile-nav-inicio"]',
     desktopSelector: '[data-tour="desktop-nav-inicio"]',
     icon: Sparkles,
-    tag: 'Paso 1 de 5',
+    tag: 'Paso 1 de 4',
+  },
+  {
+    id: 'step-objetivos',
+    title: 'Afirmaciones & Sets de Rampage',
+    subtitle: 'Decretos conscientes y bucles de poder',
+    description:
+      'Aquí gestionas tu lista completa de afirmaciones, organizas prioridades con el fijado y experimentas secuencias rítmicas de rampage para elevar tu certeza.',
+    mobileSelector: '[data-tour="mobile-nav-objetivos"]',
+    desktopSelector: '[data-tour="desktop-nav-objetivos"]',
+    icon: Target,
+    tag: 'Paso 2 de 4',
   },
   {
     id: 'step-diario',
     title: 'Diario: Cuaderno de Verdad',
-    subtitle: '5 Modalidades de escritura consciente',
+    subtitle: 'Manifestación, gratitud y reflexiones',
     description:
-      'Al pulsar aquí abres tu cuaderno íntimo: Manifestación en tiempo presente, Gratitud matutina, Afirmaciones personales, Reflexión guiada y Señales del universo. Guardado automático y privado.',
+      'Tu espacio para escribir con certeza en tiempo presente: Manifestaciones, Gratitud, Avances y Success Stories con guardado automático y privado.',
     mobileSelector: '[data-tour="mobile-nav-diario"]',
     desktopSelector: '[data-tour="desktop-nav-diario"]',
     icon: BookOpen,
-    tag: 'Paso 2 de 5',
-  },
-  {
-    id: 'step-agenda',
-    title: 'Agenda: Compromisos Conscientes',
-    subtitle: 'Navegación semanal y presencia en tus tiempos',
-    description:
-      'Bajo este botón programas tus actividades importantes con fecha y horario opcional. Incluye navegación día a día y marcado de cumplimiento con retroalimentación inmediata.',
-    mobileSelector: '[data-tour="mobile-nav-agenda"]',
-    desktopSelector: '[data-tour="desktop-nav-agenda"]',
-    icon: Calendar,
-    tag: 'Paso 3 de 5',
-  },
-  {
-    id: 'step-objetivos',
-    title: 'Intenciones, Historias & Futuro',
-    subtitle: 'El puente tangible entre el anhelo y la materia',
-    description:
-      'Aquí siembras objetivos divididos en pequeñas acciones reales con cálculo de progreso 100% derivado. También accedes al Muro de Historias de Éxito cumplidas y a tus visiones futuras de largo plazo.',
-    mobileSelector: '[data-tour="mobile-nav-objetivos"]',
-    desktopSelector: '[data-tour="desktop-nav-objetivos"]',
-    icon: Target,
-    tag: 'Paso 4 de 5',
+    tag: 'Paso 3 de 4',
   },
   {
     id: 'step-espacio',
     title: 'Mi Espacio & Ritual de Liberación',
-    subtitle: 'Progreso, sincronías y desahogo sagrado',
+    subtitle: 'Progreso, sincronías y transmutación',
     description:
-      'Tu espacio para consultar hitos desbloqueados, revisar el banco de Señales/Sincronías del camino y realizar el Ritual de Liberación para quemar y destruir definitivamente miedos o cargas.',
+      'Consulta tus hitos y oráculo cósmico, revisa las señales del camino y utiliza el Ritual de Liberación para soltar cualquier peso emocional.',
     mobileSelector: '[data-tour="mobile-nav-espacio"]',
     desktopSelector: '[data-tour="desktop-nav-espacio"]',
     icon: Compass,
-    tag: 'Paso 5 de 5',
+    tag: 'Paso 4 de 4',
   },
 ];
 
@@ -170,7 +159,11 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({ forceOpen = fa
     };
   }, [updateSpotlight]);
 
-  const handleNext = () => {
+  const handleNext = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (currentStepIndex < TOUR_STEPS.length - 1) {
       setCurrentStepIndex((prev) => prev + 1);
     } else {
@@ -178,20 +171,32 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({ forceOpen = fa
     }
   };
 
-  const handlePrev = () => {
+  const handlePrev = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (currentStepIndex > 0) {
       setCurrentStepIndex((prev) => prev - 1);
     }
   };
 
-  const handleCompleteTour = () => {
+  const handleCompleteTour = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     updateSettings({ tutorialCompleted: true });
     setIsOpen(false);
     showToast('¡Bienvenido a tu santuario! Todo está listo para ti.', 'celebrate');
     if (onFinish) onFinish();
   };
 
-  const handleSkip = () => {
+  const handleSkip = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     updateSettings({ tutorialCompleted: true });
     setIsOpen(false);
     showToast('Tutorial omitido. Puedes repetirlo desde Ajustes cuando desees.', 'gentle');
@@ -205,7 +210,13 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({ forceOpen = fa
   const isLastStep = currentStepIndex === TOUR_STEPS.length - 1;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden select-none">
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        handleSkip();
+      }}
+      className="fixed inset-0 z-50 overflow-hidden select-none"
+    >
       {/* Semi-opaque Dark Sheet with Spotlight Cutout */}
       <svg className="absolute inset-0 w-full h-full pointer-events-auto">
         <defs>
@@ -259,6 +270,7 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({ forceOpen = fa
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep.id}
+            onClick={(e) => e.stopPropagation()}
             initial={{ opacity: 0, y: 15, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.96 }}
@@ -272,17 +284,14 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({ forceOpen = fa
                     top: `${Math.max(40, Math.min(targetRect.top - 20, window.innerHeight - 340))}px`,
                     width: '380px',
                   }
-                : // On mobile: position above bottom bar
-                !isDesktop && targetRect
-                ? {
+                : {
                     position: 'absolute',
-                    bottom: '88px',
+                    bottom: '110px',
                     left: '16px',
                     right: '16px',
                     maxWidth: '420px',
                     margin: '0 auto',
-                  }
-                : {}),
+                  }),
             }}
             className="pointer-events-auto w-full max-w-sm sm:max-w-md rounded-3xl glass-card p-5 sm:p-6 border border-white shadow-liquid text-manifest-ink space-y-4"
           >
@@ -308,8 +317,9 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({ forceOpen = fa
               </div>
 
               <button
+                type="button"
                 onClick={handleSkip}
-                className="p-1 rounded-full text-manifest-inkMuted hover:text-manifest-ink transition-colors"
+                className="p-1 rounded-full text-manifest-inkMuted hover:text-manifest-ink transition-colors cursor-pointer"
                 title="Saltar tutorial"
               >
                 <X className="w-4 h-4" />
@@ -325,10 +335,10 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({ forceOpen = fa
                 <h3 className="font-serif text-base font-bold text-manifest-ink leading-snug">
                   {currentStep.title}
                 </h3>
-                <p className="text-[11px] font-medium text-manifest-auraPurple">
+                <p className="text-xs font-bold text-purple-950">
                   {currentStep.subtitle}
                 </p>
-                <p className="text-xs text-manifest-ink/80 leading-relaxed pt-1">
+                <p className="text-xs text-slate-700 leading-relaxed pt-1 font-normal">
                   {currentStep.description}
                 </p>
               </div>
@@ -354,8 +364,9 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({ forceOpen = fa
               <div className="flex items-center gap-2">
                 {currentStepIndex > 0 && (
                   <button
+                    type="button"
                     onClick={handlePrev}
-                    className="p-2 rounded-xl glass-pill text-manifest-ink hover:bg-white transition-colors"
+                    className="p-2 rounded-xl glass-pill text-manifest-ink hover:bg-white transition-colors cursor-pointer"
                     title="Paso anterior"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
@@ -363,8 +374,9 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({ forceOpen = fa
                 )}
 
                 <button
+                  type="button"
                   onClick={handleNext}
-                  className="px-4 py-2 rounded-xl primary-gradient-btn text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+                  className="px-4 py-2 rounded-xl primary-gradient-btn text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
                   <span>{isLastStep ? 'Finalizar Tutorial' : 'Siguiente'}</span>
                   {isLastStep ? (

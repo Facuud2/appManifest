@@ -116,12 +116,14 @@ export const AffirmationEditorModal: React.FC = () => {
 
     if (editingAffirmation || !chainNext) {
       closeAffirmationEditor();
-      const unlocked = checkAndUnlockMilestones();
-      if (unlocked.length === 0) {
-        showToast(
-          isEditing ? 'Afirmación actualizada' : 'Afirmación guardada',
-          'gentle'
-        );
+      if (isEditing) {
+        // Al editar: no re-evaluar ni disparar modales de recompensas / gambling
+        showToast('Afirmación actualizada', 'gentle');
+      } else {
+        const unlocked = checkAndUnlockMilestones();
+        if (unlocked.length === 0) {
+          showToast('Afirmación guardada', 'gentle');
+        }
       }
     } else {
       // Trello functionality: clear and keep focus ready for next affirmation
@@ -275,6 +277,7 @@ export const AffirmationEditorModal: React.FC = () => {
                           textareaRef.current = el;
                         }}
                         enterKeyHint="send"
+                        onFocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                         onKeyDown={handleKeyDown}
                         minRows={3}
                         placeholder={
