@@ -211,35 +211,22 @@ export const AffirmationEditorModal: React.FC = () => {
               transition={{ type: 'spring', stiffness: 420, damping: 30, mass: 0.8 }}
               className="w-full max-w-lg rounded-3xl bg-[#FCFAF8]/95 backdrop-blur-2xl border border-white/90 shadow-[0_24px_70px_rgba(40,30,60,0.22),0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.95)] flex flex-col max-h-[88vh] overflow-hidden"
             >
-              {/* macOS Window Chrome / Titlebar */}
-              <div className="relative shrink-0 flex items-center justify-between px-5 py-3.5 border-b border-manifest-ink/[0.07] bg-white/60 backdrop-blur-md select-none">
-                {/* Mac Traffic Lights */}
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={closeAffirmationEditor}
-                    title="Cerrar (Esc)"
-                    aria-label="Cerrar ventana"
-                    className="group relative w-3.5 h-3.5 rounded-full bg-[#FF5F56] border border-[#E0443E]/60 flex items-center justify-center hover:brightness-90 transition-all cursor-pointer"
-                  >
-                    <X className="w-2 h-2 text-[#7F0000] opacity-0 group-hover:opacity-100 transition-opacity stroke-[3]" />
-                  </button>
-                  <div
-                    className="w-3.5 h-3.5 rounded-full bg-[#FFBD2E] border border-[#DEA123]/60 cursor-default opacity-85"
-                    title="Minimizar"
-                  />
-                  <div
-                    className="w-3.5 h-3.5 rounded-full bg-[#27C93F] border border-[#1AAB29]/60 cursor-default opacity-85"
-                    title="Zoom"
-                  />
-                </div>
-
-                {/* Centered Mac Window Title */}
-                <div className="absolute inset-x-0 mx-auto text-center pointer-events-none flex items-center justify-center gap-2">
-                  <Sparkles className="w-3.5 h-3.5 text-manifest-auraPurple" />
-                  <span className="font-serif font-bold text-sm text-manifest-ink tracking-tight">
-                    {editingAffirmation ? 'Editar Afirmación' : 'Nueva Afirmación'}
-                  </span>
+              {/* Modal Header */}
+              <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-manifest-ink/[0.07] bg-white/60 backdrop-blur-md select-none">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-manifest-lavender to-manifest-celeste flex items-center justify-center shadow-xs border border-white">
+                    <Sparkles className="w-4 h-4 text-manifest-auraPurple" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif font-bold text-sm text-manifest-ink tracking-tight">
+                      {editingAffirmation ? 'Editar Afirmación' : 'Nueva Afirmación'}
+                    </h3>
+                    <p className="text-[11px] text-manifest-inkMuted">
+                      {sessionAddedCount > 0
+                        ? `${sessionAddedCount} afirmación${sessionAddedCount > 1 ? 'es' : ''} añadida${sessionAddedCount > 1 ? 's' : ''}`
+                        : 'Decretos conscientes en tiempo presente'}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Right: Counter badge or quick close */}
@@ -252,8 +239,9 @@ export const AffirmationEditorModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={closeAffirmationEditor}
-                    className="p-1 rounded-lg text-manifest-inkMuted hover:text-manifest-ink hover:bg-manifest-ink/5 transition-colors cursor-pointer"
+                    className="p-1.5 rounded-xl text-manifest-inkMuted hover:text-manifest-ink hover:bg-manifest-ink/5 transition-colors cursor-pointer"
                     title="Cerrar (Esc)"
+                    aria-label="Cerrar ventana"
                   >
                     <X className="w-4 h-4" />
                   </button>
