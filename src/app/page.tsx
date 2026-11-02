@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { App as KonstaApp } from 'konsta/react';
 import { useAppStore } from '@/store';
 import { AppHeader } from '@/components/layout/AppHeader';
@@ -108,33 +109,19 @@ export default function Home() {
               simulatedError={testSimulatedError ? 'storage' : null}
               onReset={() => setTestSimulatedError(false)}
             >
-              {/* Dynamic Content Canvas */}
+              {/* Dynamic Content Canvas with Smooth Micro-Transition */}
               <div className="flex-1 pt-2 sm:pt-3 lg:pt-6 pb-[calc(env(safe-area-inset-bottom,0px)+7.5rem)] lg:pb-8">
-                <div>
-                  {activeTab === 'inicio' && (
-                    <div key="inicio">
-                      <DashboardView />
-                    </div>
-                  )}
-
-                  {activeTab === 'diario' && (
-                    <div key="diario">
-                      <JournalView />
-                    </div>
-                  )}
-
-                  {activeTab === 'objetivos' && (
-                    <div key="objetivos">
-                      <GoalsView />
-                    </div>
-                  )}
-
-                  {activeTab === 'espacio' && (
-                    <div key="espacio">
-                      <MySpaceView />
-                    </div>
-                  )}
-                </div>
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                >
+                  {activeTab === 'inicio' && <DashboardView />}
+                  {activeTab === 'diario' && <JournalView />}
+                  {activeTab === 'objetivos' && <GoalsView />}
+                  {activeTab === 'espacio' && <MySpaceView />}
+                </motion.div>
               </div>
 
               {/* Mobile Konsta Translucent Floating Tabbar (< 1024px) */}
