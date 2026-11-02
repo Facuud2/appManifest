@@ -13,6 +13,7 @@ import { motion } from 'framer-motion';
 import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
+import { useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 
 const rampageFormSchema = z
   .object({
@@ -76,6 +77,8 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
   const isOpen = propIsOpen !== undefined ? propIsOpen : isRampageSetEditorOpen;
   const onClose = propOnClose || closeRampageSetEditor;
   const setOrNull = propSetOrNull !== undefined ? propSetOrNull : editingRampageSet;
+
+  const { keyboardHeight, isKeyboardOpen } = useVirtualKeyboard(isOpen);
 
   const {
     control,
@@ -272,6 +275,8 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
         if (!open) onClose();
       }}
       shouldScaleBackground
+      handleOnly
+      repositionInputs={false}
     >
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-50 bg-manifest-ink/40 backdrop-blur-sm" />
@@ -281,7 +286,7 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
         >
           {/* iOS Native Grabber Handle */}
           <div className="pt-3 pb-1 bg-white/95 shrink-0">
-            <div
+            <Drawer.Handle
               data-testid="ios-sheet-grabber"
               className="mx-auto w-12 h-1.5 rounded-full bg-manifest-ink/20 cursor-grab active:cursor-grabbing"
             />
@@ -530,7 +535,12 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
             </div>
 
             {/* Fixed Footer Buttons (shrink-0) */}
-            <div className="shrink-0 flex items-center justify-end gap-2 px-5 py-3.5 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-white/80 bg-white/90 backdrop-blur-md z-10">
+            <div
+              className="shrink-0 flex items-center justify-end gap-2 px-5 py-3.5 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-white/80 bg-white/90 backdrop-blur-md z-10 transition-all"
+              style={{
+                paddingBottom: isKeyboardOpen ? `${keyboardHeight + 12}px` : undefined,
+              }}
+            >
               <motion.button
                 type="button"
                 whileTap={IOS_TAP_SPRING}

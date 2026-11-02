@@ -14,6 +14,7 @@ import { motion } from 'framer-motion';
 import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
+import { useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 
 const journalFormSchema = z.object({
   content: z.string().min(1, 'Describe tu entrada antes de guardar'),
@@ -34,6 +35,8 @@ export const JournalEditorModal: React.FC = () => {
     showToast,
     checkAndUnlockMilestones,
   } = useAppStore();
+
+  const { keyboardHeight, isKeyboardOpen } = useVirtualKeyboard(isJournalEditorOpen);
 
   const {
     handleSubmit,
@@ -171,6 +174,8 @@ export const JournalEditorModal: React.FC = () => {
         if (!open) closeJournalEditor();
       }}
       shouldScaleBackground
+      handleOnly
+      repositionInputs={false}
     >
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-50 bg-manifest-ink/35 backdrop-blur-sm" />
@@ -179,7 +184,7 @@ export const JournalEditorModal: React.FC = () => {
           className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2.25rem] ${LIQUID_GLASS_SPECULAR} bg-white/85 p-5 sm:p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-liquid outline-none flex flex-col max-h-[92dvh]`}
         >
           {/* iOS Native Grabber Handle */}
-          <div
+          <Drawer.Handle
             data-testid="ios-sheet-grabber"
             className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-manifest-ink/20 mb-3.5 cursor-grab active:cursor-grabbing"
           />
@@ -227,6 +232,9 @@ export const JournalEditorModal: React.FC = () => {
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-4 pt-3 overflow-y-auto flex-1 min-h-0 pr-0.5"
+            style={{
+              paddingBottom: isKeyboardOpen ? `${keyboardHeight + 20}px` : undefined,
+            }}
           >
             {/* Espacio / Perfil */}
             <div className="space-y-1.5">

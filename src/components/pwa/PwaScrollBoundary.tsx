@@ -56,7 +56,7 @@ export const PwaScrollBoundary: React.FC = () => {
       }
 
       const target = e.target as HTMLElement;
-      if (target && ['SELECT'].includes(target.tagName)) {
+      if (target && (['SELECT'].includes(target.tagName) || target.closest('[data-vaul-handle]'))) {
         return;
       }
 

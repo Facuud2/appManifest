@@ -90,6 +90,7 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
         }
       }}
       shouldScaleBackground
+      handleOnly
     >
       <Drawer.Portal>
         <Drawer.Overlay
@@ -101,7 +102,7 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
           className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2.25rem] ${LIQUID_GLASS_SPECULAR} bg-white/90 p-5 sm:p-7 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_-12px_48px_rgba(73,62,85,0.2)] outline-none flex flex-col max-h-[90dvh] overflow-y-auto select-none overflow-hidden`}
         >
           {/* iOS Native Grabber Handle */}
-          <div
+          <Drawer.Handle
             data-testid="ios-sheet-grabber"
             className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-manifest-ink/20 mb-4 cursor-grab active:cursor-grabbing relative z-10"
           />
