@@ -10,10 +10,11 @@ import { useAppStore } from '@/store';
 import { Sparkles, X, Mic, Check, AlertCircle } from 'lucide-react';
 import { Affirmation, UserScope } from '@/types';
 import { UserScopeEnum } from '@/schemas';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 
 const affirmationFormSchema = z.object({
   text: z.string().min(1, 'Escribe tu manifestación o afirmación consciente'),
@@ -23,6 +24,7 @@ const affirmationFormSchema = z.object({
 type AffirmationFormData = z.infer<typeof affirmationFormSchema>;
 
 export const AffirmationEditorModal: React.FC = () => {
+  const isDesktop = useIsDesktop();
   const {
     isAffirmationEditorOpen,
     editingAffirmation,
@@ -70,8 +72,33 @@ export const AffirmationEditorModal: React.FC = () => {
           userId: activeScope,
         });
       }
+
+      // En PC: auto-enfocar y resaltar automáticamente el campo para comenzar a escribir de inmediato
+      if (isDesktop) {
+        const timer = setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.focus();
+            const len = textareaRef.current.value.length;
+            textareaRef.current.setSelectionRange(len, len);
+          }
+        }, 60);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [isAffirmationEditorOpen, editingAffirmation, activeScope, reset]);
+  }, [isAffirmationEditorOpen, editingAffirmation, activeScope, reset, isDesktop]);
+
+  // Tecla Escape para cerrar en PC
+  useEffect(() => {
+    if (!isAffirmationEditorOpen || !isDesktop) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeAffirmationEditor();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAffirmationEditorOpen, isDesktop, closeAffirmationEditor]);
 
   const submitSingleAffirmation = (textToSave: string, chainNext = false) => {
     const trimmed = textToSave.trim();
@@ -145,6 +172,14 @@ export const AffirmationEditorModal: React.FC = () => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // ⌘+Enter o Ctrl+Enter: guardar y cerrar directamente
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit(onSubmit)();
+      return;
+    }
+
+    // Enter sin Shift: encadenar múltiples o guardar si edita
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (editingAffirmation) {
@@ -155,6 +190,263 @@ export const AffirmationEditorModal: React.FC = () => {
     }
   };
 
+  // ==========================================
+  // VISTA PC: Pop-up centrado estilo macOS
+  // ==========================================
+  if (isDesktop) {
+    return (
+      <AnimatePresence>
+        {isAffirmationEditorOpen && (
+          <div
+            data-testid="affirmation-desktop-backdrop"
+            onClick={closeAffirmationEditor}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-manifest-ink/35 backdrop-blur-md"
+          >
+            <motion.div
+              data-testid="affirmation-desktop-modal"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 30, mass: 0.8 }}
+              className="w-full max-w-lg rounded-3xl bg-[#FCFAF8]/95 backdrop-blur-2xl border border-white/90 shadow-[0_24px_70px_rgba(40,30,60,0.22),0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.95)] flex flex-col max-h-[88vh] overflow-hidden"
+            >
+              {/* macOS Window Chrome / Titlebar */}
+              <div className="relative shrink-0 flex items-center justify-between px-5 py-3.5 border-b border-manifest-ink/[0.07] bg-white/60 backdrop-blur-md select-none">
+                {/* Mac Traffic Lights */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={closeAffirmationEditor}
+                    title="Cerrar (Esc)"
+                    aria-label="Cerrar ventana"
+                    className="group relative w-3.5 h-3.5 rounded-full bg-[#FF5F56] border border-[#E0443E]/60 flex items-center justify-center hover:brightness-90 transition-all cursor-pointer"
+                  >
+                    <X className="w-2 h-2 text-[#7F0000] opacity-0 group-hover:opacity-100 transition-opacity stroke-[3]" />
+                  </button>
+                  <div
+                    className="w-3.5 h-3.5 rounded-full bg-[#FFBD2E] border border-[#DEA123]/60 cursor-default opacity-85"
+                    title="Minimizar"
+                  />
+                  <div
+                    className="w-3.5 h-3.5 rounded-full bg-[#27C93F] border border-[#1AAB29]/60 cursor-default opacity-85"
+                    title="Zoom"
+                  />
+                </div>
+
+                {/* Centered Mac Window Title */}
+                <div className="absolute inset-x-0 mx-auto text-center pointer-events-none flex items-center justify-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-manifest-auraPurple" />
+                  <span className="font-serif font-bold text-sm text-manifest-ink tracking-tight">
+                    {editingAffirmation ? 'Editar Afirmación' : 'Nueva Afirmación'}
+                  </span>
+                </div>
+
+                {/* Right: Counter badge or quick close */}
+                <div className="flex items-center gap-2">
+                  {sessionAddedCount > 0 && (
+                    <span className="text-[11px] font-semibold text-manifest-auraPurple px-2.5 py-0.5 rounded-full bg-manifest-lavender/40 border border-manifest-auraPurple/30 shadow-2xs">
+                      ✨ {sessionAddedCount} {sessionAddedCount === 1 ? 'añadida' : 'añadidas'}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={closeAffirmationEditor}
+                    className="p-1 rounded-lg text-manifest-inkMuted hover:text-manifest-ink hover:bg-manifest-ink/5 transition-colors cursor-pointer"
+                    title="Cerrar (Esc)"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Form Content */}
+              <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4"
+              >
+                {/* Espacio Selector (Mac-style Segmented Control) */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-manifest-ink block tracking-tight">
+                    Espacio
+                  </label>
+                  <div className="p-1 rounded-xl bg-manifest-ink/[0.05] border border-manifest-ink/[0.06] grid grid-cols-3 gap-1 shadow-inner">
+                    {[
+                      { key: 'facu' as UserScope, label: 'Facu' },
+                      { key: 'maia' as UserScope, label: 'Maia' },
+                      { key: 'shared' as UserScope, label: '✨ Juntos' },
+                    ].map((sc) => (
+                      <button
+                        key={sc.key}
+                        type="button"
+                        onClick={() => setValue('userId', sc.key, { shouldDirty: true })}
+                        className={`py-1.5 px-3 rounded-lg text-xs transition-all duration-150 cursor-pointer ${
+                          selectedUserId === sc.key
+                            ? 'bg-white text-manifest-ink shadow-sm font-semibold border border-white/80'
+                            : 'text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/40 font-medium'
+                        }`}
+                      >
+                        {sc.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Textarea Field with Auto-Focus and Resaltado Mac */}
+                <div ref={validationRef} className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-manifest-ink block tracking-tight">
+                      Decreto o Afirmación
+                    </label>
+                    <span className="text-[11px] text-manifest-inkMuted">
+                      {currentText.length > 0 ? `${currentText.length} caracteres` : 'Escribe tu decreto'}
+                    </span>
+                  </div>
+
+                  {isVoiceActive ? (
+                    <VoiceAudioVisualizer
+                      initialText={currentText}
+                      placeholder="Habla ahora para tu afirmación..."
+                      onCommit={(fullText) => {
+                        setValue('text', fullText, { shouldValidate: true, shouldDirty: true });
+                        setIsVoiceActive(false);
+                      }}
+                      onSend={(fullText) => {
+                        setValue('text', fullText, { shouldValidate: true, shouldDirty: true });
+                        setIsVoiceActive(false);
+                      }}
+                      onCancel={() => setIsVoiceActive(false)}
+                    />
+                  ) : (
+                    <div className="relative group">
+                      <Controller
+                        name="text"
+                        control={control}
+                        render={({ field }) => (
+                          <AutoResizeTextarea
+                            {...field}
+                            ref={(el) => {
+                              field.ref(el);
+                              textareaRef.current = el;
+                            }}
+                            autoFocus
+                            enterKeyHint="send"
+                            onKeyDown={handleKeyDown}
+                            minRows={3}
+                            maxHeight={220}
+                            placeholder={
+                              sessionAddedCount > 0
+                                ? 'Escribe otra afirmación y pulsa Enter para añadirla...'
+                                : 'Escribe en tiempo presente... (Ej: Atraigo abundancia, tranquilidad y felicidad cada día)'
+                            }
+                            className={`w-full p-4 pr-12 rounded-2xl glass-input text-xs sm:text-sm placeholder:text-manifest-inkLight leading-relaxed transition-all focus:outline-none ${
+                              errors.text
+                                ? 'border-rose-400 ring-2 ring-rose-400/50'
+                                : currentText.trim().length > 0
+                                ? 'border-emerald-400 ring-2 ring-emerald-400/40'
+                                : 'border-manifest-auraPurple/80 ring-2 ring-manifest-auraPurple/30 shadow-[0_0_16px_rgba(184,163,248,0.25)]'
+                            }`}
+                          />
+                        )}
+                      />
+
+                      {/* Status Icon */}
+                      <div className="absolute right-3.5 top-3.5 pointer-events-none">
+                        {currentText.trim().length > 0 && !errors.text && (
+                          <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs">
+                            <Check className="w-3 h-3 stroke-[3]" />
+                          </div>
+                        )}
+                        {errors.text && (
+                          <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center shadow-xs">
+                            <AlertCircle className="w-3.5 h-3.5 stroke-[2.5]" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Mic Button */}
+                      <div className="absolute right-3 bottom-3">
+                        <button
+                          type="button"
+                          onClick={() => setIsVoiceActive(true)}
+                          title="Dictar manifestación con micrófono"
+                          aria-label="Dictar manifestación con micrófono"
+                          className="w-8 h-8 rounded-xl bg-white/80 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/90 shadow-sm flex items-center justify-center transition-colors cursor-pointer"
+                        >
+                          <Mic className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Inline Error */}
+                  {errors.text && (
+                    <div
+                      data-testid="affirmation-text-error"
+                      className="flex items-center gap-1.5 text-[11px] text-rose-500 font-medium pt-1 pl-1"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                      <span>{errors.text.message}</span>
+                    </div>
+                  )}
+                </div>
+              </form>
+
+              {/* Mac Dialog Footer */}
+              <div className="shrink-0 flex items-center justify-between px-6 py-4 bg-manifest-ink/[0.02] border-t border-manifest-ink/[0.07]">
+                <div className="flex items-center gap-2 text-[11px] text-manifest-inkLight">
+                  {!editingAffirmation ? (
+                    <>
+                      <span>💡 <strong>Enter</strong> para encadenar</span>
+                      <span>•</span>
+                      <span><strong>⌘↵</strong> para finalizar</span>
+                    </>
+                  ) : (
+                    <span><strong>⌘↵</strong> o botón para guardar</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={closeAffirmationEditor}
+                    className="px-4 py-2 rounded-xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/80 border border-manifest-ink/10 shadow-xs transition-colors cursor-pointer"
+                  >
+                    {sessionAddedCount > 0 ? 'Listo' : 'Cancelar'}
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="submit-affirmation-btn"
+                    onClick={() => {
+                      if (!currentText.trim() && sessionAddedCount > 0) {
+                        closeAffirmationEditor();
+                      } else {
+                        handleSubmit(onSubmit)();
+                      }
+                    }}
+                    className="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-manifest-auraPurple via-purple-600 to-indigo-600 hover:opacity-95 shadow-[0_2px_8px_rgba(184,163,248,0.35)] active:scale-[0.98] transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>
+                      {editingAffirmation
+                        ? 'Guardar Cambios'
+                        : sessionAddedCount > 0 && !currentText.trim()
+                        ? 'Finalizar Sesión'
+                        : 'Guardar Afirmación'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    );
+  }
+
+  // ==========================================
+  // VISTA MÓVIL: Drawer nativo iOS (Vaul)
+  // ESTRICTAMENTE INTACTO PARA DISPOSITIVOS MÓVILES
+  // ==========================================
   return (
     <Drawer.Root
       open={isAffirmationEditorOpen}
