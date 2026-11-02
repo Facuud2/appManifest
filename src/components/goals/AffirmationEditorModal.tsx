@@ -168,12 +168,12 @@ export const AffirmationEditorModal: React.FC = () => {
         <Drawer.Overlay className="fixed inset-0 z-50 bg-manifest-ink/35 backdrop-blur-sm" />
         <Drawer.Content
           data-testid="affirmation-vaul-drawer"
-          className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2.25rem] ${LIQUID_GLASS_SPECULAR} bg-white/85 p-5 sm:p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-liquid outline-none flex flex-col max-h-[90dvh]`}
+          className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2.25rem] ${LIQUID_GLASS_SPECULAR} bg-white/95 p-5 sm:p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-liquid outline-none flex flex-col max-h-[90dvh]`}
         >
           {/* iOS Native Grabber Handle */}
           <Drawer.Handle
             data-testid="ios-sheet-grabber"
-            className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-manifest-ink/20 mb-3.5 cursor-grab active:cursor-grabbing"
+            className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-manifest-ink/20 mb-2 cursor-grab active:cursor-grabbing"
           />
 
           <Drawer.Title className="sr-only">
@@ -183,33 +183,47 @@ export const AffirmationEditorModal: React.FC = () => {
             Decretos conscientes y afirmaciones en tiempo presente
           </Drawer.Description>
 
-          {/* Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-white/70 shrink-0">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-manifest-lavender to-manifest-celeste flex items-center justify-center shadow-sm">
-                <Sparkles className="w-4 h-4 text-manifest-auraPurple" />
-              </div>
-              <div>
-                <h3 className="font-serif text-sm font-bold text-manifest-ink">
-                  {editingAffirmation ? 'Editar Afirmación' : 'Nueva Afirmación'}
-                </h3>
-                <p className="text-[11px] text-manifest-inkMuted">
-                  Decretos conscientes y afirmaciones en tiempo presente
-                </p>
-              </div>
-            </div>
+          {/* iOS Compact Navigation Bar (h-14 px-4) */}
+          <div className="shrink-0 h-14 -mx-5 sm:-mx-6 -mt-2 px-4 sm:px-6 flex items-center justify-between border-b border-manifest-lavender/30 bg-white/95 z-10">
             <button
               type="button"
               onClick={closeAffirmationEditor}
-              className="p-1.5 rounded-full hover:bg-white/80 text-manifest-inkMuted hover:text-manifest-ink transition-colors cursor-pointer"
+              className="text-manifest-inkMuted hover:text-manifest-ink font-medium text-sm transition-colors cursor-pointer px-1 py-1"
             >
-              <X className="w-4 h-4" />
+              {sessionAddedCount > 0 ? 'Listo' : 'Cancelar'}
             </button>
+
+            <div className="text-center truncate px-2">
+              <h3 className="font-serif text-sm sm:text-base font-bold text-manifest-ink truncate">
+                {editingAffirmation ? 'Editar Afirmación' : 'Nueva Afirmación'}
+              </h3>
+            </div>
+
+            <motion.button
+              type="button"
+              whileTap={IOS_TAP_SPRING}
+              data-testid="submit-affirmation-nav-btn"
+              onClick={() => {
+                if (!currentText.trim() && sessionAddedCount > 0) {
+                  closeAffirmationEditor();
+                } else {
+                  handleSubmit(onSubmit)();
+                }
+              }}
+              className="bg-gradient-to-r from-manifest-auraPurple to-purple-600 text-white px-4 py-1.5 rounded-full font-semibold text-xs sm:text-sm shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer"
+            >
+              {editingAffirmation
+                ? 'Guardar'
+                : sessionAddedCount > 0 && !currentText.trim()
+                ? 'Finalizar'
+                : 'Guardar'}
+            </motion.button>
           </div>
 
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="space-y-4 pt-3 overflow-y-auto flex-1 min-h-0 pr-0.5"
+            data-vaul-no-drag=""
+            className="space-y-4 pt-3 overflow-y-auto overscroll-contain touch-pan-y flex-1 min-h-0 pr-0.5 pb-8"
           >
             {/* Espacio / Perfil */}
             <div className="space-y-1.5">
@@ -278,9 +292,13 @@ export const AffirmationEditorModal: React.FC = () => {
                           textareaRef.current = el;
                         }}
                         enterKeyHint="send"
-                        onFocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                         onKeyDown={handleKeyDown}
                         minRows={3}
+                        maxHeight={240}
+                        onFocus={(e) => {
+                          const el = e.currentTarget;
+                          setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
+                        }}
                         placeholder={
                           sessionAddedCount > 0
                             ? 'Escribe otra afirmación y pulsa Enter para añadirla...'
@@ -337,40 +355,32 @@ export const AffirmationEditorModal: React.FC = () => {
               )}
             </div>
 
-            {/* Footer Buttons */}
-            <div className="flex items-center justify-between gap-2 pt-2">
-              <span className="text-[11px] text-manifest-inkLight hidden sm:inline">
-                {!editingAffirmation && 'Pulsa Enter para añadir varias seguidas'}
-              </span>
-              <div className="flex items-center gap-2 ml-auto">
-                <motion.button
-                  type="button"
-                  whileTap={IOS_TAP_SPRING}
-                  onClick={closeAffirmationEditor}
-                  className="px-4 py-2.5 rounded-2xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/70 transition-colors cursor-pointer"
-                >
-                  {sessionAddedCount > 0 ? 'Listo' : 'Cancelar'}
-                </motion.button>
-                <motion.button
-                  type="button"
-                  whileTap={IOS_TAP_SPRING}
-                  data-testid="submit-affirmation-btn"
-                  onClick={() => {
-                    if (!currentText.trim() && sessionAddedCount > 0) {
-                      closeAffirmationEditor();
-                    } else {
-                      handleSubmit(onSubmit)();
-                    }
-                  }}
-                  className="px-5 py-2.5 rounded-2xl primary-gradient-btn text-xs font-semibold shadow-sm cursor-pointer"
-                >
-                  {editingAffirmation
-                    ? 'Guardar Cambios'
-                    : sessionAddedCount > 0 && !currentText.trim()
-                    ? 'Finalizar'
-                    : 'Guardar Afirmación'}
-                </motion.button>
-              </div>
+            {/* Flow Submit Button */}
+            <div className="pt-3 pb-4">
+              <motion.button
+                type="button"
+                whileTap={IOS_TAP_SPRING}
+                data-testid="submit-affirmation-btn"
+                onClick={() => {
+                  if (!currentText.trim() && sessionAddedCount > 0) {
+                    closeAffirmationEditor();
+                  } else {
+                    handleSubmit(onSubmit)();
+                  }
+                }}
+                className="w-full py-3 px-4 rounded-2xl primary-gradient-btn text-xs sm:text-sm font-semibold shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                {editingAffirmation
+                  ? 'Guardar Cambios'
+                  : sessionAddedCount > 0 && !currentText.trim()
+                  ? 'Finalizar Sesión'
+                  : 'Guardar Afirmación'}
+              </motion.button>
+              {!editingAffirmation && (
+                <p className="text-[11px] text-manifest-inkLight text-center mt-2">
+                  💡 Pulsa Enter para añadir varias seguidas
+                </p>
+              )}
             </div>
           </form>
         </Drawer.Content>

@@ -24,11 +24,18 @@ export const BottomNavigation: React.FC = () => {
   const { activeTab, setActiveTab } = useAppStore();
 
   return (
-    <div
-      data-testid="ios-floating-tabbar-wrap"
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-3 pb-[max(0.55rem,env(safe-area-inset-bottom))] pt-0.5 pointer-events-none"
-    >
-      <div className="max-w-md mx-auto pointer-events-auto">
+    <>
+      {/* Sellado inferior continuo contra filtración de texto bajo el dock */}
+      <div
+        aria-hidden="true"
+        className="lg:hidden fixed bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#FAF8FF] via-[#FAF8FF]/90 via-40% to-transparent pointer-events-none z-30"
+      />
+
+      <div
+        data-testid="ios-floating-tabbar-wrap"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-3 pb-[max(0.55rem,env(safe-area-inset-bottom))] pt-0.5 pointer-events-none"
+      >
+        <div className="max-w-md mx-auto pointer-events-auto">
         <Tabbar
           labels
           icons
@@ -96,5 +103,6 @@ export const BottomNavigation: React.FC = () => {
         </Tabbar>
       </div>
     </div>
+    </>
   );
 };

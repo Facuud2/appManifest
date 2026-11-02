@@ -10,7 +10,6 @@ import {
   Edit3,
   Equal,
 } from 'lucide-react';
-import { useTapVsScroll } from '@/hooks/useTapVsScroll';
 import { motion } from 'framer-motion';
 import { IOS_TAP_SPRING } from '@/lib/iosSprings';
 
@@ -67,15 +66,10 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
     }
   };
 
-  const cardTapHandlers = useTapVsScroll({
-    onTap: () => incrementAffirmationRepeat(affirmation.id),
-  });
-
   return (
     <div
       data-testid={`manifestation-card-${affirmation.id}`}
-      {...cardTapHandlers}
-      className={`w-full p-4 sm:p-4.5 rounded-3xl border border-white/95 space-y-2.5 select-none cursor-pointer transition-shadow touch-pan-y ${
+      className={`w-full p-4 sm:p-4.5 rounded-3xl border border-white/95 space-y-2.5 select-none transition-shadow touch-pan-y ${
         isDragging
           ? 'bg-[#FFFDF9]/98 shadow-[0_16px_36px_rgba(184,163,248,0.35)] ring-2 ring-manifest-lavender/60'
           : 'glass-card-interactive shadow-sm hover:shadow-md'
@@ -89,6 +83,7 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
               type="button"
               data-testid={`drag-handle-${affirmation.id}`}
               onPointerDown={(e) => {
+                e.stopPropagation();
                 if (onDragHandlePointerDown) {
                   onDragHandlePointerDown(e);
                 }
@@ -111,7 +106,7 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
           )}
         </div>
 
-        {/* Action Buttons - Unified h-7, rounded-xl and consistent baseline */}
+        {/* Action Buttons - Unified baseline, isolated touch targets */}
         <div
           className="flex items-center gap-1 sm:gap-1.5 shrink-0"
           onClick={(e) => e.stopPropagation()}
@@ -143,13 +138,14 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
             <Edit3 className="w-3.5 h-3.5" />
           </motion.button>
 
-          {/* Repeat Counter Button */}
+          {/* Repeat Counter Button - Touch target expandido con active:scale-90 */}
           <motion.button
             type="button"
             whileTap={IOS_TAP_SPRING}
             onClick={handleRepeat}
-            title="Repeticiones"
-            className="h-7 flex items-center gap-1 px-2 rounded-xl bg-white/85 hover:bg-white text-manifest-ink border border-white/90 shadow-xs transition-colors cursor-pointer"
+            data-testid={`affirmation-repeat-btn-${affirmation.id}`}
+            title="Pulsar para sumar repetición consciente"
+            className="h-7.5 flex items-center gap-1 px-2.5 py-1 -my-1 rounded-xl bg-white/90 hover:bg-white text-manifest-ink border border-white/90 shadow-xs transition-transform active:scale-90 cursor-pointer touch-manipulation"
           >
             <Flame
               className={`w-3.5 h-3.5 transition-colors ${

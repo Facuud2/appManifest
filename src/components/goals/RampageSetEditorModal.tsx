@@ -278,7 +278,7 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
         <Drawer.Overlay className="fixed inset-0 z-50 bg-manifest-ink/40 backdrop-blur-sm" />
         <Drawer.Content
           data-testid="rampage-vaul-drawer"
-          className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg max-h-[92dvh] h-[90dvh] flex flex-col rounded-t-[2.25rem] ${LIQUID_GLASS_SPECULAR} bg-white/95 shadow-liquid outline-none overflow-hidden`}
+          className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg max-h-[92dvh] flex flex-col rounded-t-[2.25rem] ${LIQUID_GLASS_SPECULAR} bg-white/95 shadow-liquid outline-none overflow-hidden`}
         >
           {/* iOS Native Grabber Handle */}
           <div className="pt-3 pb-1 bg-white/95 shrink-0">
@@ -295,28 +295,34 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
             Configuración de secuencia de afirmaciones para Rampage
           </Drawer.Description>
 
-          {/* Fixed Header (shrink-0) */}
-          <div className="shrink-0 flex items-center justify-between px-5 pt-2 pb-3 border-b border-manifest-lavender/40 bg-white/95 z-10">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-manifest-pink via-manifest-lavender to-manifest-celeste flex items-center justify-center shadow-sm">
-                <Sparkles className="w-4 h-4 text-manifest-auraPurple" />
-              </div>
-              <div>
-                <h3 className="font-serif text-sm font-bold text-manifest-ink">
-                  {setOrNull ? 'Editar Set de Rampage' : 'Nuevo Set de Rampage'}
-                </h3>
-                <p className="text-[10px] text-manifest-inkMuted">
-                  {fields.length} {fields.length === 1 ? 'afirmación en secuencia' : 'afirmaciones en secuencia'}
-                </p>
-              </div>
-            </div>
+          {/* iOS Compact Navigation Bar (h-14 px-4) */}
+          <div className="shrink-0 h-14 px-4 flex items-center justify-between border-b border-manifest-lavender/30 bg-white/95 z-10">
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-full hover:bg-white/80 text-manifest-inkMuted hover:text-manifest-ink transition-colors cursor-pointer"
+              className="text-manifest-inkMuted hover:text-manifest-ink font-medium text-sm transition-colors cursor-pointer px-1 py-1"
             >
-              <X className="w-4 h-4" />
+              Cancelar
             </button>
+
+            <div className="text-center truncate px-2">
+              <h3 className="font-serif text-sm sm:text-base font-bold text-manifest-ink truncate">
+                {setOrNull ? 'Editar Set' : 'Nuevo Set'}
+              </h3>
+              <p className="text-[10px] text-manifest-inkMuted truncate">
+                {fields.length} {fields.length === 1 ? 'afirmación' : 'afirmaciones'}
+              </p>
+            </div>
+
+            <motion.button
+              type="button"
+              whileTap={IOS_TAP_SPRING}
+              onClick={handlePreSubmit}
+              data-testid="rampage-submit-nav-btn"
+              className="bg-gradient-to-r from-manifest-auraPurple to-purple-600 text-white px-4 py-1.5 rounded-full font-semibold text-xs sm:text-sm shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer"
+            >
+              {setOrNull ? 'Guardar' : 'Crear'}
+            </motion.button>
           </div>
 
           <form
@@ -324,7 +330,10 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
             className="flex flex-col flex-1 min-h-0 overflow-hidden"
           >
             {/* Scrollable Body (flex-1 min-h-0 overflow-y-auto) */}
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-5 py-4 space-y-4 pb-28">
+            <div
+              data-vaul-no-drag=""
+              className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y px-4 sm:px-5 py-4 space-y-4 pb-12"
+            >
               {/* Espacio / Perfil */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-manifest-ink">
@@ -362,9 +371,13 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                   <input
                     type="text"
                     {...register('title')}
-                    onFocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                    data-vaul-no-drag=""
+                    onFocus={(e) => {
+                      const el = e.currentTarget;
+                      setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
+                    }}
                     placeholder="Ej: Abundancia, Paz Serena, Éxito"
-                    className={`w-full px-3.5 py-2.5 pr-10 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight transition-colors ${
+                    className={`w-full px-3.5 py-2.5 pr-10 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight overscroll-contain touch-pan-y transition-colors ${
                       errors.title
                         ? 'border-rose-400 ring-1 ring-rose-400/50'
                         : watch('title')?.trim()
@@ -477,10 +490,12 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                                   enterKeyHint={idx === fields.length - 1 ? 'send' : 'next'}
                                   onFocus={(e) => {
                                     ensureCardVisible(idx);
-                                    e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    const el = e.currentTarget;
+                                    setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
                                   }}
                                   onKeyDown={(e) => handleKeyDown(e, idx)}
                                   minRows={2}
+                                  maxHeight={200}
                                   placeholder="Escribe la afirmación para esta secuencia..."
                                   className={`w-full p-2.5 pr-8 rounded-xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight transition-colors ${
                                     errors.affirmations?.[idx]?.text
@@ -527,26 +542,19 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                   <Plus className="w-4 h-4 stroke-[2.5]" />
                   <span>Añadir afirmación</span>
                 </motion.button>
-              </div>
-            </div>
 
-            {/* Fixed Footer Buttons (shrink-0) */}
-            <div className="shrink-0 flex items-center justify-end gap-2 px-5 py-3.5 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-white/80 bg-white/90 backdrop-blur-md z-10">
-              <motion.button
-                type="button"
-                whileTap={IOS_TAP_SPRING}
-                onClick={onClose}
-                className="px-4 py-2 rounded-xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/60 transition-colors cursor-pointer"
-              >
-                Cancelar
-              </motion.button>
-              <motion.button
-                type="submit"
-                whileTap={IOS_TAP_SPRING}
-                className="px-5 py-2.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm cursor-pointer"
-              >
-                {setOrNull ? 'Guardar Cambios' : 'Crear Set de Rampage'}
-              </motion.button>
+                {/* Botón principal dentro del flujo final del scroll (NO fixed ni sticky sobre el teclado) */}
+                <div className="pt-4 pb-4">
+                  <motion.button
+                    type="submit"
+                    whileTap={IOS_TAP_SPRING}
+                    data-testid="rampage-submit-flow-btn"
+                    className="w-full py-3 px-4 rounded-2xl primary-gradient-btn text-xs sm:text-sm font-semibold shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <span>{setOrNull ? 'Guardar Cambios del Set' : 'Crear Set de Rampage'}</span>
+                  </motion.button>
+                </div>
+              </div>
             </div>
           </form>
         </Drawer.Content>

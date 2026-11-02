@@ -177,12 +177,12 @@ export const JournalEditorModal: React.FC = () => {
         <Drawer.Overlay className="fixed inset-0 z-50 bg-manifest-ink/35 backdrop-blur-sm" />
         <Drawer.Content
           data-testid="journal-vaul-drawer"
-          className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2.25rem] ${LIQUID_GLASS_SPECULAR} bg-white/85 p-5 sm:p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-liquid outline-none flex flex-col max-h-[92dvh]`}
+          className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2.25rem] ${LIQUID_GLASS_SPECULAR} bg-white/95 p-5 sm:p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-liquid outline-none flex flex-col max-h-[92dvh]`}
         >
           {/* iOS Native Grabber Handle */}
           <Drawer.Handle
             data-testid="ios-sheet-grabber"
-            className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-manifest-ink/20 mb-3.5 cursor-grab active:cursor-grabbing"
+            className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-manifest-ink/20 mb-2 cursor-grab active:cursor-grabbing"
           />
 
           <Drawer.Title className="sr-only">{getModalTitle()}</Drawer.Title>
@@ -190,44 +190,37 @@ export const JournalEditorModal: React.FC = () => {
             Formulario para escribir o editar una entrada en tu diario manifestador
           </Drawer.Description>
 
-          {/* Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-white/70 shrink-0">
-            <div className="flex items-center gap-2.5">
-              <div
-                className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-sm ${
-                  selectedEntryType === 'manifestation'
-                    ? 'bg-gradient-to-tr from-manifest-pink to-manifest-lavender text-manifest-auraPurple'
-                    : selectedEntryType === 'progress'
-                    ? 'bg-manifest-mint text-emerald-700'
-                    : 'bg-amber-100 text-amber-700 border border-amber-200'
-                }`}
-              >
-                {selectedEntryType === 'manifestation' ? (
-                  <Target className="w-4 h-4" />
-                ) : selectedEntryType === 'progress' ? (
-                  <Sparkles className="w-4 h-4 text-emerald-600" />
-                ) : (
-                  <Trophy className="w-4 h-4 text-amber-600" />
-                )}
-              </div>
-              <div>
-                <h3 className="font-serif text-sm font-bold text-manifest-ink">
-                  {getModalTitle()}
-                </h3>
-              </div>
-            </div>
+          {/* iOS Compact Navigation Bar (h-14 px-4) */}
+          <div className="shrink-0 h-14 -mx-5 sm:-mx-6 -mt-2 px-4 sm:px-6 flex items-center justify-between border-b border-manifest-lavender/30 bg-white/95 z-10">
             <button
               type="button"
               onClick={closeJournalEditor}
-              className="p-1.5 rounded-full hover:bg-white/80 text-manifest-inkMuted hover:text-manifest-ink transition-colors cursor-pointer"
+              className="text-manifest-inkMuted hover:text-manifest-ink font-medium text-sm transition-colors cursor-pointer px-1 py-1"
             >
-              <X className="w-4 h-4" />
+              Cancelar
             </button>
+
+            <div className="text-center truncate px-2">
+              <h3 className="font-serif text-sm sm:text-base font-bold text-manifest-ink truncate">
+                {getModalTitle()}
+              </h3>
+            </div>
+
+            <motion.button
+              type="button"
+              whileTap={IOS_TAP_SPRING}
+              data-testid="submit-journal-nav-btn"
+              onClick={handleSubmit(onSubmit)}
+              className="bg-gradient-to-r from-manifest-auraPurple to-purple-600 text-white px-4 py-1.5 rounded-full font-semibold text-xs sm:text-sm shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer"
+            >
+              Guardar
+            </motion.button>
           </div>
 
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="space-y-4 pt-3 overflow-y-auto flex-1 min-h-0 pr-0.5"
+            data-vaul-no-drag=""
+            className="space-y-4 pt-3 overflow-y-auto overscroll-contain touch-pan-y flex-1 min-h-0 pr-0.5 pb-8"
           >
             {/* Espacio / Perfil */}
             <div className="space-y-1.5">
@@ -345,8 +338,12 @@ export const JournalEditorModal: React.FC = () => {
                       <AutoResizeTextarea
                         {...field}
                         data-testid="journal-content-input"
-                        onFocus={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                         minRows={4}
+                        maxHeight={240}
+                        onFocus={(e) => {
+                          const el = e.currentTarget;
+                          setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
+                        }}
                         placeholder={
                           selectedEntryType === 'manifestation'
                             ? 'Describe con total certeza y detalle sensorial lo que ya es tuyo en la realidad...'
@@ -405,21 +402,13 @@ export const JournalEditorModal: React.FC = () => {
               )}
             </div>
 
-            {/* Footer Buttons */}
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <motion.button
-                type="button"
-                whileTap={IOS_TAP_SPRING}
-                onClick={closeJournalEditor}
-                className="px-4 py-2.5 rounded-2xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/70 transition-colors cursor-pointer"
-              >
-                Cancelar
-              </motion.button>
+            {/* Flow Submit Button */}
+            <div className="pt-3 pb-4">
               <motion.button
                 type="submit"
                 whileTap={IOS_TAP_SPRING}
                 data-testid="submit-journal-btn"
-                className="px-5 py-2.5 rounded-2xl primary-gradient-btn text-xs font-semibold shadow-sm cursor-pointer"
+                className="w-full py-3 px-4 rounded-2xl primary-gradient-btn text-xs sm:text-sm font-semibold shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
               >
                 {editingJournalEntry
                   ? 'Guardar Cambios'

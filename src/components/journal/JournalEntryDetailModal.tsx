@@ -90,6 +90,7 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
         }
       }}
       handleOnly
+      repositionInputs={false}
     >
       <Drawer.Portal>
         <Drawer.Overlay
@@ -98,7 +99,8 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
         />
         <Drawer.Content
           data-testid="journal-detail-modal"
-          className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2.25rem] ${LIQUID_GLASS_SPECULAR} bg-white/90 p-5 sm:p-7 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_-12px_48px_rgba(73,62,85,0.2)] outline-none flex flex-col max-h-[90dvh] overflow-y-auto select-none overflow-hidden`}
+          className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2.25rem] ${LIQUID_GLASS_SPECULAR} bg-white/90 p-5 sm:p-7 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_-12px_48px_rgba(73,62,85,0.2)] outline-none flex flex-col max-h-[90dvh] overflow-y-auto overscroll-contain touch-pan-y select-none overflow-hidden`}
+          data-vaul-no-drag=""
         >
           {/* iOS Native Grabber Handle */}
           <Drawer.Handle
