@@ -238,11 +238,11 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({ forceOpen = fa
           </mask>
         </defs>
 
-        {/* Semi-transparent dark overlay filled with mask */}
+        {/* Semi-transparent frosted scrim filled with mask */}
         <rect
           width="100%"
           height="100%"
-          fill="rgba(8, 6, 12, 0.78)"
+          fill="rgba(15, 23, 42, 0.45)"
           mask="url(#tourSpotlightMask)"
         />
       </svg>
@@ -293,12 +293,12 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({ forceOpen = fa
                     margin: '0 auto',
                   }),
             }}
-            className="pointer-events-auto w-full max-w-sm sm:max-w-md rounded-3xl glass-card p-5 sm:p-6 border border-white shadow-liquid text-manifest-ink space-y-4"
+            className="pointer-events-auto w-full max-w-sm sm:max-w-md rounded-3xl liquid-glass-surface bg-manifest-surfaceElevated p-5 sm:p-6 border border-manifest-glassBorder shadow-lens text-manifest-ink space-y-4"
           >
             {/* Header: Tag + Device indicator + Skip button */}
-            <div className="flex items-center justify-between pb-2 border-b border-white/70">
+            <div className="flex items-center justify-between pb-2 border-b border-manifest-glassBorder">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-manifest-lavender/60 text-manifest-ink">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-manifest-glassControl text-manifest-ink border border-manifest-glassBorder">
                   {currentStep.tag}
                 </span>
                 <span className="text-[10px] text-manifest-inkMuted font-medium flex items-center gap-1">
@@ -319,7 +319,7 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({ forceOpen = fa
               <button
                 type="button"
                 onClick={handleSkip}
-                className="p-1 rounded-full text-manifest-inkMuted hover:text-manifest-ink transition-colors cursor-pointer"
+                className="p-1 rounded-full text-manifest-inkMuted hover:text-manifest-ink hover:bg-manifest-glassControlHover transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-manifest-glassBorderFocus"
                 title="Saltar tutorial"
               >
                 <X className="w-4 h-4" />
@@ -328,24 +328,24 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({ forceOpen = fa
 
             {/* Content & Icon */}
             <div className="flex items-start gap-3.5">
-              <div className="w-10 h-10 rounded-2xl bg-manifest-lavender/50 flex items-center justify-center shrink-0 border border-white">
-                <Icon className="w-5 h-5 text-manifest-ink" />
+              <div className="w-10 h-10 rounded-2xl bg-manifest-glassControl border border-manifest-glassBorder flex items-center justify-center shrink-0">
+                <Icon className="w-5 h-5 text-manifest-auraPurple" />
               </div>
               <div className="space-y-1 flex-1">
                 <h3 className="font-serif text-base font-bold text-manifest-ink leading-snug">
                   {currentStep.title}
                 </h3>
-                <p className="text-xs font-bold text-purple-950">
+                <p className="text-xs font-semibold text-manifest-gold">
                   {currentStep.subtitle}
                 </p>
-                <p className="text-xs text-slate-700 leading-relaxed pt-1 font-normal">
+                <p className="text-xs text-manifest-inkMuted leading-relaxed pt-1 font-normal">
                   {currentStep.description}
                 </p>
               </div>
             </div>
 
             {/* Bottom Controls: Progress dots + Buttons */}
-            <div className="pt-2 border-t border-white/60 flex items-center justify-between gap-2">
+            <div className="pt-2 border-t border-manifest-glassBorder flex items-center justify-between gap-2">
               {/* Step indicator dots */}
               <div className="flex items-center gap-1.5">
                 {TOUR_STEPS.map((_, idx) => (
@@ -353,7 +353,7 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({ forceOpen = fa
                     key={idx}
                     className={`h-1.5 rounded-full transition-all duration-300 ${
                       idx === currentStepIndex
-                        ? 'w-5 bg-manifest-ink'
+                        ? 'w-5 bg-manifest-auraPurple'
                         : 'w-1.5 bg-manifest-ink/20'
                     }`}
                   />
@@ -366,7 +366,7 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({ forceOpen = fa
                   <button
                     type="button"
                     onClick={handlePrev}
-                    className="p-2 rounded-xl glass-pill text-manifest-ink hover:bg-white transition-colors cursor-pointer"
+                    className="p-2 rounded-xl glass-pill text-manifest-ink hover:bg-manifest-glassControlHover transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-manifest-glassBorderFocus"
                     title="Paso anterior"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
@@ -376,7 +376,7 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({ forceOpen = fa
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="px-4 py-2 rounded-xl primary-gradient-btn text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer"
+                  className="px-4 py-2 rounded-xl primary-gradient-btn text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-manifest-glassBorderFocus"
                 >
                   <span>{isLastStep ? 'Finalizar Tutorial' : 'Siguiente'}</span>
                   {isLastStep ? (

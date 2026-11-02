@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { Plus_Jakarta_Sans, Lora, Courier_Prime } from 'next/font/google';
 import './globals.css';
 import { PwaScrollBoundary } from '@/components/pwa/PwaScrollBoundary';
 import { PwaInputEnterNavigator } from '@/components/pwa/PwaInputEnterNavigator';
@@ -11,9 +11,23 @@ const plusJakartaSans = Plus_Jakarta_Sans({
   display: 'swap',
 });
 
+const lora = Lora({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-serif',
+  display: 'swap',
+});
+
+const courierPrime = Courier_Prime({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-mono',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
-  title: 'Manifest Journal — Santuario Personal',
-  description: 'Espacio íntimo para manifestar intenciones, registrar reflexiones, organizar tu vida y liberar cargas.',
+  title: 'Manifest — Santuario Místico & Grimorio',
+  description: 'Espacio íntimo y místico para manifestar intenciones, registrar reflexiones en tu grimorio personal y liberar cargas.',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
@@ -27,7 +41,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#DCCFFF',
+  themeColor: '#E8E8E8',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -42,14 +56,28 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={plusJakartaSans.variable}>
+    <html lang="es" className={`${plusJakartaSans.variable} ${lora.variable} ${courierPrime.variable} light`}>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/icons/icon.svg" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                document.documentElement.classList.add('light');
+                document.documentElement.classList.remove('dark');
+                var s = localStorage.getItem('manifest_user_settings');
+                if (s && JSON.parse(s).isLiteMode) {
+                  document.documentElement.classList.add('lite-mode');
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
       </head>
-      <body className="aura-bg text-manifest-ink font-sans antialiased selection:bg-manifest-lavender/50 min-h-screen">
+      <body className="aura-bg text-manifest-ink font-sans antialiased selection:bg-manifest-auraPurple/30 selection:text-manifest-ink min-h-screen">
         <PwaScrollBoundary />
         <PwaInputEnterNavigator />
         {children}

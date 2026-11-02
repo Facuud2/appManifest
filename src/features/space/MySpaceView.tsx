@@ -36,14 +36,16 @@ export const MySpaceView: React.FC = () => {
         colors={{
           strongBgIos: `${LIQUID_GLASS_SPECULAR}`,
         }}
-        className="w-full p-1"
+        className="w-full p-1 bg-manifest-surfaceNav/90 border border-manifest-glassBorder"
       >
         <SegmentedButton
           strong
           rounded
           active={subTab === 'tracking'}
           onClick={() => setSubTab('tracking')}
-          className="text-xs font-semibold py-2 px-2 !normal-case text-manifest-ink cursor-pointer"
+          className={`text-xs font-semibold py-2 px-2 !normal-case cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
+            subTab === 'tracking' ? 'text-manifest-ink bg-manifest-glassControlActive border border-manifest-glassBorderFocus shadow-xs' : 'text-manifest-inkMuted hover:text-manifest-ink'
+          }`}
         >
           <span className="flex items-center justify-center gap-1 whitespace-nowrap">
             <Award className="w-3.5 h-3.5 shrink-0" />
@@ -56,7 +58,9 @@ export const MySpaceView: React.FC = () => {
           rounded
           active={subTab === 'signs'}
           onClick={() => setSubTab('signs')}
-          className="text-xs font-semibold py-2 px-2 !normal-case text-manifest-ink cursor-pointer"
+          className={`text-xs font-semibold py-2 px-2 !normal-case cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
+            subTab === 'signs' ? 'text-manifest-ink bg-manifest-glassControlActive border border-manifest-glassBorderFocus shadow-xs' : 'text-manifest-inkMuted hover:text-manifest-ink'
+          }`}
         >
           <span className="flex items-center justify-center gap-1 whitespace-nowrap">
             <Sparkles className="w-3.5 h-3.5 shrink-0" />
@@ -69,7 +73,9 @@ export const MySpaceView: React.FC = () => {
           rounded
           active={subTab === 'release'}
           onClick={() => setSubTab('release')}
-          className="text-xs font-semibold py-2 px-2 !normal-case text-manifest-ink cursor-pointer"
+          className={`text-xs font-semibold py-2 px-2 !normal-case cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
+            subTab === 'release' ? 'text-manifest-ink bg-manifest-glassControlActive border border-manifest-glassBorderFocus shadow-xs' : 'text-manifest-inkMuted hover:text-manifest-ink'
+          }`}
         >
           <span className="flex items-center justify-center gap-1 whitespace-nowrap">
             <Flame className="w-3.5 h-3.5 shrink-0" />
@@ -83,7 +89,9 @@ export const MySpaceView: React.FC = () => {
           active={subTab === 'settings'}
           onClick={() => setSubTab('settings')}
           data-testid="subtab-settings"
-          className="text-xs font-semibold py-2 px-2 !normal-case text-manifest-ink cursor-pointer"
+          className={`text-xs font-semibold py-2 px-2 !normal-case cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
+            subTab === 'settings' ? 'text-manifest-ink bg-manifest-glassControlActive border border-manifest-glassBorderFocus shadow-xs' : 'text-manifest-inkMuted hover:text-manifest-ink'
+          }`}
         >
           <span className="flex items-center justify-center gap-1 whitespace-nowrap">
             <Settings className="w-3.5 h-3.5 shrink-0" />

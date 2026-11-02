@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
     const {
       centralTheme,
       specifications = '',
+      detectedTone = 'calma, firme, íntima',
       previousAffirmations = [],
       batchSize = 3,
       batchIndex = 0,
@@ -44,11 +45,12 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 2. Gemini Live Call
+    // 2. Gemini Live Call with AYA Method prosody prompt
     try {
       const result = await generateRampageWithGemini(
         theme,
         specifications,
+        detectedTone,
         previousAffirmations,
         batchSize
       );

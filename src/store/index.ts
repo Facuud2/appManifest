@@ -125,6 +125,11 @@ interface AppState {
   toggleLiteMode: () => void;
   setLiteMode: (enabled: boolean) => void;
 
+  // Liquid Glass Color Mode (Dark / Light / System)
+  colorMode: 'dark' | 'light' | 'system';
+  setColorMode: (mode: 'dark' | 'light' | 'system') => void;
+  toggleColorMode: () => void;
+
   // AI Sandbox Mode (Cero consumo de API)
   aiSandboxMode: boolean;
   toggleAiSandboxMode: () => void;
@@ -293,6 +298,20 @@ export const useAppStore = create<AppState>((set, get) => {
       set({ isLiteMode: enabled, settings: { ...get().settings, isLiteMode: enabled } });
     },
 
+    // Neumorphic Rainbow Pastels (Light Mode Enforced)
+    colorMode: 'light',
+    setColorMode: (_mode: 'dark' | 'light' | 'system' = 'light') => {
+      storage.saveUserSettings({ colorMode: 'light' });
+      if (typeof document !== 'undefined') {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+      }
+      set({ colorMode: 'light', settings: { ...get().settings, colorMode: 'light' } });
+    },
+    toggleColorMode: () => {
+      get().setColorMode('light');
+    },
+
     // AI Sandbox Mode (Cero consumo de API)
     aiSandboxMode: Boolean(
       initialSettings.aiSandboxMode ||
@@ -383,11 +402,17 @@ export const useAppStore = create<AppState>((set, get) => {
         document.documentElement.classList.add('lite-mode');
       }
 
+      if (typeof document !== 'undefined') {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+      }
+
       set({
         ...scoped,
         activeScope: scope,
         settings: storage.getUserSettings(),
         isLiteMode: settings.isLiteMode || false,
+        colorMode: 'light',
         etherFragments: settings.etherFragments ?? 50,
         isInitialized: true,
       });

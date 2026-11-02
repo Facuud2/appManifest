@@ -10,15 +10,21 @@ import {
   Edit3,
   CheckCircle2,
   Loader2,
-  Plus,
+  Play,
+  Pause,
+  RotateCcw,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDrag } from '@use-gesture/react';
-import { IOS_VIEW_SPRING, IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
+import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
 import { RampageAffirmation, RampageSet } from '@/types';
 import { RampageConfigDrawer } from './RampageConfigDrawer';
 import { RampageDecisionModal } from './RampageDecisionModal';
 import { logAiTelemetry } from '@/lib/gemini';
+import { audioEngine, AmbienceType } from '@/lib/audioEngine';
+import { useVoiceProfile } from '@/hooks/useVoiceProfile';
 
 export const RampageSetView: React.FC = () => {
   const {
@@ -34,6 +40,8 @@ export const RampageSetView: React.FC = () => {
     openRampageConfig,
     closeRampageConfig,
   } = useAppStore();
+
+  const { profile, hasVoice } = useVoiceProfile();
 
   // Manual Set State
   const [activeSetIndex, setActiveSetIndex] = useState(0);
@@ -51,10 +59,22 @@ export const RampageSetView: React.FC = () => {
   const [batchCount, setBatchCount] = useState(1);
   const [isDecisionOpen, setIsDecisionOpen] = useState(false);
 
+  // Audio & Voice Playback State
+  const [autoPlayVoice, setAutoPlayVoice] = useState(true);
+  const [autoAdvance, setAutoAdvance] = useState(true);
+  const [isVoicePlaying, setIsVoicePlaying] = useState(false);
+  const [reactiveEnergy, setReactiveEnergy] = useState<number>(0);
+
+  // Audio object URL cache mapping affirmation.id -> objectUrl
+  const audioCacheRef = useRef<Map<string, string>>(new Map());
+  const autoAdvanceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   const isFetchingBatchRef = useRef<boolean>(false);
   const batchCountRef = useRef<number>(1);
   const aiThemeRef = useRef<string>('');
   const aiSpecsRef = useRef<string>('');
+  const aiIndexRef = useRef<number>(0);
+  const aiAffirmationsRef = useRef<RampageAffirmation[]>([]);
 
   // Keep refs synchronized
   useEffect(() => {
@@ -69,6 +89,47 @@ export const RampageSetView: React.FC = () => {
     aiSpecsRef.current = aiSpecs;
   }, [aiSpecs]);
 
+  useEffect(() => {
+    aiIndexRef.current = aiIndex;
+  }, [aiIndex]);
+
+  useEffect(() => {
+    aiAffirmationsRef.current = aiAffirmations;
+  }, [aiAffirmations]);
+
+  // Reactive Halo 60fps monitor
+  useEffect(() => {
+    let animId: number;
+    const updateHalo = () => {
+      if (isAiSession) {
+        const energy = audioEngine.getReactiveEnergy();
+        setReactiveEnergy(energy);
+        setIsVoicePlaying(audioEngine.isPlaying());
+      }
+      animId = requestAnimationFrame(updateHalo);
+    };
+    animId = requestAnimationFrame(updateHalo);
+    return () => cancelAnimationFrame(animId);
+  }, [isAiSession]);
+
+  // Clean all audio URLs from memory on unmount
+  useEffect(() => {
+    const currentAudioCache = audioCacheRef.current;
+    return () => {
+      if (autoAdvanceTimerRef.current) {
+        clearTimeout(autoAdvanceTimerRef.current);
+      }
+      currentAudioCache.forEach((url) => {
+        try {
+          URL.revokeObjectURL(url);
+        } catch (_) {}
+      });
+      currentAudioCache.clear();
+      audioEngine.stopVoice();
+      audioEngine.stopAmbience();
+    };
+  }, []);
+
   // Intercept navigation away if unconfirmed AI session is active
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -81,7 +142,55 @@ export const RampageSetView: React.FC = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isAiSession, aiAffirmations.length]);
 
-  // Request next batch of 3 affirmations in background
+  /**
+   * Synthesize audio for an affirmation using the persistent voiceProfileId
+   */
+  const synthesizeAffirmationAudio = useCallback(
+    async (aff: RampageAffirmation): Promise<string | null> => {
+      if (audioCacheRef.current.has(aff.id)) {
+        return audioCacheRef.current.get(aff.id)!;
+      }
+
+      try {
+        const isSandbox =
+          aiSandboxMode ||
+          (typeof window !== 'undefined' && (window.navigator as any)?.webdriver === true);
+
+        const voiceProfileId = profile?.voiceProfileId || 'voice_aya_master';
+        const detectedTone = profile?.detectedTone || 'calma, firme, íntima';
+
+        const res = await fetch('/api/ai/voice-synthesize', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(isSandbox ? { 'x-ai-sandbox': 'true' } : {}),
+          },
+          body: JSON.stringify({
+            text: aff.text,
+            voiceProfileId,
+            detectedTone,
+          }),
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const blob = await res.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        audioCacheRef.current.set(aff.id, objectUrl);
+        return objectUrl;
+      } catch (err) {
+        console.warn('[AI Rampage] Voice synthesis error for affirmation:', err);
+        return null;
+      }
+    },
+    [aiSandboxMode, profile]
+  );
+
+  /**
+   * Request next batch of 3 affirmations in background and pre-synthesize their audios
+   */
   const fetchNextBatch = useCallback(
     async (currentAffs: RampageAffirmation[]) => {
       if (isFetchingBatchRef.current) return;
@@ -105,6 +214,7 @@ export const RampageSetView: React.FC = () => {
           body: JSON.stringify({
             centralTheme: aiThemeRef.current,
             specifications: aiSpecsRef.current,
+            detectedTone: profile?.detectedTone || 'calma, firme, íntima',
             previousAffirmations: lastTwoAffirmations,
             batchSize: 3,
             batchIndex: batchCountRef.current,
@@ -138,6 +248,11 @@ export const RampageSetView: React.FC = () => {
           });
 
           setBatchCount((prev) => prev + 1);
+
+          // Pre-synthesize audios for the newly added batch in background
+          newBatchItems.forEach((item) => {
+            synthesizeAffirmationAudio(item);
+          });
         }
       } catch (err) {
         console.warn('[AI Rampage] Error prefetching next batch:', err);
@@ -145,11 +260,111 @@ export const RampageSetView: React.FC = () => {
         isFetchingBatchRef.current = false;
       }
     },
-    [aiSandboxMode]
+    [aiSandboxMode, profile, synthesizeAffirmationAudio]
   );
 
-  // Start a new AI Rampage Queue Session
-  const handleStartAiSession = async (theme: string, specs: string) => {
+  /**
+   * Advance affirmation in AI Session
+   */
+  const advanceAiAffirmation = useCallback(
+    (dir = 1) => {
+      const currentList = aiAffirmationsRef.current;
+      if (currentList.length === 0) return;
+
+      if (autoAdvanceTimerRef.current) {
+        clearTimeout(autoAdvanceTimerRef.current);
+        autoAdvanceTimerRef.current = null;
+      }
+
+      // 1. Increment repeat count for current affirmation
+      const curIdx = aiIndexRef.current;
+      setAiAffirmations((prev) => {
+        const copy = [...prev];
+        if (copy[curIdx]) {
+          copy[curIdx] = {
+            ...copy[curIdx],
+            repeatCount: (copy[curIdx].repeatCount || 0) + 1,
+          };
+        }
+        return copy;
+      });
+
+      checkAndUnlockMilestones({ suppressModal: true });
+      setDirection(dir);
+
+      const totalNow = currentList.length;
+      const nextIndex = (curIdx + dir + totalNow) % totalNow;
+      setAiIndex(nextIndex);
+
+      // 2. Penultimate Affirmation Trigger (e.g. index 1 of 3, index 4 of 6)
+      if (nextIndex === totalNow - 2) {
+        fetchNextBatch(currentList);
+      }
+    },
+    [checkAndUnlockMilestones, fetchNextBatch]
+  );
+
+  /**
+   * Handle audio completion of current affirmation (triggers 1.8s integration pause)
+   */
+  const handleAffirmationAudioEnded = useCallback(() => {
+    setIsVoicePlaying(false);
+    if (!autoAdvance) return;
+
+    if (autoAdvanceTimerRef.current) {
+      clearTimeout(autoAdvanceTimerRef.current);
+    }
+
+    // 1.8s Integration Pause before auto-advancing to next affirmation
+    autoAdvanceTimerRef.current = setTimeout(() => {
+      advanceAiAffirmation(1);
+    }, 1800);
+  }, [autoAdvance, advanceAiAffirmation]);
+
+  /**
+   * Play audio of current affirmation
+   */
+  const playCurrentAffirmationAudio = useCallback(async () => {
+    if (autoAdvanceTimerRef.current) {
+      clearTimeout(autoAdvanceTimerRef.current);
+      autoAdvanceTimerRef.current = null;
+    }
+
+    const currentAff = aiAffirmations[aiIndex];
+    if (!currentAff) return;
+
+    let audioUrl = audioCacheRef.current.get(currentAff.id);
+    if (!audioUrl) {
+      audioUrl = (await synthesizeAffirmationAudio(currentAff)) || undefined;
+    }
+
+    if (audioUrl && autoPlayVoice) {
+      await audioEngine.playVoice(audioUrl, handleAffirmationAudioEnded);
+      setIsVoicePlaying(true);
+    }
+  }, [
+    aiAffirmations,
+    aiIndex,
+    autoPlayVoice,
+    synthesizeAffirmationAudio,
+    handleAffirmationAudioEnded,
+  ]);
+
+  // Play audio whenever current affirmation changes in AI Session
+  useEffect(() => {
+    if (isAiSession && !isInitialLoading && aiAffirmations.length > 0) {
+      playCurrentAffirmationAudio();
+    }
+  }, [isAiSession, isInitialLoading, aiIndex, playCurrentAffirmationAudio, aiAffirmations.length]);
+
+  /**
+   * Start a new AI Rampage Queue Session
+   */
+  const handleStartAiSession = async (
+    theme: string,
+    specs: string,
+    options?: { autoPlayVoice: boolean; ambience: AmbienceType }
+  ) => {
     setIsAiSession(true);
     setAiTheme(theme);
     setAiSpecs(specs);
@@ -159,6 +374,20 @@ export const RampageSetView: React.FC = () => {
     setIsInitialLoading(true);
     isFetchingBatchRef.current = false;
     batchCountRef.current = 1;
+
+    // Apply audio preferences
+    setAutoPlayVoice(options?.autoPlayVoice ?? true);
+    if (options?.ambience) {
+      audioEngine.setAmbience(options.ambience);
+    }
+
+    // Clear previous audio cache
+    audioCacheRef.current.forEach((url) => {
+      try {
+        URL.revokeObjectURL(url);
+      } catch (_) {}
+    });
+    audioCacheRef.current.clear();
 
     try {
       const isSandbox =
@@ -174,6 +403,7 @@ export const RampageSetView: React.FC = () => {
         body: JSON.stringify({
           centralTheme: theme,
           specifications: specs,
+          detectedTone: profile?.detectedTone || 'calma, firme, íntima',
           previousAffirmations: [],
           batchSize: 3,
           batchIndex: 0,
@@ -196,83 +426,63 @@ export const RampageSetView: React.FC = () => {
         })
       );
 
+      // Pre-synthesize audio for first 2 affirmations before lifting skeleton
+      if (initialAffs.length >= 2) {
+        await Promise.all([
+          synthesizeAffirmationAudio(initialAffs[0]),
+          synthesizeAffirmationAudio(initialAffs[1]),
+        ]);
+        // Also fire third in background
+        if (initialAffs[2]) {
+          synthesizeAffirmationAudio(initialAffs[2]);
+        }
+      }
+
       setAiAffirmations(initialAffs);
     } catch (err) {
       console.error('[AI Rampage] Error starting session:', err);
       showToast('Error al conectar con IA. Usando modo de contingencia.', 'info');
       // Contingency affirmations
-      setAiAffirmations([
+      const fallbackAffs: RampageAffirmation[] = [
         {
           id: `ai-aff-${Date.now()}-0`,
-          text: `Mi mente y mi corazón vibran en perfecta armonía con ${theme}.`,
+          text: `Siento cómo ${theme}... fluye ahora en mi pecho, con serenidad absoluta.`,
           repeatCount: 0,
         },
         {
           id: `ai-aff-${Date.now()}-1`,
-          text: `Permito que la energía de ${theme} fluya libre y poderosamente en mi vida.`,
+          text: `Permito que la certeza de ${theme} se expanda; mi cuerpo lo sabe real.`,
           repeatCount: 0,
         },
         {
           id: `ai-aff-${Date.now()}-2`,
-          text: `Agradezco con certeza que ${theme} ya se manifiesta en mi realidad presente.`,
+          text: `Yo soy la presencia viva de ${theme}, anclada para siempre en mi presente.`,
           repeatCount: 0,
         },
-      ]);
+      ];
+      setAiAffirmations(fallbackAffs);
+      fallbackAffs.forEach((item) => synthesizeAffirmationAudio(item));
     } finally {
       setIsInitialLoading(false);
     }
   };
 
-  // Advance affirmation in AI Session
-  const advanceAiAffirmation = (dir = 1) => {
-    if (aiAffirmations.length === 0) return;
-
-    // 1. Increment repeat count for current affirmation
-    setAiAffirmations((prev) => {
-      const copy = [...prev];
-      if (copy[aiIndex]) {
-        copy[aiIndex] = {
-          ...copy[aiIndex],
-          repeatCount: (copy[aiIndex].repeatCount || 0) + 1,
-        };
-      }
-      return copy;
-    });
-
-    checkAndUnlockMilestones({ suppressModal: true });
-    setDirection(dir);
-
-    const totalNow = aiAffirmations.length;
-    const nextIndex = (aiIndex + dir + totalNow) % totalNow;
-    setAiIndex(nextIndex);
-
-    // 2. Pre-fetching Rule: Penultimate affirmation trigger (e.g. index 1 of 3, index 4 of 6)
-    if (nextIndex === totalNow - 2) {
-      fetchNextBatch(aiAffirmations);
+  /**
+   * Handle Click on "Finalizar Rampage": 400ms fade-out of all audio, then open Decision Modal
+   */
+  const handleOpenFinishModal = async () => {
+    if (autoAdvanceTimerRef.current) {
+      clearTimeout(autoAdvanceTimerRef.current);
+      autoAdvanceTimerRef.current = null;
     }
+    // Soft 400ms fade-out
+    await audioEngine.fadeAndStopAll(400);
+    setIsDecisionOpen(true);
   };
 
-  // Manual Set Navigation
-  const totalSets = rampageSets.length;
-  const safeSetIndex = totalSets > 0 ? ((activeSetIndex % totalSets) + totalSets) % totalSets : 0;
-  const currentSet = rampageSets[safeSetIndex];
-
-  const totalAffirmationsInSet = currentSet?.affirmations?.length || 0;
-  const safeAffirmationIndex =
-    totalAffirmationsInSet > 0
-      ? ((affirmationIndex % totalAffirmationsInSet) + totalAffirmationsInSet) % totalAffirmationsInSet
-      : 0;
-  const currentAffirmation = currentSet?.affirmations?.[safeAffirmationIndex];
-
-  const advanceManualAffirmation = (dir = 1) => {
-    if (!currentSet || totalAffirmationsInSet === 0 || !currentAffirmation) return;
-    incrementRampageAffirmationRepeat(currentSet.id, currentAffirmation.id);
-    checkAndUnlockMilestones({ suppressModal: true });
-    setDirection(dir);
-    setAffirmationIndex((prev) => (prev + dir + totalAffirmationsInSet) % totalAffirmationsInSet);
-  };
-
-  // Save AI Session
+  /**
+   * Save AI Session
+   */
   const handleSaveAiSession = () => {
     if (!aiTheme.trim() || aiAffirmations.length === 0) return;
 
@@ -292,20 +502,63 @@ export const RampageSetView: React.FC = () => {
     saveRampageSet(newSet);
     showToast('Set guardado en tu Santuario ✨', 'success');
 
+    // Cleanup resources
+    audioCacheRef.current.forEach((url) => {
+      try {
+        URL.revokeObjectURL(url);
+      } catch (_) {}
+    });
+    audioCacheRef.current.clear();
+
     setIsAiSession(false);
     setIsDecisionOpen(false);
     setAiAffirmations([]);
-    setActiveSetIndex(rampageSets.length); // point to new set
+    setActiveSetIndex(rampageSets.length);
     setAffirmationIndex(0);
   };
 
-  // Discard AI Session
+  /**
+   * Discard AI Session
+   */
   const handleDiscardAiSession = () => {
+    // Release all Object URLs from memory
+    audioCacheRef.current.forEach((url) => {
+      try {
+        URL.revokeObjectURL(url);
+      } catch (_) {}
+    });
+    audioCacheRef.current.clear();
+    audioEngine.stopVoice();
+    audioEngine.stopAmbience();
+
     setIsAiSession(false);
     setIsDecisionOpen(false);
     setAiAffirmations([]);
     setAiIndex(0);
     showToast('Rampage descartado limpiamente 🗑️', 'gentle');
+  };
+
+  // Manual Set Navigation
+  const totalSets = rampageSets.length;
+  const safeSetIndex = totalSets > 0 ? ((activeSetIndex % totalSets) + totalSets) % totalSets : 0;
+  const currentSet = rampageSets[safeSetIndex];
+
+  const totalAffirmationsInSet = currentSet?.affirmations?.length || 0;
+  const safeAffirmationIndex =
+    totalAffirmationsInSet > 0
+      ? ((affirmationIndex % totalAffirmationsInSet) + totalAffirmationsInSet) %
+        totalAffirmationsInSet
+      : 0;
+  const currentAffirmation = currentSet?.affirmations?.[safeAffirmationIndex];
+
+  const advanceManualAffirmation = (dir = 1) => {
+    if (!currentSet || totalAffirmationsInSet === 0 || !currentAffirmation) return;
+    incrementRampageAffirmationRepeat(currentSet.id, currentAffirmation.id);
+    checkAndUnlockMilestones({ suppressModal: true });
+    setDirection(dir);
+    setAffirmationIndex(
+      (prev) => (prev + dir + totalAffirmationsInSet) % totalAffirmationsInSet
+    );
   };
 
   // Gesture handling
@@ -363,7 +616,7 @@ export const RampageSetView: React.FC = () => {
   };
 
   // ========================================================
-  // RENDER CASE 1: AI RAMPAGE SLIDING QUEUE SESSION
+  // RENDER CASE 1: AI RAMPAGE SLIDING QUEUE SESSION (AYA METHOD)
   // ========================================================
   if (isAiSession) {
     const currentAiAff = aiAffirmations[aiIndex];
@@ -381,7 +634,7 @@ export const RampageSetView: React.FC = () => {
             <div className="flex items-center justify-center sm:justify-start gap-1.5">
               <span className="w-2 h-2 rounded-full bg-manifest-auraPurple animate-pulse shrink-0" />
               <span className="text-[10px] font-bold uppercase tracking-wider text-manifest-auraPurple">
-                Rampage con IA en vivo • Lote {batchCount}
+                Voz AYA en vivo • Lote {batchCount}
               </span>
             </div>
             <h3 className="text-sm sm:text-base font-serif font-bold text-manifest-ink truncate mt-0.5">
@@ -396,7 +649,7 @@ export const RampageSetView: React.FC = () => {
           <motion.button
             type="button"
             whileTap={IOS_TAP_SPRING}
-            onClick={() => setIsDecisionOpen(true)}
+            onClick={handleOpenFinishModal}
             data-testid="finish-rampage-btn"
             className="shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-2xl primary-gradient-btn text-xs font-semibold shadow-sm cursor-pointer"
           >
@@ -405,10 +658,10 @@ export const RampageSetView: React.FC = () => {
           </motion.button>
         </div>
 
-        {/* Subheader: Progreso en tiempo real */}
+        {/* Subheader: Progreso en tiempo real & Controles de Audio */}
         <div className="flex items-center justify-between px-2 pt-0.5">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-manifest-ink">
+            <span className="text-xs font-bold text-manifest-ink" data-testid="rampage-progress-label">
               Afirmación {totalAiNow > 0 ? aiIndex + 1 : 0} de {totalAiNow}
             </span>
             {/* Dots */}
@@ -426,16 +679,36 @@ export const RampageSetView: React.FC = () => {
             </div>
           </div>
 
-          {isFetchingBatchRef.current && (
-            <div className="flex items-center gap-1 text-[11px] text-manifest-auraPurple animate-pulse font-medium">
-              <Loader2 className="w-3 h-3 animate-spin" />
-              <span>Preparando lote siguiente...</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {isFetchingBatchRef.current && (
+              <div
+                data-testid="prefetching-indicator"
+                className="flex items-center gap-1 text-[11px] text-manifest-auraPurple animate-pulse font-medium"
+              >
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span className="hidden sm:inline">Pre-cargando lote +3...</span>
+              </div>
+            )}
+
+            {/* Auto-Advance Toggle Badge */}
+            <button
+              type="button"
+              onClick={() => setAutoAdvance((p) => !p)}
+              data-testid="toggle-auto-advance"
+              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border transition-all cursor-pointer ${
+                autoAdvance
+                  ? 'bg-manifest-lavender/50 text-manifest-auraPurple border-manifest-auraPurple/40'
+                  : 'bg-white/70 text-manifest-inkMuted border-black/10'
+              }`}
+              title={autoAdvance ? 'Avance automático activado' : 'Modo manual por toque'}
+            >
+              {autoAdvance ? '⚡ Auto' : '👆 Toque'}
+            </button>
+          </div>
         </div>
 
-        {/* Protagonist Card / Liquid Skeleton */}
-        <div className="relative overflow-hidden contain-layout w-full min-h-[220px] sm:min-h-[250px] flex items-center justify-center">
+        {/* Protagonist Card / Liquid Skeleton with Real-Time Reactive Pastel Halo */}
+        <div className="relative overflow-hidden contain-layout w-full min-h-[230px] sm:min-h-[260px] flex items-center justify-center p-2">
           {isInitialLoading ? (
             /* Liquid Glass Skeleton with Quotation Marks */
             <div className="w-full relative p-6 sm:p-9 rounded-3xl sm:rounded-[2rem] liquid-glass-surface shadow-liquid flex flex-col justify-between min-h-[220px] sm:min-h-[250px] animate-pulse">
@@ -460,7 +733,7 @@ export const RampageSetView: React.FC = () => {
                 <div className="h-5 w-3/5 bg-manifest-lavender/60 rounded-lg" />
                 <span className="text-[11px] text-manifest-auraPurple font-medium pt-2 flex items-center gap-1.5">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Sintonizando frecuencias del Rampage...</span>
+                  <span>Sintonizando frecuencias y sintetizando tu voz...</span>
                 </span>
               </div>
               <div className="h-3 w-40 bg-manifest-lavender/40 rounded-full mx-auto" />
@@ -468,85 +741,146 @@ export const RampageSetView: React.FC = () => {
           ) : (
             <AnimatePresence mode="popLayout" custom={direction}>
               {currentAiAff && (
-                <motion.div
-                  key={`ai-card-${currentAiAff.id}-${aiIndex}`}
-                  custom={direction}
-                  variants={slideVariants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  whileTap={IOS_TAP_SPRING}
-                  {...(bindCardGesture() as any)}
-                  data-testid="rampage-next-btn"
-                  className="w-full relative p-6 sm:p-9 rounded-3xl sm:rounded-[2rem] liquid-glass-surface shadow-liquid cursor-pointer select-none flex flex-col justify-between min-h-[220px] sm:min-h-[250px] touch-pan-y"
-                >
-                  {/* Corner Decorative Quotation Marks (4 corners) */}
-                  <span
+                <div className="relative w-full">
+                  {/* Halo Reactivo Pastel a 60fps sincronizado al AnalyserNode de Web Audio API */}
+                  <div
+                    data-testid="voice-reactive-halo"
                     aria-hidden="true"
-                    className="absolute top-3.5 left-4 font-serif text-3xl sm:text-4xl text-manifest-ink/20 select-none pointer-events-none leading-none"
-                  >
-                    “
-                  </span>
-                  <span
-                    aria-hidden="true"
-                    className="absolute top-3.5 right-4 font-serif text-3xl sm:text-4xl text-manifest-ink/20 select-none pointer-events-none leading-none rotate-180"
-                  >
-                    “
-                  </span>
-                  <span
-                    aria-hidden="true"
-                    className="absolute bottom-3.5 left-4 font-serif text-3xl sm:text-4xl text-manifest-ink/20 select-none pointer-events-none leading-none rotate-180"
-                  >
-                    ”
-                  </span>
-                  <span
-                    aria-hidden="true"
-                    className="absolute bottom-3.5 right-4 font-serif text-3xl sm:text-4xl text-manifest-ink/20 select-none pointer-events-none leading-none"
-                  >
-                    ”
-                  </span>
+                    className="absolute -inset-1.5 rounded-[2.25rem] pointer-events-none transition-all duration-100 ease-out"
+                    style={{
+                      background:
+                        'radial-gradient(circle, rgba(184,163,248,0.45) 0%, rgba(254,205,211,0.35) 50%, rgba(186,230,253,0.3) 100%)',
+                      opacity: isVoicePlaying ? 0.35 + reactiveEnergy * 0.65 : 0.08,
+                      transform: `scale(${1 + reactiveEnergy * 0.035})`,
+                      filter: `blur(${8 + reactiveEnergy * 14}px)`,
+                    }}
+                  />
 
-                  {/* Sub-header inside card */}
-                  <div className="relative z-10 flex items-center justify-between pb-2">
-                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-manifest-lavender/50 text-manifest-auraPurple border border-white">
-                      AFIRMACIÓN #{aiIndex + 1}
+                  <motion.div
+                    key={`ai-card-${currentAiAff.id}-${aiIndex}`}
+                    custom={direction}
+                    variants={slideVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    whileTap={IOS_TAP_SPRING}
+                    {...(bindCardGesture() as any)}
+                    data-testid="rampage-next-btn"
+                    className="w-full relative p-6 sm:p-9 rounded-3xl sm:rounded-[2rem] liquid-glass-surface shadow-liquid cursor-pointer select-none flex flex-col justify-between min-h-[220px] sm:min-h-[250px] touch-pan-y border border-white/80"
+                  >
+                    {/* Corner Decorative Quotation Marks (4 corners) */}
+                    <span
+                      aria-hidden="true"
+                      className="absolute top-3.5 left-4 font-serif text-3xl sm:text-4xl text-manifest-ink/20 select-none pointer-events-none leading-none"
+                    >
+                      “
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className="absolute top-3.5 right-4 font-serif text-3xl sm:text-4xl text-manifest-ink/20 select-none pointer-events-none leading-none rotate-180"
+                    >
+                      “
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className="absolute bottom-3.5 left-4 font-serif text-3xl sm:text-4xl text-manifest-ink/20 select-none pointer-events-none leading-none rotate-180"
+                    >
+                      ”
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className="absolute bottom-3.5 right-4 font-serif text-3xl sm:text-4xl text-manifest-ink/20 select-none pointer-events-none leading-none"
+                    >
+                      ”
                     </span>
 
-                    <div
-                      title="Contador independiente de repeticiones"
-                      className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/85 border border-white shadow-sm"
-                    >
-                      <Flame
-                        className={`w-3.5 h-3.5 ${
-                          (currentAiAff.repeatCount || 0) > 0
-                            ? 'text-amber-500 fill-amber-400'
-                            : 'text-manifest-inkMuted'
-                        }`}
-                      />
-                      <span
-                        data-testid="rampage-repeat-counter"
-                        className="text-xs font-bold text-manifest-ink"
-                      >
-                        {currentAiAff.repeatCount || 0}
+                    {/* Sub-header inside card */}
+                    <div className="relative z-10 flex items-center justify-between pb-2">
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-manifest-lavender/50 text-manifest-auraPurple border border-white flex items-center gap-1">
+                        <Sparkles className="w-2.5 h-2.5" />
+                        <span>AFIRMACIÓN #{aiIndex + 1}</span>
+                      </span>
+
+                      {/* Repetition Counter & Audio Indicator */}
+                      <div className="flex items-center gap-2">
+                        {isVoicePlaying && (
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-manifest-auraPurple px-2 py-0.5 rounded-full bg-manifest-lavender/30 animate-pulse">
+                            <span className="w-1.5 h-1.5 rounded-full bg-manifest-auraPurple" />
+                            <span>Voz AYA</span>
+                          </span>
+                        )}
+
+                        <div
+                          title="Contador independiente de repeticiones"
+                          className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/85 border border-white shadow-sm"
+                        >
+                          <Flame
+                            className={`w-3.5 h-3.5 ${
+                              (currentAiAff.repeatCount || 0) > 0
+                                ? 'text-amber-500 fill-amber-400'
+                                : 'text-manifest-inkMuted'
+                            }`}
+                          />
+                          <span
+                            data-testid="rampage-repeat-counter"
+                            className="text-xs font-bold text-manifest-ink"
+                          >
+                            {currentAiAff.repeatCount || 0}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Protagonist Affirmation Text */}
+                    <div className="relative z-10 my-auto py-5 text-center px-4 sm:px-6">
+                      <p className="text-base sm:text-xl md:text-2xl font-serif font-bold text-manifest-ink leading-relaxed tracking-tight">
+                        {currentAiAff.text}
+                      </p>
+                    </div>
+
+                    {/* Compact iOS Audio Controls & Tactile Hint */}
+                    <div className="relative z-10 flex items-center justify-between pt-2 border-t border-black/[0.04]">
+                      {/* Play / Pause / Replay Buttons */}
+                      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (isVoicePlaying) {
+                              audioEngine.stopVoice();
+                              setIsVoicePlaying(false);
+                            } else {
+                              playCurrentAffirmationAudio();
+                            }
+                          }}
+                          data-testid="audio-play-pause-btn"
+                          className="w-7 h-7 rounded-full glass-pill text-manifest-ink flex items-center justify-center shadow-xs transition-colors cursor-pointer hover:bg-manifest-glassControlHover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-manifest-glassBorderFocus"
+                          title={isVoicePlaying ? 'Pausar audio' : 'Reproducir voz'}
+                        >
+                          {isVoicePlaying ? (
+                            <Pause className="w-3.5 h-3.5" />
+                          ) : (
+                            <Play className="w-3.5 h-3.5 ml-0.5" />
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => playCurrentAffirmationAudio()}
+                          data-testid="audio-repeat-btn"
+                          className="w-7 h-7 rounded-full glass-pill text-manifest-ink flex items-center justify-center shadow-xs transition-colors cursor-pointer hover:bg-manifest-glassControlHover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-manifest-glassBorderFocus"
+                          title="Repetir audio actual"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                        </button>
+                      </div>
+
+                      <span className="text-[10px] font-medium text-manifest-inkMuted/70 flex items-center gap-1">
+                        <span>Toca para sumar 🔥 y avanzar</span>
+                        <span>→</span>
                       </span>
                     </div>
-                  </div>
-
-                  {/* Protagonist Affirmation Text */}
-                  <div className="relative z-10 my-auto py-5 text-center px-4 sm:px-6">
-                    <p className="text-base sm:text-xl md:text-2xl font-serif font-bold text-manifest-ink leading-relaxed tracking-tight">
-                      {currentAiAff.text}
-                    </p>
-                  </div>
-
-                  {/* Bottom Tactile Affordance Hint */}
-                  <div className="relative z-10 flex items-center justify-center pt-2">
-                    <span className="text-[10px] font-medium text-manifest-inkMuted/70 flex items-center gap-1">
-                      <span>Toca la tarjeta para repetir y avanzar</span>
-                      <span>→</span>
-                    </span>
-                  </div>
-                </motion.div>
+                  </motion.div>
+                </div>
               )}
             </AnimatePresence>
           )}
@@ -577,7 +911,7 @@ export const RampageSetView: React.FC = () => {
           Crea tu primer Set de Rampage
         </h4>
         <p className="text-xs text-manifest-inkMuted max-w-sm mx-auto">
-          Un set de rampage es una secuencia rítmica de afirmaciones para repetir en bucle y elevar tu frecuencia vibracional.
+          Un set de rampage es una secuencia rítmica de afirmaciones con tu propia voz clonada para repetir en bucle y reprogramar tu subconsciente.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
           <motion.button
@@ -592,7 +926,7 @@ export const RampageSetView: React.FC = () => {
           <button
             type="button"
             onClick={() => openRampageSetEditor(null)}
-            className="px-4 py-2 rounded-xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/80 transition-colors"
+            className="px-4 py-2 rounded-xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink hover:bg-manifest-glassControlHover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-manifest-glassBorderFocus transition-colors"
           >
             O crear manualmente
           </button>
@@ -628,7 +962,7 @@ export const RampageSetView: React.FC = () => {
           }}
           disabled={totalSets <= 1}
           title="Set anterior"
-          className="w-8 h-8 rounded-full flex items-center justify-center bg-white/80 hover:bg-white text-manifest-ink disabled:opacity-35 transition-colors shadow-sm cursor-pointer"
+          className="w-8 h-8 rounded-full flex items-center justify-center glass-pill text-manifest-ink disabled:opacity-35 transition-colors shadow-sm cursor-pointer hover:bg-manifest-glassControlHover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-manifest-glassBorderFocus"
         >
           <ChevronLeft className="w-4 h-4" />
         </motion.button>
@@ -658,7 +992,7 @@ export const RampageSetView: React.FC = () => {
             }}
             disabled={totalSets <= 1}
             title="Set siguiente"
-            className="w-8 h-8 rounded-full flex items-center justify-center bg-white/80 hover:bg-white text-manifest-ink disabled:opacity-35 transition-colors shadow-sm cursor-pointer"
+            className="w-8 h-8 rounded-full flex items-center justify-center glass-pill text-manifest-ink disabled:opacity-35 transition-colors shadow-sm cursor-pointer hover:bg-manifest-glassControlHover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-manifest-glassBorderFocus"
           >
             <ChevronRight className="w-4 h-4" />
           </motion.button>

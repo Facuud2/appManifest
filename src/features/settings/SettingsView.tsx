@@ -18,9 +18,13 @@ import {
   X,
   Compass,
   Zap,
+  Mic,
+  RotateCcw,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
+import { useVoiceProfile } from '@/hooks/useVoiceProfile';
+import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
 
 export const SettingsView: React.FC = () => {
   const {
@@ -33,6 +37,9 @@ export const SettingsView: React.FC = () => {
     aiSandboxMode,
     toggleAiSandboxMode,
   } = useAppStore();
+
+  const { hasVoice, profile, saveSample, removeProfile } = useVoiceProfile();
+  const [isRecalibrating, setIsRecalibrating] = useState(false);
 
   const [nameInput, setNameInput] = useState(settings.userName);
   const [newAffirmation, setNewAffirmation] = useState('');
@@ -123,6 +130,26 @@ export const SettingsView: React.FC = () => {
         }}
         className="!my-2"
       >
+        {/* Appearance Mode (Neumorphic Esoteric Rainbow Pastels - 100% Light Mode) */}
+        <ListItem
+          title={
+            <span className="font-serif text-sm font-bold text-manifest-ink flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-manifest-auraPurple shrink-0" />
+              <span>Tema Neumórfico Luminous Rainbow Pastels</span>
+            </span>
+          }
+          subtitle={
+            <span className="text-[11px] font-medium text-manifest-inkMuted block mt-0.5">
+              Soft Blue #C8E0F4, Soft Pink #F5E0E8, Soft Grey #E8E8E8 en modo claro continuo
+            </span>
+          }
+          after={
+            <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100/80 text-emerald-800 border border-emerald-300/60 shadow-neu-sm">
+              Luz Activa
+            </span>
+          }
+        />
+
         <ListItem
           title={
             <span className="font-serif text-sm font-bold text-manifest-ink flex items-center gap-2">
@@ -131,12 +158,12 @@ export const SettingsView: React.FC = () => {
             </span>
           }
           subtitle={
-            <span className="text-[11px] font-medium text-slate-700 block mt-0.5">
+            <span className="text-[11px] font-medium text-manifest-inkMuted block mt-0.5">
               {isLiteMode ? 'Activado — Máxima fluidez sin blur' : 'Estándar — Efecto Liquid Glass completo'}
             </span>
           }
           text={
-            <p className="text-xs text-slate-600 font-normal leading-relaxed mt-0.5">
+            <p className="text-xs text-manifest-inkMuted font-normal leading-relaxed mt-0.5">
               Reduce desenfoques pesados y prioriza velocidad instantánea en redes lentas o ahorro de batería.
             </p>
           }
@@ -161,14 +188,14 @@ export const SettingsView: React.FC = () => {
             </span>
           }
           subtitle={
-            <span className="text-[11px] font-medium text-slate-700 block mt-0.5">
+            <span className="text-[11px] font-medium text-manifest-inkMuted block mt-0.5">
               {aiSandboxMode
                 ? 'Activado — Respuestas simuladas sin consumo de cuota'
                 : 'Desactivado — Conexión en vivo con Google Gemini'}
             </span>
           }
           text={
-            <p className="text-xs text-slate-600 font-normal leading-relaxed mt-0.5">
+            <p className="text-xs text-manifest-inkMuted font-normal leading-relaxed mt-0.5">
               Simula respuestas realistas de IA (500ms) para pruebas continuas y testing sin agotar la cuota de API.
             </p>
           }
@@ -203,9 +230,112 @@ export const SettingsView: React.FC = () => {
             </span>
           }
           subtitle={
-            <span className="text-xs text-slate-600 block mt-0.5">
+            <span className="text-xs text-manifest-inkMuted block mt-0.5">
               Volver a abrir la guía paso a paso con láminas de foco
             </span>
+          }
+        />
+      </List>
+
+      {/* Huella Vocal AYA (Voz Clonada Persistente) */}
+      <List
+        inset
+        strong
+        colors={{
+          strongBgIos: `${LIQUID_GLASS_SPECULAR} rounded-3xl overflow-hidden`,
+        }}
+        className="!my-2"
+      >
+        <ListItem
+          media={
+            <div
+              className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                hasVoice
+                  ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                  : 'bg-manifest-lavender/60 text-manifest-auraPurple'
+              }`}
+            >
+              <Mic className="w-4 h-4" />
+            </div>
+          }
+          title={
+            <div className="flex items-center gap-2">
+              <span className="font-serif text-sm font-bold text-manifest-ink">
+                Huella Vocal AYA (Voz Propia)
+              </span>
+              {hasVoice && (
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                  Calibrada
+                </span>
+              )}
+            </div>
+          }
+          subtitle={
+            <span className="text-[11px] font-medium text-manifest-inkMuted block mt-0.5">
+              {hasVoice
+                ? `Cadencia: ${profile?.detectedTone || 'calma, firme, íntima'} • Muestra registrada`
+                : 'Aún no has registrado tu muestra de voz'}
+            </span>
+          }
+          text={
+            <p className="text-xs text-manifest-inkMuted font-normal leading-relaxed mt-0.5">
+              {hasVoice
+                ? 'Todas las afirmaciones de Rampage se sintetizan manteniendo idéntico tu timbre de voz.'
+                : 'Se captura automáticamente al dictar el tema de un Rampage o puedes grabarla aquí mismo (6-15s).'}
+            </p>
+          }
+          footer={
+            <div className="pt-2 w-full space-y-2">
+              {isRecalibrating ? (
+                <div className="p-3 rounded-2xl bg-white/90 border border-manifest-auraPurple/40 shadow-sm space-y-2">
+                  <p className="text-xs text-manifest-ink font-semibold">
+                    Habla claro durante 6 a 15 segundos para registrar tu huella de voz:
+                  </p>
+                  <VoiceAudioVisualizer
+                    onCommit={async (text, extra) => {
+                      if (extra?.audioBlob) {
+                        await saveSample(extra.audioBlob, {
+                          durationSeconds: Math.round((extra.durationMs || 6000) / 1000),
+                          detectedTone: extra.detectedTone || 'calma, firme, íntima',
+                        });
+                        showToast('✨ Huella vocal AYA actualizada con éxito', 'success');
+                      }
+                      setIsRecalibrating(false);
+                    }}
+                    onCancel={() => setIsRecalibrating(false)}
+                    placeholder="Habla en tu tono pausado y tranquilo..."
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <motion.button
+                    type="button"
+                    whileTap={IOS_TAP_SPRING}
+                    onClick={() => setIsRecalibrating(true)}
+                    data-testid="recalibrate-voice-btn"
+                    className="px-3.5 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold cursor-pointer flex items-center gap-1.5"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>{hasVoice ? 'Recalibrar mi huella de voz' : 'Registrar huella de voz'}</span>
+                  </motion.button>
+
+                  {hasVoice && (
+                    <motion.button
+                      type="button"
+                      whileTap={IOS_TAP_SPRING}
+                      onClick={async () => {
+                        await removeProfile();
+                        showToast('Huella vocal eliminada', 'gentle');
+                      }}
+                      data-testid="delete-voice-btn"
+                      className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs font-medium cursor-pointer transition-colors"
+                    >
+                      Eliminar
+                    </motion.button>
+                  )}
+                </div>
+              )}
+            </div>
           }
         />
       </List>
@@ -256,7 +386,7 @@ export const SettingsView: React.FC = () => {
 
       {/* Favorite Affirmations List */}
       <div className={`p-5 rounded-3xl ${LIQUID_GLASS_SPECULAR} space-y-3 mx-4`}>
-        <div className="flex items-center gap-2 pb-2 border-b border-white/70">
+        <div className="flex items-center gap-2 pb-2 border-b border-manifest-glassBorder">
           <Heart className="w-4 h-4 text-manifest-auraRose" />
           <h3 className="font-serif text-sm font-bold text-manifest-ink">
             Tus Afirmaciones Favoritas
@@ -267,7 +397,7 @@ export const SettingsView: React.FC = () => {
           {settings.favoriteAffirmations.map((aff, index) => (
             <div
               key={`${aff}-${index}`}
-              className="p-3 rounded-2xl bg-white/70 border border-white flex items-center justify-between gap-2 text-xs"
+              className="p-3 rounded-2xl bg-manifest-surfaceElevated border border-manifest-glassBorder shadow-glass flex items-center justify-between gap-2 text-xs"
             >
               <p className="font-medium text-manifest-ink leading-relaxed">
                 {aff}
@@ -328,7 +458,7 @@ export const SettingsView: React.FC = () => {
             </span>
           }
           text={
-            <p className="text-xs text-slate-600 font-normal leading-relaxed mt-0.5">
+            <p className="text-xs text-manifest-inkMuted font-normal leading-relaxed mt-0.5">
               Exporta o restaura tus registros locales en formato JSON.
             </p>
           }
@@ -384,7 +514,7 @@ export const SettingsView: React.FC = () => {
             </span>
           }
           text={
-            <p className="text-xs text-slate-600 font-normal leading-relaxed mt-0.5">
+            <p className="text-xs text-manifest-inkMuted font-normal leading-relaxed mt-0.5">
               Tus manifestaciones y diario operan en tu dispositivo con sincronización segura.
             </p>
           }

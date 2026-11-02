@@ -1,14 +1,11 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '@/store';
 import {
   Sparkles,
   PenLine,
   ArrowRight,
-  Sun,
-  Moon,
-  CloudSun,
   BookOpen,
   Plus,
   Flame,
@@ -20,14 +17,16 @@ import {
   Target,
   Trophy,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Moon,
+  Zap,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Affirmation, JournalEntry } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Segmented, SegmentedButton } from 'konsta/react';
-import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
-import { ManifestationCard } from '@/components/goals/ManifestationCard';
+import { IOS_TAP_SPRING } from '@/lib/iosSprings';
 import { PinnedAffirmationsList } from '@/components/goals/PinnedAffirmationsList';
 import { RampageSetView } from '@/components/goals/RampageSetView';
 import { JournalEntryDetailModal } from '@/components/journal/JournalEntryDetailModal';
@@ -40,7 +39,6 @@ export const DashboardView: React.FC = () => {
     navigateToGoals,
     openJournalEditor,
     openAffirmationEditor,
-    openRampageSetEditor,
     openRampageConfig,
     journalEntries,
     deleteJournalEntry,
@@ -48,6 +46,10 @@ export const DashboardView: React.FC = () => {
     reorderAffirmations,
     deleteAffirmation,
     saveAffirmation,
+    incrementAffirmationRepeat,
+    settings,
+    etherFragments,
+    openOracle,
   } = useAppStore();
 
   const [viewMode, setViewMode] = useState<'list' | 'rampage'>('list');
@@ -56,6 +58,8 @@ export const DashboardView: React.FC = () => {
   const [journalEntryToDelete, setJournalEntryToDelete] = useState<JournalEntry | null>(null);
   const [affirmationToDelete, setAffirmationToDelete] = useState<Affirmation | null>(null);
   const [recentlyDeletedAffirmation, setRecentlyDeletedAffirmation] = useState<Affirmation | null>(null);
+  const [spotlightIndex, setSpotlightIndex] = useState(0);
+  const [spotlightPulse, setSpotlightPulse] = useState(false);
 
   // Auto-clear recently deleted undo after 7 seconds
   useEffect(() => {
@@ -86,8 +90,6 @@ export const DashboardView: React.FC = () => {
     return 0;
   };
 
-  // Separate pinned and unpinned affirmations
-  // En la pantalla de inicio: de arriba hacia abajo siendo la primera la más reciente
   const pinnedAffirmations = affirmations.filter((a) => a.pinned);
   const unpinnedAffirmations = affirmations
     .filter((a) => !a.pinned)
@@ -95,7 +97,7 @@ export const DashboardView: React.FC = () => {
       const timeA = getAffirmationTime(a);
       const timeB = getAffirmationTime(b);
       if (timeA !== timeB) {
-        return timeB - timeA; // Más reciente primero (al principio de forma predeterminada)
+        return timeB - timeA;
       }
       return (b.id || '').localeCompare(a.id || '');
     });
@@ -123,167 +125,535 @@ export const DashboardView: React.FC = () => {
     }
   };
 
+  // Bento Spotlight Affirmation (Hero Focus)
+  const spotlightAffirmation =
+    pinnedAffirmations.length > 0
+      ? pinnedAffirmations[spotlightIndex % pinnedAffirmations.length]
+      : affirmations[0] || null;
+
+  const totalRepeats = affirmations.reduce((sum, a) => sum + (a.repeatCount || 0), 0);
+  const dailyStreak = settings.dailyStreak || 1;
+
+  const handleRepeatSpotlight = (affId: string) => {
+    setSpotlightPulse(true);
+    setTimeout(() => setSpotlightPulse(false), 500);
+    incrementAffirmationRepeat(affId);
+  };
+
+  const handleNextSpotlight = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (pinnedAffirmations.length > 1) {
+      setSpotlightIndex((prev) => (prev + 1) % pinnedAffirmations.length);
+    }
+  };
+
+  const handlePrevSpotlight = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (pinnedAffirmations.length > 1) {
+      setSpotlightIndex((prev) => (prev - 1 + pinnedAffirmations.length) % pinnedAffirmations.length);
+    }
+  };
+
   return (
-    <div className="max-w-2xl mx-auto space-y-4 sm:space-y-5 pt-0.5">
-      {/* 1. Date & Warm Greeting */}
-      <div className="px-1 flex items-center justify-between">
+    <div className="w-full space-y-6 pt-1">
+      {/* 1. Header: Saludo Sagrado & Fecha */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
         <div>
-          <p className="text-xs font-medium text-manifest-inkMuted">
-            {formattedDate}
-          </p>
-          <h2 className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink flex items-center gap-2 mt-0.5">
-            {hour < 12 ? (
-              <CloudSun className="w-5 h-5 text-amber-500 inline shrink-0" />
-            ) : hour < 20 ? (
-              <Sun className="w-5 h-5 text-amber-500 inline shrink-0" />
-            ) : (
-              <Moon className="w-5 h-5 text-manifest-lavender inline shrink-0" />
-            )}
+          <h2 className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink flex items-center gap-2">
+            <span className="text-manifest-brass text-base">✦</span>
             <span>
-              {hour < 12 ? 'Buenos días' : hour < 20 ? 'Buenas tardes' : 'Buenas noches'},{' '}
+              {hour < 12 ? 'Alba consciente' : hour < 20 ? 'Tarde sagrada' : 'Noche mística'},{' '}
               {getScopeGreetingName()}
             </span>
           </h2>
+          <p className="text-xs font-serif italic text-manifest-brass/80 mt-0.5 flex items-center gap-1.5">
+            <span>✧</span>
+            <span>{formattedDate}</span>
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            onClick={() => navigateToGoals(viewMode)}
+            className="text-xs font-serif italic text-manifest-inkMuted hover:text-manifest-brass transition-colors flex items-center gap-1 cursor-pointer py-1 px-2.5 rounded-full hover:bg-manifest-glassControlHover focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+          >
+            <span>{viewMode === 'rampage' ? 'Explorar sets' : 'Todas las afirmaciones'}</span>
+            <ArrowRight className="w-3 h-3" />
+          </button>
         </div>
       </div>
 
-      {/* 2. SECCIÓN: Afirmaciones & Sets de Rampage */}
-      <section className="space-y-3">
-        {/* Konsta UI Cupertino Segmented Control */}
-        <div className="flex items-center justify-between gap-2 px-1">
-          <Segmented
-            strong
-            rounded
-            colors={{
-              strongBgIos: `${LIQUID_GLASS_SPECULAR}`,
-            }}
-            className="w-full sm:w-auto sm:min-w-[330px] p-1"
-          >
-            <SegmentedButton
-              strong
-              rounded
-              active={viewMode === 'list'}
-              onClick={() => setViewMode('list')}
-              className="text-xs font-semibold py-1.5 px-3 !normal-case text-manifest-ink cursor-pointer"
+      {/* 2. Responsive Bento Grid Container */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* ============================================================== */}
+        {/* COLUMNA PRINCIPAL (8 columnas en desktop, orden central) */}
+        {/* ============================================================== */}
+        <div className="lg:col-span-8 space-y-6">
+          {/* A. HERO SPOTLIGHT CARD (Inspirado en Hero de Harry Potter / Bento wireframe) */}
+          {spotlightAffirmation && (
+            <motion.div
+              layout
+              className="relative overflow-hidden rounded-3xl glass-card border border-manifest-glassBorder p-5 sm:p-7 shadow-liquid"
             >
-              <span className="flex items-center justify-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-manifest-auraPurple shrink-0" />
-                <span>Mis Fijadas ({pinnedAffirmations.length})</span>
-              </span>
-            </SegmentedButton>
+              {/* Corner tarot stars */}
+              <span className="absolute top-3.5 left-4 text-manifest-brass/45 text-xs select-none">✦</span>
+              <span className="absolute top-3.5 right-4 text-manifest-brass/45 text-xs select-none">✦</span>
+              <span className="absolute bottom-3.5 left-4 text-manifest-brass/45 text-xs select-none">✦</span>
+              <span className="absolute bottom-3.5 right-4 text-manifest-brass/45 text-xs select-none">✦</span>
 
-            <SegmentedButton
-              strong
-              rounded
-              active={viewMode === 'rampage'}
-              onClick={() => setViewMode('rampage')}
-              className="text-xs font-semibold py-1.5 px-3 !normal-case text-manifest-ink cursor-pointer"
-            >
-              <span className="flex items-center justify-center gap-1.5">
-                <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0" />
-                <span>Sets de Rampage</span>
-              </span>
-            </SegmentedButton>
-          </Segmented>
-        </div>
+              {/* Ambient radial glow */}
+              <div
+                aria-hidden="true"
+                className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-gradient-to-br from-manifest-brass/15 via-manifest-auraPurple/15 to-transparent blur-3xl pointer-events-none"
+              />
 
-        {/* Section Header Row with Section Title on Left and Actions on Right */}
-        <div className="flex items-center justify-between px-1 pt-0.5">
-          <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
-            {viewMode === 'rampage' ? (
-              <>
-                <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
-                <span>Sets de Rampage</span>
-              </>
-            ) : (
-              <>
-                <Pin className="w-3.5 h-3.5 text-manifest-auraPurple fill-manifest-auraPurple" />
-                <span>Afirmaciones Fijadas ({pinnedAffirmations.length})</span>
-              </>
-            )}
-          </h3>
+              {/* Card Header: Badge + Pagination */}
+              <div className="flex items-center justify-between gap-2 mb-3.5 relative z-10">
+                <div className="flex items-center gap-2">
+                  <span className="vintage-label-tape-dark text-[10px] px-2.5 py-1 rounded flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3 text-manifest-brass" />
+                    <span>ENFOQUE SAGRADO</span>
+                  </span>
+                  <span className="vintage-label-tape text-[10px] px-2 py-0.5 rounded-sm uppercase tracking-wider">
+                    {spotlightAffirmation.userId === 'shared'
+                      ? '✦ JUNTOS'
+                      : (spotlightAffirmation.author || (spotlightAffirmation.userId === 'facu' ? '☾ FACU' : '✧ MAIA')).toUpperCase()}
+                  </span>
+                </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigateToGoals(viewMode)}
-              className="text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink transition-colors flex items-center gap-0.5 cursor-pointer"
-            >
-              <span>{viewMode === 'rampage' ? 'Ver todos' : 'Ver todas'}</span>
-              <ArrowRight className="w-3 h-3" />
-            </button>
-            {viewMode === 'rampage' ? (
-              <motion.button
-                whileTap={IOS_TAP_SPRING}
-                onClick={() => openRampageConfig()}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Nuevo Set</span>
-              </motion.button>
-            ) : (
-              <motion.button
-                whileTap={IOS_TAP_SPRING}
-                onClick={() => openAffirmationEditor(null)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Nueva</span>
-              </motion.button>
-            )}
-          </div>
-        </div>
+                {pinnedAffirmations.length > 1 && (
+                  <div className="flex items-center gap-1 bg-manifest-glassControl px-2 py-0.5 rounded-full border border-manifest-glassBorder">
+                    <button
+                      onClick={handlePrevSpotlight}
+                      title="Decreto anterior"
+                      className="p-1 text-manifest-inkMuted hover:text-manifest-ink transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="text-[11px] font-sans font-bold text-manifest-brass px-1 tabular-nums">
+                      {(spotlightIndex % pinnedAffirmations.length) + 1} / {pinnedAffirmations.length}
+                    </span>
+                    <button
+                      onClick={handleNextSpotlight}
+                      title="Decreto siguiente"
+                      className="p-1 text-manifest-inkMuted hover:text-manifest-ink transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+                    >
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
 
-        {viewMode === 'rampage' ? (
-          <RampageSetView />
-        ) : pinnedAffirmations.length === 0 ? (
-          <LiquidEmptyState
-            title="Sin afirmaciones fijadas"
-            description="Fija tus afirmaciones prioritarias con el icono de chincheta para tenerlas siempre presentes en tu pantalla de inicio."
-            actionLabel="Explorar todas mis afirmaciones"
-            onAction={() => navigateToGoals('list')}
-          />
-        ) : (
-          <div className="space-y-2.5">
-            {/* Pinned Affirmations with Drag & Drop - compact and capped */}
-            <PinnedAffirmationsList
-              pinnedAffirmations={
-                showAllPinnedInDashboard
-                  ? pinnedAffirmations
-                  : pinnedAffirmations.slice(0, 4)
-              }
-              onReorder={handleReorderPinned}
-              onDeleteRequest={(targetAff) => setAffirmationToDelete(targetAff)}
-            />
+              {/* Affirmation Text: Crystal-clear Lora font */}
+              <div className="my-3 sm:my-4 relative z-10">
+                <p className="font-serif text-lg sm:text-xl lg:text-[22px] text-manifest-ink font-normal leading-relaxed select-text">
+                  “{spotlightAffirmation.text}”
+                </p>
+              </div>
 
-            {pinnedAffirmations.length > 4 && (
-              <motion.button
-                type="button"
-                whileTap={IOS_TAP_SPRING}
-                onClick={() => setShowAllPinnedInDashboard((prev) => !prev)}
-                className="w-full py-2.5 px-3 rounded-2xl glass-pill border border-white/80 text-xs font-semibold text-manifest-auraPurple flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <span>
-                  {showAllPinnedInDashboard
-                    ? 'Mostrar menos afirmaciones'
-                    : `Ver las ${pinnedAffirmations.length} afirmaciones fijadas`}
+              {/* Action Bar: High impact repeat CTA + Repeat counter */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-manifest-glassBorder relative z-10">
+                <div className="flex items-center gap-2 text-xs font-sans text-manifest-inkMuted">
+                  <span className="flex items-center gap-1.5 text-amber-900 font-bold bg-amber-100/80 px-2.5 py-1 rounded-full border border-amber-300/60 shadow-neu-sm">
+                    <Flame className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+                    <span className="tabular-nums">{spotlightAffirmation.repeatCount} consagradas</span>
+                  </span>
+                  <span className="hidden sm:inline text-[11px] text-manifest-inkMuted">
+                    Toca para elevar su vibración
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <motion.button
+                    whileTap={IOS_TAP_SPRING}
+                    onClick={() => handleRepeatSpotlight(spotlightAffirmation.id)}
+                    className="relative px-5 py-2.5 rounded-full primary-gradient-btn text-manifest-ink font-sans font-bold text-xs tracking-wider uppercase shadow-md flex items-center gap-1.5 cursor-pointer hover:brightness-110 active:scale-95 transition-all overflow-hidden focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+                  >
+                    {spotlightPulse && (
+                      <motion.span
+                        initial={{ scale: 0.5, opacity: 0.8 }}
+                        animate={{ scale: 2.2, opacity: 0 }}
+                        transition={{ duration: 0.45 }}
+                        className="absolute inset-0 bg-white rounded-full pointer-events-none"
+                      />
+                    )}
+                    <Flame className="w-4 h-4 fill-current" />
+                    <span>Repetir (+1)</span>
+                  </motion.button>
+                  <button
+                    onClick={() => openAffirmationEditor(spotlightAffirmation)}
+                    title="Editar decreto"
+                    className="p-2.5 rounded-full bg-manifest-glassControl hover:bg-manifest-glassControlHover text-manifest-inkMuted hover:text-manifest-ink border border-manifest-glassBorder transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* B. BENTO STATS GRID (Esoteric Rainbow Pastel Neumorphism) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Box 1: Racha Sagrada (Soft Peach #FDE4D0 & Solar Butter #FDF2C7) */}
+            <div className="p-3.5 sm:p-4 rounded-2xl glass-card border border-manifest-peach/40 hover:border-manifest-peach/70 transition-all space-y-1 relative overflow-hidden group">
+              <div className="flex items-center justify-between text-amber-700">
+                <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-amber-700">
+                  Racha
                 </span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                    showAllPinnedInDashboard ? 'rotate-180' : ''
-                  }`}
-                />
-              </motion.button>
-            )}
-          </div>
-        )}
-      </section>
+                <Flame className="w-4 h-4 fill-current text-amber-600" />
+              </div>
+              <div className="text-2xl sm:text-3xl font-sans font-bold tabular-nums text-manifest-ink leading-none pt-1">
+                {dailyStreak}d
+              </div>
+              <p className="text-[11px] font-sans text-manifest-inkMuted truncate">
+                Conexión viva
+              </p>
+            </div>
 
-      {/* Pop-up de Confirmación de Eliminación con physics Apple / Liquid Glass */}
+            {/* Box 2: Decretos Activos (Soft Lavender #E3DBF8 & Amethyst) */}
+            <div className="p-3.5 sm:p-4 rounded-2xl glass-card border border-manifest-lavender/50 hover:border-manifest-lavender/80 transition-all space-y-1 relative overflow-hidden group">
+              <div className="flex items-center justify-between text-purple-700">
+                <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-purple-700">
+                  Decretos
+                </span>
+                <Sparkles className="w-4 h-4 text-purple-700" />
+              </div>
+              <div className="text-2xl sm:text-3xl font-sans font-bold tabular-nums text-manifest-ink leading-none pt-1">
+                {affirmations.length}
+              </div>
+              <p className="text-[11px] font-sans text-manifest-inkMuted truncate">
+                {pinnedAffirmations.length} en el altar
+              </p>
+            </div>
+
+            {/* Box 3: Fragmentos de Éter (Soft Blue #C8E0F4 & Celestial Moon) */}
+            <div
+              onClick={() => openOracle()}
+              className="p-3.5 sm:p-4 rounded-2xl glass-card border border-manifest-celeste/50 hover:border-manifest-celeste/80 transition-all space-y-1 relative overflow-hidden group cursor-pointer"
+            >
+              <div className="flex items-center justify-between text-sky-700">
+                <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-sky-700">
+                  Éter
+                </span>
+                <Moon className="w-4 h-4 text-sky-700" />
+              </div>
+              <div className="text-2xl sm:text-3xl font-sans font-bold tabular-nums text-manifest-ink leading-none pt-1 flex items-baseline gap-1">
+                <span>{etherFragments}</span>
+                <span className="text-xs font-sans text-sky-600 font-bold">✧</span>
+              </div>
+              <p className="text-[11px] font-sans font-medium text-sky-700 truncate group-hover:underline">
+                Girar Oráculo →
+              </p>
+            </div>
+
+            {/* Box 4: Vibración / Repeticiones (Soft Mint #D2F4E2 & Healing Jade) */}
+            <div className="p-3.5 sm:p-4 rounded-2xl glass-card border border-manifest-mint/50 hover:border-manifest-mint/80 transition-all space-y-1 relative overflow-hidden group">
+              <div className="flex items-center justify-between text-emerald-700">
+                <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-emerald-700">
+                  Energía
+                </span>
+                <Zap className="w-4 h-4 text-emerald-700" />
+              </div>
+              <div className="text-2xl sm:text-3xl font-sans font-bold tabular-nums text-manifest-ink leading-none pt-1">
+                {totalRepeats}
+              </div>
+              <p className="text-[11px] font-sans text-manifest-inkMuted truncate">
+                Repeticiones totales
+              </p>
+            </div>
+          </div>
+
+          {/* C. DECRETOS & AFIRMACIONES DECK */}
+          <section className="space-y-3 pt-2">
+            <div className="flex items-center justify-between gap-2 px-0.5">
+              <div className="inline-flex p-0.5 rounded-full bg-manifest-glassControl border border-manifest-glassBorder backdrop-blur-md">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`px-3 py-1.5 text-xs font-serif tracking-wide rounded-full transition-all flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
+                    viewMode === 'list'
+                      ? 'bg-manifest-glassControlActive text-manifest-ink shadow-xs border border-manifest-glassBorderFocus'
+                      : 'text-manifest-inkMuted hover:text-manifest-ink'
+                  }`}
+                >
+                  <Sparkles className="w-3 h-3 text-manifest-brass" />
+                  <span>Fijadas ({pinnedAffirmations.length})</span>
+                </button>
+
+                <button
+                  onClick={() => setViewMode('rampage')}
+                  className={`px-3 py-1.5 text-xs font-serif tracking-wide rounded-full transition-all flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
+                    viewMode === 'rampage'
+                      ? 'bg-manifest-glassControlActive text-manifest-ink shadow-xs border border-manifest-glassBorderFocus'
+                      : 'text-manifest-inkMuted hover:text-manifest-ink'
+                  }`}
+                >
+                  <Flame className="w-3 h-3 text-amber-400 fill-amber-400" />
+                  <span>Rampage</span>
+                </button>
+              </div>
+
+              {viewMode === 'rampage' ? (
+                <motion.button
+                  whileTap={IOS_TAP_SPRING}
+                  onClick={() => openRampageConfig()}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full primary-gradient-btn text-xs font-serif tracking-wide shadow-sm shrink-0 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Nuevo Set</span>
+                </motion.button>
+              ) : (
+                <motion.button
+                  whileTap={IOS_TAP_SPRING}
+                  onClick={() => openAffirmationEditor(null)}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full primary-gradient-btn text-xs font-serif tracking-wide shadow-sm shrink-0 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Nuevo Decreto</span>
+                </motion.button>
+              )}
+            </div>
+
+            {viewMode === 'rampage' ? (
+              <RampageSetView />
+            ) : pinnedAffirmations.length === 0 ? (
+              <LiquidEmptyState
+                title="Sin decretos fijados"
+                description="Consagra y fija tus afirmaciones prioritarias con el icono de chincheta para tenerlas presentes en tu santuario diario."
+                actionLabel="Explorar mis afirmaciones"
+                onAction={() => navigateToGoals('list')}
+              />
+            ) : (
+              <div className="space-y-2.5">
+                <PinnedAffirmationsList
+                  pinnedAffirmations={
+                    showAllPinnedInDashboard
+                      ? pinnedAffirmations
+                      : pinnedAffirmations.slice(0, 4)
+                  }
+                  onReorder={handleReorderPinned}
+                  onDeleteRequest={(targetAff) => setAffirmationToDelete(targetAff)}
+                />
+
+                {pinnedAffirmations.length > 4 && (
+                  <motion.button
+                    type="button"
+                    whileTap={IOS_TAP_SPRING}
+                    onClick={() => setShowAllPinnedInDashboard((prev) => !prev)}
+                    className="w-full py-2 px-3 rounded-full glass-pill text-xs font-serif text-manifest-brass flex items-center justify-center gap-1.5 transition-colors cursor-pointer hover:bg-manifest-glassControlHover focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+                  >
+                    <span>
+                      {showAllPinnedInDashboard
+                        ? 'Mostrar menos decretos'
+                        : `Ver las ${pinnedAffirmations.length} afirmaciones fijadas`}
+                    </span>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                        showAllPinnedInDashboard ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </motion.button>
+                )}
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* ============================================================== */}
+        {/* COLUMNA DERECHA / PANEL MÍSTICO (4 columnas en desktop) */}
+        {/* ============================================================== */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* 1. Bento Card: Oráculo Cósmico (Liquid Glass Capsule) */}
+          <div className="p-5 rounded-3xl glass-card border border-manifest-glassBorder space-y-3.5 shadow-liquid relative overflow-hidden">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-manifest-brass flex items-center gap-1.5">
+                <Moon className="w-3.5 h-3.5 text-manifest-brass" />
+                <span>Oráculo Cósmico</span>
+              </span>
+              <span className="text-[11px] font-sans font-bold px-2.5 py-0.5 rounded-full bg-manifest-glassControl text-manifest-brass border border-manifest-glassBorder tabular-nums">
+                {etherFragments} ✧
+              </span>
+            </div>
+
+            <p className="text-xs font-serif text-manifest-ink leading-relaxed">
+              Sintoniza tu revelación mística y sincronicidades alineadas para hoy.
+            </p>
+
+            <motion.button
+              whileTap={IOS_TAP_SPRING}
+              onClick={() => openOracle()}
+              className="w-full py-2.5 px-4 rounded-full primary-gradient-btn text-manifest-ink font-sans font-bold text-xs tracking-wide shadow-md flex items-center justify-center gap-2 cursor-pointer hover:brightness-105 active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-manifest-brass" />
+              <span>Girar Oráculo</span>
+            </motion.button>
+          </div>
+
+          {/* 2. Bento Card: Grimorio & Diario Reciente (Inspirado en Activity Feed de la inspo) */}
+          <section className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-manifest-brass" />
+                <span>Grimorio & Diario</span>
+              </h3>
+
+              <div className="flex items-center gap-2">
+                {journalEntries.length > 0 && (
+                  <button
+                    onClick={() => setActiveTab('diario')}
+                    className="text-xs font-sans text-manifest-inkMuted hover:text-manifest-brass transition-colors flex items-center gap-0.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none rounded"
+                  >
+                    <span>Ver todas</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                )}
+                <motion.button
+                  whileTap={IOS_TAP_SPRING}
+                  data-testid="dashboard-write-journal-btn"
+                  onClick={() => openJournalEditor('manifestation', null)}
+                  className="flex items-center gap-1 px-3 py-1 rounded-full primary-gradient-btn text-xs font-sans font-semibold tracking-wide shadow-sm shrink-0 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+                >
+                  <PenLine className="w-3 h-3" />
+                  <span>Escribir</span>
+                </motion.button>
+              </div>
+            </div>
+
+            {recentEntries.length === 0 ? (
+              <LiquidEmptyState
+                icon={BookOpen}
+                badge="Grimorio Íntimo"
+                title="Tu grimorio aguarda tus palabras"
+                description="Aquí vivirán tus reflexiones personales, avances de manifestación y sincronías conscientes."
+                actionLabel="Escribir en el Grimorio"
+                onAction={() => openJournalEditor('manifestation', null)}
+              />
+            ) : (
+              <div className="space-y-2.5">
+                {recentEntries.map((entry) => {
+                  const formattedEntryDate = format(new Date(entry.createdAt), "d 'de' MMMM", { locale: es });
+                  const isProgress = entry.entryType === 'progress';
+                  const isManifestation = entry.entryType === 'manifestation';
+                  const hasCustomTitle =
+                    entry.title &&
+                    entry.title !== 'Entrada de diario' &&
+                    !entry.content.startsWith(entry.title.replace(/\.\.\.$/, ''));
+
+                  return (
+                    <div
+                      key={entry.id}
+                      onClick={() => setSelectedJournalEntryForView(entry)}
+                      data-testid={`journal-card-${entry.id}`}
+                      className={`p-3.5 rounded-2xl tarot-card-border glass-card-interactive cursor-pointer space-y-2 select-none ${
+                        isProgress
+                          ? 'border-l-[3.5px] border-l-emerald-500/70'
+                          : isManifestation
+                          ? 'border-l-[3.5px] border-l-manifest-auraPurple/70'
+                          : 'border-l-[3.5px] border-l-amber-500/70'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span
+                            className={`inline-flex items-center gap-1 text-[9.5px] font-sans font-bold uppercase tracking-wider px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 shadow-neu-sm ${
+                              isProgress
+                                ? 'bg-emerald-100/80 text-emerald-800 border border-emerald-300/60'
+                                : isManifestation
+                                ? 'bg-purple-100/80 text-purple-800 border border-purple-300/60'
+                                : 'bg-amber-100/80 text-amber-800 border border-amber-300/60'
+                            }`}
+                          >
+                            {isProgress ? (
+                              <>
+                                <Sparkles className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+                                <span>Avance</span>
+                              </>
+                            ) : isManifestation ? (
+                              <>
+                                <Target className="w-2.5 h-2.5 text-purple-600 shrink-0" />
+                                <span>Manifestación</span>
+                              </>
+                            ) : (
+                              <>
+                                <Trophy className="w-2.5 h-2.5 text-amber-600 shrink-0" />
+                                <span>Success Story</span>
+                              </>
+                            )}
+                          </span>
+                          <span className="text-[10px] font-sans text-manifest-inkMuted whitespace-nowrap shrink-0">
+                            {formattedEntryDate}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openJournalEditor(entry.entryType, entry);
+                            }}
+                            title="Editar entrada"
+                            data-testid={`edit-journal-card-${entry.id}`}
+                            className="w-6.5 h-6.5 rounded-lg flex items-center justify-center bg-manifest-glassControl hover:bg-manifest-glassControlHover text-manifest-inkMuted hover:text-manifest-ink border border-manifest-glassBorder active:scale-95 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setJournalEntryToDelete(entry);
+                            }}
+                            title="Eliminar entrada"
+                            data-testid={`delete-journal-card-${entry.id}`}
+                            className="w-6.5 h-6.5 rounded-lg flex items-center justify-center bg-manifest-glassControl hover:bg-rose-100/80 text-manifest-inkMuted hover:text-rose-600 border border-manifest-glassBorder active:scale-95 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:outline-none"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="pt-0.5">
+                        {hasCustomTitle ? (
+                          <div>
+                            <h4 className="text-xs font-serif font-bold text-manifest-ink line-clamp-1 leading-snug">
+                              {entry.title}
+                            </h4>
+                            <p className="text-[11px] font-serif text-manifest-inkMuted line-clamp-2 leading-relaxed mt-0.5">
+                              {entry.content}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-xs sm:text-[13px] font-serif text-manifest-ink leading-snug line-clamp-2">
+                            “{entry.content}”
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          {/* 3. Bento Card: Sabiduría Mística / Ley de Asunción */}
+          <div className="p-4 rounded-2xl glass-card border border-manifest-glassBorder space-y-1.5 shadow-sm">
+            <div className="flex items-center gap-1.5 text-manifest-brass text-[11px] font-sans font-bold uppercase tracking-wider">
+              <span>✦</span>
+              <span>Sabiduría Diaria</span>
+            </div>
+            <p className="font-serif text-xs text-manifest-ink leading-relaxed">
+              “El mundo físico no es más que el eco tardío de tu estado interior consagrado. Habita hoy en el agradecimiento de lo ya cumplido.”
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Pop-up de Confirmación de Eliminación de Afirmación */}
       <AnimatePresence>
         {affirmationToDelete && (
           <div
             onClick={() => setAffirmationToDelete(null)}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-manifest-ink/35 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/35 backdrop-blur-md"
           >
             <motion.div
               onClick={(e) => e.stopPropagation()}
@@ -296,15 +666,15 @@ export const DashboardView: React.FC = () => {
                 transition: { duration: 0.15, ease: [0.22, 1, 0.36, 1] },
               }}
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full max-w-sm rounded-3xl glass-card p-5 sm:p-6 border border-white shadow-liquid space-y-4"
+              className="w-full max-w-sm rounded-3xl glass-card border border-manifest-glassBorder shadow-liquid space-y-4 p-5 sm:p-6"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-rose-100/80 border border-rose-200/80 text-rose-500 flex items-center justify-center shrink-0 shadow-sm">
+                <div className="w-10 h-10 rounded-2xl bg-rose-100/80 border border-rose-300/60 text-rose-700 flex items-center justify-center shrink-0 shadow-neu-sm">
                   <Trash2 className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="font-serif text-sm font-bold text-manifest-ink">
-                    ¿Retirar esta afirmación?
+                    ¿Retirar este decreto?
                   </h3>
                   <p className="text-[11px] text-manifest-inkMuted">
                     Confirmación de retiro
@@ -312,21 +682,22 @@ export const DashboardView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-3 rounded-2xl bg-white/70 border border-white/90">
-                <p className="text-xs font-medium text-manifest-ink line-clamp-3 italic">
+              <div className="p-3 rounded-2xl bg-manifest-glassControl border border-manifest-glassBorder">
+                <p className="text-xs font-serif italic text-manifest-ink line-clamp-3">
                   “{affirmationToDelete.text}”
                 </p>
               </div>
 
               <p className="text-[11.5px] text-manifest-inkMuted leading-relaxed">
-                Esta acción retirará la afirmación de tu tablero de inicio. <span className="font-semibold text-manifest-auraPurple">Podrás deshacer la acción de inmediato</span> si lo deseas.
+                Esta acción retirará la afirmación de tu altar de inicio.{' '}
+                <span className="font-semibold text-manifest-brass">Podrás deshacer la acción de inmediato</span> si lo deseas.
               </p>
 
               <div className="flex items-center justify-end gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => setAffirmationToDelete(null)}
-                  className="px-3.5 py-2 rounded-xl text-xs font-semibold text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/70 transition-colors cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl text-xs font-serif text-manifest-inkMuted hover:text-manifest-ink hover:bg-manifest-glassControlHover transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
                 >
                   Cancelar
                 </button>
@@ -338,9 +709,9 @@ export const DashboardView: React.FC = () => {
                     setRecentlyDeletedAffirmation(deleted);
                     setAffirmationToDelete(null);
                   }}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-800 to-rose-900 hover:from-rose-700 hover:to-rose-800 border border-rose-500/30 text-white text-xs font-serif font-semibold shadow-sm transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:outline-none"
                 >
-                  Retirar afirmación
+                  Retirar decreto
                 </button>
               </div>
             </motion.div>
@@ -356,10 +727,10 @@ export const DashboardView: React.FC = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.95, transition: { duration: 0.15 } }}
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed bottom-20 lg:bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-2xl glass-card border border-white/95 shadow-liquid bg-white/95 backdrop-blur-xl"
+            className="fixed bottom-20 lg:bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-2xl glass-card border border-manifest-glassBorder shadow-liquid backdrop-blur-xl"
           >
-            <span className="text-xs font-medium text-manifest-ink">
-              Afirmación retirada
+            <span className="text-xs font-serif text-manifest-ink">
+              Decreto retirado
             </span>
             <button
               type="button"
@@ -367,7 +738,7 @@ export const DashboardView: React.FC = () => {
                 saveAffirmation(recentlyDeletedAffirmation);
                 setRecentlyDeletedAffirmation(null);
               }}
-              className="text-xs font-bold text-manifest-auraPurple px-2.5 py-1 rounded-xl bg-manifest-lavender/70 hover:bg-manifest-lavender border border-manifest-auraPurple/30 transition-all cursor-pointer flex items-center gap-1 shadow-sm active:scale-95"
+              className="text-xs font-serif font-bold text-manifest-brass px-2.5 py-1 rounded-xl bg-manifest-glassControl hover:bg-manifest-glassControlHover border border-manifest-brass/40 transition-all cursor-pointer flex items-center gap-1 shadow-sm active:scale-95 focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Deshacer</span>
@@ -375,7 +746,7 @@ export const DashboardView: React.FC = () => {
             <button
               type="button"
               onClick={() => setRecentlyDeletedAffirmation(null)}
-              className="text-manifest-inkMuted hover:text-manifest-ink p-1 rounded-full cursor-pointer"
+              className="text-manifest-inkMuted hover:text-manifest-ink p-1 rounded-full cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -383,193 +754,7 @@ export const DashboardView: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* 3. SECCIÓN: Diario & Cuaderno */}
-      <section className="space-y-3 pt-1">
-        {/* Quick Action: Start Notebook Entry */}
-        <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl liquid-glass-surface flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-manifest-peach via-manifest-pink to-manifest-lavender flex items-center justify-center shrink-0 shadow-sm">
-              <PenLine className="w-5 h-5 text-manifest-ink" />
-            </div>
-            <div>
-              <h4 className="text-xs sm:text-sm font-semibold text-manifest-ink">
-                Escribir en el Cuaderno
-              </h4>
-              <p className="text-[11px] text-manifest-inkMuted">
-                Notas y reflexiones personales
-              </p>
-            </div>
-          </div>
-          <motion.button
-            whileTap={IOS_TAP_SPRING}
-            data-testid="dashboard-write-journal-btn"
-            onClick={() => openJournalEditor('manifestation', null)}
-            className="px-4 py-2 rounded-2xl primary-gradient-btn text-xs font-semibold shrink-0 cursor-pointer"
-          >
-            Escribir
-          </motion.button>
-        </div>
-
-        {/* Recent Notebook Entries */}
-        <div className="space-y-2.5">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
-              <BookOpen className="w-3.5 h-3.5 text-manifest-ink" />
-              Diario Reciente
-            </h3>
-            {journalEntries.length > 0 && (
-              <button
-                onClick={() => setActiveTab('diario')}
-                className="text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink transition-colors flex items-center gap-0.5 cursor-pointer"
-              >
-                <span>Ver todas ({journalEntries.length})</span>
-                <ArrowRight className="w-3 h-3" />
-              </button>
-            )}
-          </div>
-
-          {recentEntries.length === 0 ? (
-            <LiquidEmptyState
-              icon={BookOpen}
-              badge="Diario íntimo"
-              title="Tu cuaderno aguarda tus notas"
-              description="Aquí vivirán tus reflexiones personales, avances de manifestación e historias de éxito diario."
-              actionLabel="Escribir en el Cuaderno"
-              onAction={() => openJournalEditor('manifestation', null)}
-            />
-          ) : (
-            <div className="grid grid-cols-1 gap-2.5 sm:gap-3">
-              {recentEntries.map((entry) => {
-                const formattedEntryDate = format(new Date(entry.createdAt), "d 'de' MMMM", { locale: es });
-                const isProgress = entry.entryType === 'progress';
-                const isManifestation = entry.entryType === 'manifestation';
-                const hasCustomTitle =
-                  entry.title &&
-                  entry.title !== 'Entrada de diario' &&
-                  !entry.content.startsWith(entry.title.replace(/\.\.\.$/, ''));
-
-                return (
-                  <div
-                    key={entry.id}
-                    onClick={() => setSelectedJournalEntryForView(entry)}
-                    data-testid={`journal-card-${entry.id}`}
-                    className={`p-3.5 sm:p-4 rounded-2xl glass-card-interactive cursor-pointer border border-white/95 space-y-2.5 hover:scale-[1.006] transition-all select-none ${
-                      isProgress
-                        ? 'border-l-[3.5px] border-l-emerald-500/80 bg-gradient-to-r from-manifest-mint/20 via-white/80 to-white/70 shadow-xs'
-                        : isManifestation
-                        ? 'border-l-[3.5px] border-l-manifest-auraPurple/75 bg-gradient-to-r from-manifest-lavender/25 via-white/80 to-white/70 shadow-xs'
-                        : 'border-l-[3.5px] border-l-amber-500/80 bg-gradient-to-r from-amber-100/30 via-white/80 to-white/70 shadow-xs'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-1">
-                      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                        <span
-                          className={`inline-flex items-center gap-1 text-[9.5px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full whitespace-nowrap shrink-0 ${
-                            isProgress
-                              ? 'bg-manifest-mint/80 text-emerald-800 border border-emerald-300/60'
-                              : isManifestation
-                              ? 'bg-gradient-to-r from-manifest-pink/40 to-manifest-lavender/60 text-manifest-auraPurple border border-manifest-auraPurple/30'
-                              : 'bg-amber-100/90 text-amber-900 border border-amber-300/50'
-                          }`}
-                        >
-                          {isProgress ? (
-                            <>
-                              <Sparkles className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
-                              <span>Avance</span>
-                            </>
-                          ) : isManifestation ? (
-                            <>
-                              <Target className="w-2.5 h-2.5 text-manifest-auraPurple shrink-0" />
-                              <span>Manifestación</span>
-                            </>
-                          ) : (
-                            <>
-                              <Trophy className="w-2.5 h-2.5 text-amber-600 shrink-0" />
-                              <span>Success Story</span>
-                            </>
-                          )}
-                        </span>
-                        <span className="text-[10px] text-manifest-inkMuted whitespace-nowrap shrink-0">
-                          {formattedEntryDate}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 sm:gap-2">
-                        <span className="text-[10px] text-manifest-inkMuted font-medium px-2 py-0.5 rounded-full bg-white/75 border border-white/80">
-                          {entry.userId === 'shared' ? '✨ Juntos' : entry.author || (entry.userId === 'facu' ? 'Facu' : 'Maia')}
-                        </span>
-
-                        {/* Action Buttons: Edit and Delete */}
-                        <div
-                          className="flex items-center gap-1 shrink-0"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openJournalEditor(entry.entryType, entry);
-                            }}
-                            title="Editar entrada"
-                            data-testid={`edit-journal-card-${entry.id}`}
-                            className="w-7 h-7 rounded-xl flex items-center justify-center bg-white/75 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/90 shadow-2xs active:scale-95 transition-all cursor-pointer"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setJournalEntryToDelete(entry);
-                            }}
-                            title="Eliminar entrada"
-                            data-testid={`delete-journal-card-${entry.id}`}
-                            className="w-7 h-7 rounded-xl flex items-center justify-center bg-white/75 hover:bg-rose-50 text-manifest-inkMuted hover:text-rose-600 border border-white/90 shadow-2xs active:scale-95 transition-all cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-0.5">
-                      {hasCustomTitle ? (
-                        <div>
-                          <h4 className="text-xs sm:text-sm font-serif font-bold text-manifest-ink line-clamp-1 leading-snug">
-                            {entry.title}
-                          </h4>
-                          <p className="text-[11.5px] text-manifest-inkMuted line-clamp-2 leading-relaxed mt-1">
-                            {entry.content}
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="flex items-start gap-1.5">
-                          <span
-                            aria-hidden="true"
-                            className={`font-serif text-base sm:text-lg leading-none font-bold select-none shrink-0 -mt-0.5 ${
-                              isProgress
-                                ? 'text-emerald-500/60'
-                                : isManifestation
-                                ? 'text-manifest-auraPurple/60'
-                                : 'text-amber-500/70'
-                            }`}
-                          >
-                            “
-                          </span>
-                          <p className="text-xs sm:text-[13px] font-serif font-semibold text-manifest-ink leading-snug line-clamp-2 sm:line-clamp-3">
-                            {entry.content}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Detail Modal for viewing full Journal Entry from Inicio (without changing sections) */}
+      {/* Detail Modal for viewing full Journal Entry from Inicio */}
       <JournalEntryDetailModal
         isOpen={!!selectedJournalEntryForView}
         entry={selectedJournalEntryForView}
@@ -578,12 +763,12 @@ export const DashboardView: React.FC = () => {
         onDelete={(id) => deleteJournalEntry(id)}
       />
 
-      {/* Confirmation Dialog for deleting a journal entry directly from the card in Inicio */}
+      {/* Confirmation Dialog for deleting a journal entry */}
       <AnimatePresence>
         {journalEntryToDelete && (
           <div
             onClick={() => setJournalEntryToDelete(null)}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-manifest-ink/35 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/35 backdrop-blur-md"
           >
             <motion.div
               onClick={(e) => e.stopPropagation()}
@@ -591,10 +776,10 @@ export const DashboardView: React.FC = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 6 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-sm rounded-3xl bg-white p-5 sm:p-6 border border-white shadow-liquid space-y-4"
+              className="w-full max-w-sm rounded-3xl glass-card border border-manifest-glassBorder shadow-liquid space-y-4 p-5 sm:p-6"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-rose-100/80 border border-rose-200/80 text-rose-500 flex items-center justify-center shrink-0 shadow-sm">
+                <div className="w-10 h-10 rounded-2xl bg-rose-100/80 border border-rose-300/60 text-rose-700 flex items-center justify-center shrink-0 shadow-neu-sm">
                   <Trash2 className="w-5 h-5" />
                 </div>
                 <div>
@@ -607,11 +792,11 @@ export const DashboardView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-3 rounded-2xl bg-manifest-lavender/30 border border-white/90">
-                <p className="text-xs font-semibold text-manifest-ink line-clamp-1">
+              <div className="p-3 rounded-2xl bg-manifest-glassControl border border-manifest-glassBorder">
+                <p className="text-xs font-serif font-semibold text-manifest-ink line-clamp-1">
                   {journalEntryToDelete.title}
                 </p>
-                <p className="text-[11px] text-manifest-inkMuted line-clamp-2 mt-0.5">
+                <p className="text-[11px] font-serif italic text-manifest-inkMuted line-clamp-2 mt-0.5">
                   {journalEntryToDelete.content}
                 </p>
               </div>
@@ -620,7 +805,7 @@ export const DashboardView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setJournalEntryToDelete(null)}
-                  className="px-4 py-2 rounded-xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink hover:bg-neutral-100 transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-serif text-manifest-inkMuted hover:text-manifest-ink hover:bg-manifest-glassControlHover transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
                 >
                   Cancelar
                 </button>
@@ -631,7 +816,7 @@ export const DashboardView: React.FC = () => {
                     setJournalEntryToDelete(null);
                   }}
                   data-testid="confirm-delete-journal-card-btn"
-                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-sm active:scale-95 transition-all cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-serif font-semibold bg-rose-800 hover:bg-rose-700 text-white shadow-sm active:scale-95 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:outline-none"
                 >
                   Eliminar
                 </button>

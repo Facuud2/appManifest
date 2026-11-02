@@ -53,7 +53,8 @@ export const CURRENT_SCHEMA_VERSION = 5;
 export const DEFAULT_SETTINGS: UserSettings = {
   userName: 'Facu',
   greetingPreference: 'intimate',
-  theme: 'pastel-rainbow',
+  theme: 'neumorphism-esoteric',
+  colorMode: 'light',
   reducedMotion: false,
   favoriteAffirmations: [],
   firstLaunchCompleted: true,

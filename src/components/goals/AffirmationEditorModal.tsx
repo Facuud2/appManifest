@@ -200,7 +200,7 @@ export const AffirmationEditorModal: React.FC = () => {
           <div
             data-testid="affirmation-desktop-backdrop"
             onClick={closeAffirmationEditor}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-manifest-ink/35 backdrop-blur-md"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/35 backdrop-blur-md"
           >
             <motion.div
               data-testid="affirmation-desktop-modal"
@@ -209,21 +209,21 @@ export const AffirmationEditorModal: React.FC = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 12 }}
               transition={{ type: 'spring', stiffness: 420, damping: 30, mass: 0.8 }}
-              className="w-full max-w-lg rounded-3xl bg-[#FCFAF8]/95 backdrop-blur-2xl border border-white/90 shadow-[0_24px_70px_rgba(40,30,60,0.22),0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.95)] flex flex-col max-h-[88vh] overflow-hidden"
+              className="w-full max-w-lg rounded-3xl glass-card border border-manifest-glassBorder shadow-lens flex flex-col max-h-[88vh] overflow-hidden"
             >
               {/* Modal Header */}
-              <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-manifest-ink/[0.07] bg-white/60 backdrop-blur-md select-none">
+              <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-manifest-glassBorder bg-manifest-surfaceElevated select-none">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-manifest-lavender to-manifest-celeste flex items-center justify-center shadow-xs border border-white">
+                  <div className="w-8 h-8 rounded-xl bg-manifest-glassControl border border-manifest-glassBorder flex items-center justify-center shadow-xs">
                     <Sparkles className="w-4 h-4 text-manifest-auraPurple" />
                   </div>
                   <div>
                     <h3 className="font-serif font-bold text-sm text-manifest-ink tracking-tight">
-                      {editingAffirmation ? 'Editar Afirmación' : 'Nueva Afirmación'}
+                      {editingAffirmation ? 'Editar Decreto' : 'Nuevo Decreto'}
                     </h3>
-                    <p className="text-[11px] text-manifest-inkMuted">
+                    <p className="text-[11px] text-manifest-inkLight">
                       {sessionAddedCount > 0
-                        ? `${sessionAddedCount} afirmación${sessionAddedCount > 1 ? 'es' : ''} añadida${sessionAddedCount > 1 ? 's' : ''}`
+                        ? `${sessionAddedCount} decreto${sessionAddedCount > 1 ? 's' : ''} consagrado${sessionAddedCount > 1 ? 's' : ''}`
                         : 'Decretos conscientes en tiempo presente'}
                     </p>
                   </div>
@@ -232,14 +232,14 @@ export const AffirmationEditorModal: React.FC = () => {
                 {/* Right: Counter badge or quick close */}
                 <div className="flex items-center gap-2">
                   {sessionAddedCount > 0 && (
-                    <span className="text-[11px] font-semibold text-manifest-auraPurple px-2.5 py-0.5 rounded-full bg-manifest-lavender/40 border border-manifest-auraPurple/30 shadow-2xs">
-                      ✨ {sessionAddedCount} {sessionAddedCount === 1 ? 'añadida' : 'añadidas'}
+                    <span className="text-[11px] font-semibold text-purple-800 px-2.5 py-0.5 rounded-full bg-purple-100/80 border border-purple-300/60 shadow-neu-sm">
+                      ✧ {sessionAddedCount} {sessionAddedCount === 1 ? 'añadido' : 'añadidos'}
                     </span>
                   )}
                   <button
                     type="button"
                     onClick={closeAffirmationEditor}
-                    className="p-1.5 rounded-xl text-manifest-inkMuted hover:text-manifest-ink hover:bg-manifest-ink/5 transition-colors cursor-pointer"
+                    className="p-1.5 rounded-xl text-manifest-inkLight hover:text-manifest-ink hover:bg-white/5 transition-colors cursor-pointer"
                     title="Cerrar (Esc)"
                     aria-label="Cerrar ventana"
                   >
@@ -359,7 +359,7 @@ export const AffirmationEditorModal: React.FC = () => {
                           onClick={() => setIsVoiceActive(true)}
                           title="Dictar manifestación con micrófono"
                           aria-label="Dictar manifestación con micrófono"
-                          className="w-8 h-8 rounded-xl bg-white/80 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/90 shadow-sm flex items-center justify-center transition-colors cursor-pointer"
+                          className="w-8 h-8 rounded-xl glass-pill text-purple-700 border border-purple-300/50 hover:bg-purple-100/70 shadow-neu-sm flex items-center justify-center transition-colors cursor-pointer"
                         >
                           <Mic className="w-4 h-4" />
                         </button>
@@ -397,7 +397,7 @@ export const AffirmationEditorModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={closeAffirmationEditor}
-                    className="px-4 py-2 rounded-xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/80 border border-manifest-ink/10 shadow-xs transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink glass-pill border border-purple-500/20 shadow-xs transition-colors cursor-pointer"
                   >
                     {sessionAddedCount > 0 ? 'Listo' : 'Cancelar'}
                   </button>
@@ -445,15 +445,15 @@ export const AffirmationEditorModal: React.FC = () => {
       repositionInputs={false}
     >
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 z-50 bg-manifest-ink/35 backdrop-blur-sm" />
+        <Drawer.Overlay className="fixed inset-0 z-50 bg-slate-900/35 backdrop-blur-sm" />
         <Drawer.Content
           data-testid="affirmation-vaul-drawer"
-          className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2.25rem] ${LIQUID_GLASS_SPECULAR} bg-white/95 p-5 sm:p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-liquid outline-none flex flex-col max-h-[90dvh]`}
+          className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2rem] border-t border-manifest-glassBorder bg-manifest-surfaceNav/98 backdrop-blur-2xl p-5 sm:p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-liquid outline-none flex flex-col max-h-[90dvh]`}
         >
           {/* iOS Native Grabber Handle */}
           <Drawer.Handle
             data-testid="ios-sheet-grabber"
-            className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-manifest-ink/20 mb-2 cursor-grab active:cursor-grabbing"
+            className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-manifest-auraPurple/30 mb-2 cursor-grab active:cursor-grabbing"
           />
 
           <Drawer.Title className="sr-only">
@@ -464,18 +464,18 @@ export const AffirmationEditorModal: React.FC = () => {
           </Drawer.Description>
 
           {/* iOS Compact Navigation Bar (h-14 px-4) */}
-          <div className="shrink-0 h-14 -mx-5 sm:-mx-6 -mt-2 px-4 sm:px-6 flex items-center justify-between border-b border-manifest-lavender/30 bg-white/95 z-10">
+          <div className="shrink-0 h-14 -mx-5 sm:-mx-6 -mt-2 px-4 sm:px-6 flex items-center justify-between border-b border-manifest-glassBorder bg-manifest-surfaceNav z-10">
             <button
               type="button"
               onClick={closeAffirmationEditor}
-              className="text-manifest-inkMuted hover:text-manifest-ink font-medium text-sm transition-colors cursor-pointer px-1 py-1"
+              className="text-manifest-inkLight hover:text-manifest-ink font-medium text-sm transition-colors cursor-pointer px-1 py-1"
             >
               {sessionAddedCount > 0 ? 'Listo' : 'Cancelar'}
             </button>
 
             <div className="text-center truncate px-2">
               <h3 className="font-serif text-sm sm:text-base font-bold text-manifest-ink truncate">
-                {editingAffirmation ? 'Editar Afirmación' : 'Nueva Afirmación'}
+                {editingAffirmation ? 'Editar Decreto' : 'Nuevo Decreto'}
               </h3>
             </div>
 
@@ -490,7 +490,7 @@ export const AffirmationEditorModal: React.FC = () => {
                   handleSubmit(onSubmit)();
                 }
               }}
-              className="bg-gradient-to-r from-manifest-auraPurple to-purple-600 text-white px-4 py-1.5 rounded-full font-semibold text-xs sm:text-sm shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer"
+              className="primary-gradient-btn text-manifest-ink px-4 py-1.5 rounded-full font-semibold text-xs sm:text-sm shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer"
             >
               {editingAffirmation
                 ? 'Guardar'
@@ -523,8 +523,8 @@ export const AffirmationEditorModal: React.FC = () => {
                     onClick={() => setValue('userId', sc.key, { shouldDirty: true })}
                     className={`py-1.5 px-2 rounded-xl text-xs font-semibold transition-colors border cursor-pointer ${
                       selectedUserId === sc.key
-                        ? 'bg-manifest-ink text-white border-manifest-ink shadow-sm'
-                        : 'bg-white/70 hover:bg-white text-manifest-inkMuted border-white/80'
+                        ? 'bg-purple-100/90 text-purple-900 border-purple-300/70 shadow-neu-sm'
+                        : 'bg-manifest-glassControl hover:bg-manifest-glassControlHover text-manifest-inkMuted border-manifest-glassBorder'
                     }`}
                   >
                     {sc.label}
@@ -540,7 +540,7 @@ export const AffirmationEditorModal: React.FC = () => {
                   Decreto o Afirmación
                 </label>
                 {sessionAddedCount > 0 && (
-                  <span className="text-[11px] font-semibold text-manifest-auraPurple px-2.5 py-0.5 rounded-full bg-manifest-lavender/50 border border-manifest-auraPurple/30">
+                  <span className="text-[11px] font-semibold text-purple-800 px-2.5 py-0.5 rounded-full bg-purple-100/80 border border-purple-300/60 shadow-neu-sm">
                     ✨ {sessionAddedCount} {sessionAddedCount === 1 ? 'añadida' : 'añadidas'}
                   </span>
                 )}
@@ -584,7 +584,7 @@ export const AffirmationEditorModal: React.FC = () => {
                             ? 'Escribe otra afirmación y pulsa Enter para añadirla...'
                             : 'Escribe en tiempo presente... (Ej: Atraigo abundancia, tranquilidad y felicidad cada día)'
                         }
-                        className={`w-full p-3.5 pr-12 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight leading-relaxed transition-colors ${
+                        className={`w-full p-3.5 pr-12 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkMuted/40 leading-relaxed transition-colors ${
                           errors.text
                             ? 'border-rose-400 ring-1 ring-rose-400/50'
                             : currentText.trim().length > 0
@@ -598,12 +598,12 @@ export const AffirmationEditorModal: React.FC = () => {
                   {/* Inline Status Icon: Check or Alert */}
                   <div className="absolute right-3 top-3 pointer-events-none">
                     {currentText.trim().length > 0 && !errors.text && (
-                      <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs">
+                      <div className="w-5 h-5 rounded-full bg-emerald-100/80 text-emerald-700 border border-emerald-300/60 flex items-center justify-center shadow-neu-sm">
                         <Check className="w-3 h-3 stroke-[3]" />
                       </div>
                     )}
                     {errors.text && (
-                      <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center shadow-xs">
+                      <div className="w-5 h-5 rounded-full bg-rose-100/80 text-rose-700 border border-rose-300/60 flex items-center justify-center shadow-neu-sm">
                         <AlertCircle className="w-3.5 h-3.5 stroke-[2.5]" />
                       </div>
                     )}
@@ -615,7 +615,7 @@ export const AffirmationEditorModal: React.FC = () => {
                       onClick={() => setIsVoiceActive(true)}
                       title="Dictar manifestación con micrófono"
                       aria-label="Dictar manifestación con micrófono"
-                      className="w-8 h-8 rounded-xl bg-white/80 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/90 shadow-sm flex items-center justify-center transition-colors cursor-pointer"
+                      className="w-8 h-8 rounded-xl glass-pill text-purple-700 border border-purple-300/50 hover:bg-purple-100/70 shadow-neu-sm flex items-center justify-center transition-colors cursor-pointer"
                     >
                       <Mic className="w-4 h-4" />
                     </button>

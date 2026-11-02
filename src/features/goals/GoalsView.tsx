@@ -13,8 +13,7 @@ import {
 } from 'lucide-react';
 import { UserScope, Affirmation } from '@/types';
 import { motion } from 'framer-motion';
-import { Segmented, SegmentedButton } from 'konsta/react';
-import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
+import { IOS_TAP_SPRING } from '@/lib/iosSprings';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
 import { ManifestationCard } from '@/components/goals/ManifestationCard';
@@ -122,46 +121,38 @@ export const GoalsView: React.FC = () => {
         <div className="hidden lg:block">
           <h2 className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-manifest-auraPurple" />
-            Afirmaciones
+            <span>Decretos & Afirmaciones</span>
           </h2>
         </div>
 
-        {/* iOS Konsta Segmented Control / Switch + Action */}
+        {/* Liquid Glass pill switcher + Action */}
         <div className="flex items-center gap-2 self-start sm:self-auto w-full sm:w-auto justify-between sm:justify-end">
-          <Segmented
-            strong
-            rounded
-            colors={{
-              strongBgIos: `${LIQUID_GLASS_SPECULAR}`,
-            }}
-            className="flex-1 sm:flex-initial sm:min-w-[290px] p-1"
-          >
-            <SegmentedButton
-              strong
-              rounded
-              active={viewMode === 'list'}
+          <div className="inline-flex p-0.5 rounded-full bg-manifest-glassControl border border-manifest-glassBorder backdrop-blur-md">
+            <button
+              type="button"
               onClick={() => setViewMode('list')}
-              className="text-xs font-semibold py-1.5 px-3 !normal-case text-manifest-ink cursor-pointer"
+              className={`px-3 py-1.5 text-xs font-serif tracking-wide rounded-full transition-all flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
+                viewMode === 'list'
+                  ? 'bg-manifest-glassControlActive text-manifest-ink shadow-xs border border-manifest-glassBorderFocus'
+                  : 'text-manifest-inkMuted hover:text-manifest-ink'
+              }`}
             >
-              <span className="flex items-center justify-center gap-1.5">
-                <Pin className="w-3.5 h-3.5 text-manifest-auraPurple shrink-0" />
-                <span>Mis Fijadas</span>
-              </span>
-            </SegmentedButton>
-
-            <SegmentedButton
-              strong
-              rounded
-              active={viewMode === 'rampage'}
+              <Pin className="w-3 h-3 text-manifest-brass" />
+              <span>Mis Fijadas ({pinnedAffirmations.length})</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setViewMode('rampage')}
-              className="text-xs font-semibold py-1.5 px-3 !normal-case text-manifest-ink cursor-pointer"
+              className={`px-3 py-1.5 text-xs font-serif tracking-wide rounded-full transition-all flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
+                viewMode === 'rampage'
+                  ? 'bg-manifest-glassControlActive text-manifest-ink shadow-xs border border-manifest-glassBorderFocus'
+                  : 'text-manifest-inkMuted hover:text-manifest-ink'
+              }`}
             >
-              <span className="flex items-center justify-center gap-1.5">
-                <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0" />
-                <span>Sets de Rampage</span>
-              </span>
-            </SegmentedButton>
-          </Segmented>
+              <Flame className="w-3 h-3 text-amber-400 fill-amber-400" />
+              <span>Rampage</span>
+            </button>
+          </div>
 
           {viewMode === 'rampage' ? (
             <motion.button
@@ -169,7 +160,7 @@ export const GoalsView: React.FC = () => {
               whileTap={IOS_TAP_SPRING}
               onClick={() => openRampageConfig()}
               data-testid="open-rampage-modal-btn"
-              className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full primary-gradient-btn text-xs font-serif tracking-wide shadow-sm shrink-0 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Nuevo Set</span>
@@ -180,10 +171,10 @@ export const GoalsView: React.FC = () => {
               whileTap={IOS_TAP_SPRING}
               onClick={() => openAffirmationEditor(null)}
               data-testid="add-affirmation-top-btn"
-              className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full primary-gradient-btn text-xs font-serif tracking-wide shadow-sm shrink-0 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Nueva</span>
+              <span>Nuevo Decreto</span>
             </motion.button>
           )}
         </div>
@@ -194,11 +185,11 @@ export const GoalsView: React.FC = () => {
         <div className="space-y-4">
           {/* SECTION: PINNED (DRAG & DROP RESTRICTED) */}
           {pinnedAffirmations.length > 0 && (
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               <div className="flex items-center justify-between px-1">
                 <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
                   <Pin className="w-3.5 h-3.5 text-manifest-auraPurple fill-manifest-auraPurple" />
-                  Afirmaciones Fijadas ({pinnedAffirmations.length})
+                  <span>Decretos Fijados ({pinnedAffirmations.length})</span>
                 </h3>
               </div>
 
@@ -211,12 +202,12 @@ export const GoalsView: React.FC = () => {
           )}
 
           {/* SECTION: ALL / UNPINNED AFIRMACIONES */}
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
               <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-manifest-ink">
                 {pinnedAffirmations.length > 0
-                  ? `Otras Afirmaciones (${unpinnedAffirmations.length})`
-                  : `Todas las Afirmaciones (${affirmations.length})`}
+                  ? `Otros Decretos (${unpinnedAffirmations.length})`
+                  : `Todos los Decretos (${affirmations.length})`}
               </h3>
             </div>
 
@@ -228,11 +219,11 @@ export const GoalsView: React.FC = () => {
                 onAction={() => openAffirmationEditor(null)}
               />
             ) : unpinnedAffirmations.length === 0 && pinnedAffirmations.length > 0 ? (
-              <p className="text-xs text-manifest-inkMuted text-center py-2">
-                Todas tus afirmaciones están fijadas como prioritarias arriba.
+              <p className="text-xs text-manifest-inkLight text-center py-2">
+                Todos tus decretos están fijados en el altar superior.
               </p>
             ) : (
-              <div className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-2">
                 {unpinnedAffirmations.map((item) => (
                   <ManifestationCard
                     key={item.id}
@@ -246,26 +237,27 @@ export const GoalsView: React.FC = () => {
             {/* Quick Manifestation Writer: dynamically positioned below the last card */}
             <form
               onSubmit={handleSave}
-              className="p-4 sm:p-5 rounded-3xl glass-card border border-white/95 shadow-sm space-y-3"
+              className="p-3.5 sm:p-4 rounded-2xl tarot-card-border glass-card border border-purple-400/15 shadow-sm space-y-2.5"
             >
               <div className="flex items-center justify-between gap-2">
-                <label className="text-xs font-semibold text-manifest-ink">
-                  Añadir Afirmación
+                <label className="text-xs font-semibold text-manifest-ink flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-manifest-auraPurple" />
+                  <span>Consagrar Nuevo Decreto</span>
                 </label>
                 <div className="flex items-center gap-1">
                   {[
-                    { key: 'facu' as UserScope, label: 'Facu' },
-                    { key: 'maia' as UserScope, label: 'Maia' },
-                    { key: 'shared' as UserScope, label: '✨ Juntos' },
+                    { key: 'facu' as UserScope, label: '☾ Facu' },
+                    { key: 'maia' as UserScope, label: '✧ Maia' },
+                    { key: 'shared' as UserScope, label: '✦ Juntos' },
                   ].map((sc) => (
                     <button
                       key={sc.key}
                       type="button"
                       onClick={() => setScope(sc.key)}
-                      className={`py-1 px-2.5 rounded-xl text-[11px] font-semibold transition-all border ${
+                      className={`py-1 px-2.5 rounded-lg text-[10px] font-semibold transition-all border cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
                         scope === sc.key
-                          ? 'bg-manifest-ink text-white border-manifest-ink shadow-sm'
-                          : 'bg-white/70 hover:bg-white text-manifest-inkMuted border-white/80'
+                          ? 'bg-manifest-glassControlActive text-manifest-ink border-manifest-glassBorderFocus shadow-xs'
+                          : 'bg-manifest-glassControl hover:bg-manifest-glassControlHover text-manifest-inkMuted border-manifest-glassBorder'
                       }`}
                     >
                       {sc.label}
@@ -297,19 +289,19 @@ export const GoalsView: React.FC = () => {
                     onChange={(e) => setManifestationText(e.target.value)}
                     onKeyDown={handleKeyDown}
                     enterKeyHint="send"
-                    placeholder="Escribe en tiempo presente tu deseo o afirmación... (Pulsa Enviar para añadir otra)"
-                    className="w-full p-3.5 pr-11 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight"
+                    placeholder="Escribe en tiempo presente tu deseo o afirmación... (Pulsa Enviar para consagrar)"
+                    className="w-full p-3 pr-10 rounded-xl glass-input text-xs placeholder:text-manifest-inkLight"
                     required
                   />
-                  <div className="absolute right-2.5 bottom-2.5">
+                  <div className="absolute right-2 bottom-2">
                     <button
                       type="button"
                       onClick={() => setIsDictating(true)}
                       title="Dictar afirmación con micrófono"
                       aria-label="Dictar afirmación con micrófono"
-                      className="w-8 h-8 rounded-xl bg-white/80 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/90 shadow-sm flex items-center justify-center transition-all cursor-pointer"
+                      className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-manifest-inkLight hover:text-manifest-ink border border-white/5 flex items-center justify-center transition-all cursor-pointer"
                     >
-                      <Mic className="w-4 h-4" />
+                      <Mic className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
@@ -318,10 +310,10 @@ export const GoalsView: React.FC = () => {
               <div className="flex justify-end pt-0.5">
                 <button
                   type="submit"
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm cursor-pointer active:scale-95 transition-transform"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm cursor-pointer active:scale-95 transition-transform"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  <span>Añadir afirmación</span>
+                  <span>Consagrar</span>
                 </button>
               </div>
             </form>

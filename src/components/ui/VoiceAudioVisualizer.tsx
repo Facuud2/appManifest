@@ -5,9 +5,12 @@ import { Plus, ArrowUp, Loader2 } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { logAiTelemetry } from '@/lib/gemini';
 
-interface VoiceAudioVisualizerProps {
+export interface VoiceAudioVisualizerProps {
   initialText?: string;
-  onCommit: (fullText: string) => void;
+  onCommit: (
+    fullText: string,
+    extra?: { detectedTone?: string; audioBlob?: Blob; durationMs?: number }
+  ) => void;
   onSend?: (fullText: string) => void;
   onCancel: () => void;
   className?: string;
@@ -52,6 +55,38 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
   const barRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const barHeightsRef = useRef<number[]>(new Array(BAR_COUNT).fill(MIN_HEIGHT));
 
+  // Stop MediaRecorder and wait for the final data flush
+  const stopAndGetAudioBlob = (): Promise<Blob> => {
+    return new Promise((resolve) => {
+      const recorder = mediaRecorderRef.current;
+      if (!recorder || recorder.state === 'inactive') {
+        resolve(
+          new Blob(audioChunksRef.current, {
+            type: recordedMimeTypeRef.current || 'audio/webm',
+          })
+        );
+        return;
+      }
+
+      recorder.onstop = () => {
+        const finalBlob = new Blob(audioChunksRef.current, {
+          type: recordedMimeTypeRef.current || 'audio/webm',
+        });
+        resolve(finalBlob);
+      };
+
+      try {
+        recorder.stop();
+      } catch (_) {
+        resolve(
+          new Blob(audioChunksRef.current, {
+            type: recordedMimeTypeRef.current || 'audio/webm',
+          })
+        );
+      }
+    });
+  };
+
   // Cleanup all audio and speech resources
   const cleanup = useCallback(() => {
     isListeningRef.current = false;
@@ -73,12 +108,6 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
       recognitionRef.current = null;
     }
 
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      try {
-        mediaRecorderRef.current.stop();
-      } catch (_) {}
-    }
-
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach((track) => {
         try {
@@ -98,20 +127,22 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
     }
   }, []);
 
-  // Process recorded audio with Gemini AI transcript
+  // Process recorded audio with Gemini AI editorial transcript
   const processRecordedAudio = async (isSendAction: boolean) => {
     if (isTranscribing) return;
 
     const duration = Date.now() - recordingStartTimeRef.current;
+    const spokenTextSnapshot = (currentFullTextRef.current || '').trim();
+
+    // 1. Await final audio blob from recorder before tearing down resources
+    const audioBlob = await stopAndGetAudioBlob();
     cleanup();
 
-    // Collect blobs
-    const audioBlob = new Blob(audioChunksRef.current, {
-      type: recordedMimeTypeRef.current || 'audio/webm',
-    });
+    const hasSpokenWords = spokenTextSnapshot.length > 0;
+    const hasAudioData = audioBlob.size > 800 && duration >= 800;
 
-    // Guardrail: Cancel locally if < 1.0 second or < 2 KB (2048 bytes)
-    if (duration < 1000 || audioBlob.size < 2048) {
+    // Guardrail: Cancel locally if silence or too short
+    if (!hasSpokenWords && !hasAudioData) {
       showToast('Grabación demasiado corta', 'info');
       onCancel();
       return;
@@ -120,12 +151,18 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
     setIsTranscribing(true);
 
     try {
-      const isSandboxActive =
-        aiSandboxMode ||
-        (typeof window !== 'undefined' && (window.navigator as any)?.webdriver === true);
+      const isWebdriver =
+        typeof window !== 'undefined' && (window.navigator as any)?.webdriver === true;
+      const isSandboxActive = Boolean(aiSandboxMode && isWebdriver);
 
       const formData = new FormData();
-      formData.append('audio', audioBlob, 'recording.webm');
+      if (audioBlob.size > 200) {
+        const ext = recordedMimeTypeRef.current.includes('mp4') ? 'mp4' : 'webm';
+        formData.append('audio', audioBlob, `speech.${ext}`);
+      }
+      if (spokenTextSnapshot) {
+        formData.append('spokenText', spokenTextSnapshot);
+      }
       formData.append('previousTextTail', baseTextRef.current.slice(-60));
 
       const res = await fetch('/api/ai/transcribe', {
@@ -142,9 +179,10 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
       logAiTelemetry('/api/ai/transcribe', data.source, data.totalTokens || 0, {
         durationMs: duration,
         blobSize: audioBlob.size,
+        spokenLength: spokenTextSnapshot.length,
       });
 
-      const editorialText = (data.text || '').trim();
+      const editorialText = (data.text || spokenTextSnapshot).trim();
       let combinedText = '';
 
       if (baseTextRef.current) {
@@ -160,17 +198,29 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
         combinedText = editorialText;
       }
 
-      const finalText = combinedText.trim() || currentFullTextRef.current.trim();
-      onCommit(finalText);
+      const finalText = combinedText.trim() || spokenTextSnapshot;
+      onCommit(finalText, {
+        detectedTone: data.detectedTone,
+        audioBlob,
+        durationMs: duration,
+      });
       if (isSendAction && onSend) {
         onSend(finalText);
       }
     } catch (err) {
-      console.warn('[AI Transcribe] Error falling back to speech recognition:', err);
-      const fallback = currentFullTextRef.current.trim();
+      console.warn('[AI Transcribe] Falling back directly to spoken words:', err);
+      // Fallback directly to whatever the user actually said!
+      const fallback = spokenTextSnapshot;
       if (fallback) {
-        onCommit(fallback);
-        if (isSendAction && onSend) onSend(fallback);
+        const base = baseTextRef.current;
+        const separator = base && !base.endsWith(' ') ? ' ' : '';
+        const full = base ? `${base}${separator}${fallback}` : fallback;
+        onCommit(full, {
+          detectedTone: 'calma, firme, íntima',
+          audioBlob,
+          durationMs: duration,
+        });
+        if (isSendAction && onSend) onSend(full);
       } else {
         onCancel();
       }
@@ -198,8 +248,8 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
   useEffect(() => {
     isListeningRef.current = true;
     baseTextRef.current = (initialText || '').trim();
-    currentFullTextRef.current = baseTextRef.current;
-    setTranscribedText(baseTextRef.current);
+    currentFullTextRef.current = '';
+    setTranscribedText('');
     audioChunksRef.current = [];
     recordingStartTimeRef.current = Date.now();
 
@@ -241,7 +291,6 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
         }
         recordedMimeTypeRef.current = mimeType;
 
-        // Initialize MediaRecorder at low speech bitrate (32000 bps)
         try {
           const recorder = new MediaRecorder(stream, {
             mimeType,
@@ -377,15 +426,12 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
 
           const sessionSpoken = [sessionFinal, sessionInterim]
             .filter(Boolean)
-            .join(' ');
+            .join(' ')
+            .trim();
+
           if (sessionSpoken) {
-            const base = baseTextRef.current;
-            const separator = base && !base.endsWith(' ') ? ' ' : '';
-            const fullText = base
-              ? `${base}${separator}${sessionSpoken}`
-              : sessionSpoken;
-            currentFullTextRef.current = fullText;
-            setTranscribedText(fullText);
+            currentFullTextRef.current = sessionSpoken;
+            setTranscribedText(sessionSpoken);
           }
         };
 
@@ -401,7 +447,6 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
 
         recognition.onend = () => {
           if (isListeningRef.current) {
-            baseTextRef.current = currentFullTextRef.current;
             try {
               recognition.start();
             } catch (_) {
@@ -441,10 +486,10 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
         <div className="flex items-center justify-between px-3.5 py-1 text-[11px] text-manifest-auraPurple min-h-[20px] transition-all">
           <div className="flex items-center gap-1.5 truncate">
             <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0 text-manifest-auraPurple" />
-            <span className="font-semibold">Transcribiendo y puntuando con Gemini...</span>
+            <span className="font-semibold">Puntuando y limpiando con Gemini...</span>
           </div>
           <span className="text-[10px] text-manifest-inkLight shrink-0 ml-2">
-            Editorial AI
+            Gemini Flash
           </span>
         </div>
       ) : transcribedText ? (
@@ -454,14 +499,18 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
             <span className="truncate font-medium">{transcribedText}</span>
           </div>
           <span className="text-[10px] text-manifest-inkLight shrink-0 ml-2">
-            En vivo
+            Escuchando...
           </span>
         </div>
-      ) : null}
+      ) : (
+        <div className="flex items-center px-3.5 py-1 text-[11px] text-manifest-inkLight min-h-[20px]">
+          <span>{placeholder}</span>
+        </div>
+      )}
 
       {/* Gemini Voice Pill Container */}
       <div className="w-full h-14 rounded-full bg-white border border-black/5 shadow-[0_4px_20px_rgba(0,0,0,0.06)] px-3.5 sm:px-4 flex items-center justify-between gap-3 select-none">
-        {/* Left: Plus (+) Button */}
+        {/* Left: Plus (+) Button to Cancel */}
         <button
           type="button"
           onClick={handleCancel}
@@ -492,13 +541,13 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
 
         {/* Right Action Buttons: Stop (⏹) and Send (↑) */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* Stop / Pause Button (⏹) */}
+          {/* Stop / Pause Button (⏹): Detiene, transcribe y guarda en el campo */}
           <button
             type="button"
             onClick={handleStop}
             disabled={isTranscribing}
-            title="Detener y transcribir"
-            aria-label="Detener y transcribir"
+            title="Detener y conservar lo dicho"
+            aria-label="Detener y conservar lo dicho"
             data-testid="voice-stop-btn"
             className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#E8EAED] hover:bg-[#DCE0E5] active:scale-95 flex items-center justify-center transition-all cursor-pointer text-neutral-900 shadow-sm disabled:opacity-50"
           >
@@ -509,13 +558,13 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
             )}
           </button>
 
-          {/* Send / Commit Button (↑) */}
+          {/* Send / Commit Button (↑): Detiene, transcribe y confirma */}
           <button
             type="button"
             onClick={handleSend}
             disabled={isTranscribing}
-            title="Enviar / Aceptar"
-            aria-label="Enviar"
+            title="Aceptar y enviar"
+            aria-label="Aceptar y enviar"
             data-testid="voice-send-btn"
             className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#A8D4FE] hover:bg-[#92c6fd] active:scale-95 flex items-center justify-center transition-all cursor-pointer text-neutral-900 shadow-sm disabled:opacity-50"
           >

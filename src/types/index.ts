@@ -168,7 +168,8 @@ export interface DailyReflection {
 export interface UserSettings {
   userName: string;
   greetingPreference: 'morning_gentle' | 'intimate' | 'empowered';
-  theme: 'pastel-rainbow' | 'serene-lavender' | 'mint-glow';
+  theme: 'pastel-rainbow' | 'serene-lavender' | 'mint-glow' | 'liquid-glass' | 'neumorphism-esoteric';
+  colorMode?: 'dark' | 'light' | 'system';
   reducedMotion: boolean;
   favoriteAffirmations: string[];
   firstLaunchCompleted: boolean;

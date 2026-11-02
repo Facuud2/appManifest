@@ -14,14 +14,14 @@ interface Segment {
 }
 
 const SEGMENTS: Segment[] = [
-  { label: '+20 Éter', sub: 'Fragmentos Cósmicos', color: '#F6C9D9', textColor: '#493E55', fragments: 20 },
-  { label: 'Sincronía', sub: 'Alineación de Señal', color: '#DCCFFF', textColor: '#493E55', fragments: 15 },
-  { label: '+35 Éter', sub: 'Luz Elevada', color: '#CBE9F8', textColor: '#493E55', fragments: 35 },
-  { label: 'Decreto Dorado', sub: 'Poder Manifestador', color: '#F8EDB9', textColor: '#493E55', fragments: 25 },
-  { label: '+50 Éter', sub: 'Gracia Divina', color: '#D0EFDF', textColor: '#493E55', fragments: 50 },
-  { label: 'Paz Serena', sub: 'Mente Clara', color: '#D6E4FA', textColor: '#493E55', fragments: 10 },
-  { label: 'Destello', sub: 'Iluminación', color: '#F7D9CB', textColor: '#493E55', fragments: 30 },
-  { label: '+100 Éter', sub: 'Jackpot Cósmico', color: '#E8D5FF', textColor: '#3B2D54', fragments: 100 },
+  { label: '+20 Éter', sub: 'Fragmentos de Éter', color: '#4A2E5B', textColor: '#F4F0E8', fragments: 20 },
+  { label: 'Sincronía', sub: 'Alineación Oculta', color: '#272033', textColor: '#F4F0E8', fragments: 15 },
+  { label: '+35 Éter', sub: 'Luz Estelar', color: '#684524', textColor: '#F4F0E8', fragments: 35 },
+  { label: 'Decreto Dorado', sub: 'Poder Manifestador', color: '#7A5B2E', textColor: '#F4F0E8', fragments: 25 },
+  { label: '+50 Éter', sub: 'Gracia Divina', color: '#2B4235', textColor: '#F4F0E8', fragments: 50 },
+  { label: 'Paz Serena', sub: 'Mente Clara', color: '#283644', textColor: '#F4F0E8', fragments: 10 },
+  { label: 'Destello', sub: 'Iluminación', color: '#572E44', textColor: '#F4F0E8', fragments: 30 },
+  { label: '+100 Éter', sub: 'Jackpot Cósmico', color: '#5C316B', textColor: '#F4F0E8', fragments: 100 },
 ];
 
 export const CosmicOracleWheel: React.FC = () => {
@@ -63,10 +63,10 @@ export const CosmicOracleWheel: React.FC = () => {
 
     // Draw Outer Iridescent Ring
     const grad = ctx.createLinearGradient(0, 0, width, height);
-    grad.addColorStop(0, '#F6C9D9');
-    grad.addColorStop(0.33, '#DCCFFF');
-    grad.addColorStop(0.66, '#CBE9F8');
-    grad.addColorStop(1, '#F8EDB9');
+    grad.addColorStop(0, '#5C316B');
+    grad.addColorStop(0.33, '#7A5B2E');
+    grad.addColorStop(0.66, '#2B4235');
+    grad.addColorStop(1, '#4A2E5B');
 
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius + 8, 0, 2 * Math.PI);
@@ -84,8 +84,8 @@ export const CosmicOracleWheel: React.FC = () => {
       ctx.fill();
 
       // Border between segments
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = 'rgba(216, 190, 240, 0.25)';
+      ctx.lineWidth = 1.5;
       ctx.stroke();
 
       // Text inside segment
@@ -94,22 +94,22 @@ export const CosmicOracleWheel: React.FC = () => {
       ctx.translate(centerX, centerY);
       ctx.rotate(angle + arc / 2);
       ctx.textAlign = 'right';
-      ctx.font = 'bold 12px -apple-system, system-ui, sans-serif';
+      ctx.font = '600 11px system-ui, sans-serif';
       ctx.fillText(seg.label, radius - 20, 4);
       ctx.restore();
     });
 
-    // Center Golden Hub
+    // Center Mystic Hub
     ctx.beginPath();
     ctx.arc(centerX, centerY, 24, 0, 2 * Math.PI);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.shadowColor = 'rgba(184, 163, 248, 0.4)';
+    ctx.fillStyle = '#1A1524';
+    ctx.shadowColor = 'rgba(183, 134, 209, 0.5)';
     ctx.shadowBlur = 12;
     ctx.fill();
 
     ctx.beginPath();
     ctx.arc(centerX, centerY, 16, 0, 2 * Math.PI);
-    ctx.fillStyle = '#DCCFFF';
+    ctx.fillStyle = '#7A5B2E';
     ctx.fill();
   }, [isOracleOpen]);
 
@@ -147,7 +147,7 @@ export const CosmicOracleWheel: React.FC = () => {
     <AnimatePresence>
       <div
         onClick={closeOracle}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-manifest-ink/40 backdrop-blur-md"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/35 backdrop-blur-md"
         data-testid="cosmic-oracle-modal"
       >
         <motion.div
@@ -156,12 +156,12 @@ export const CosmicOracleWheel: React.FC = () => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 16 }}
           transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-          className="w-full max-w-sm rounded-[2.5rem] glass-card p-6 border border-white shadow-liquid text-center space-y-4 relative overflow-hidden"
+          className="w-full max-w-sm rounded-3xl liquid-glass-surface bg-manifest-surfaceElevated p-6 border border-manifest-glassBorder shadow-lens text-center space-y-4 relative overflow-hidden"
         >
           {/* Top Header */}
-          <div className="flex items-center justify-between pb-1 border-b border-white/70">
+          <div className="flex items-center justify-between pb-2 border-b border-manifest-glassBorder">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-manifest-pink to-manifest-lavender flex items-center justify-center shadow-xs">
+              <div className="w-8 h-8 rounded-xl bg-manifest-glassControl border border-manifest-glassBorder flex items-center justify-center shadow-xs">
                 <Compass className="w-4 h-4 text-manifest-auraPurple" />
               </div>
               <div className="text-left">
@@ -169,7 +169,7 @@ export const CosmicOracleWheel: React.FC = () => {
                   Oráculo de Sincronías
                 </h3>
                 <span className="text-[10px] text-manifest-inkMuted flex items-center gap-1">
-                  <Star className="w-2.5 h-2.5 text-amber-500 fill-amber-500" />
+                  <Star className="w-2.5 h-2.5 text-amber-400 fill-amber-400" />
                   {etherFragments} Fragmentos de Éter
                 </span>
               </div>
@@ -178,7 +178,7 @@ export const CosmicOracleWheel: React.FC = () => {
               type="button"
               onClick={closeOracle}
               data-testid="close-oracle-btn"
-              className="p-1.5 rounded-full hover:bg-white/80 text-manifest-inkMuted hover:text-manifest-ink transition-colors cursor-pointer"
+              className="p-1.5 rounded-full hover:bg-manifest-glassControlHover text-manifest-inkMuted hover:text-manifest-ink transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-manifest-glassBorderFocus"
             >
               <X className="w-4 h-4" />
             </button>
@@ -219,7 +219,7 @@ export const CosmicOracleWheel: React.FC = () => {
                 initial={{ opacity: 0, scale: 0.9, y: 8 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="p-3 rounded-2xl bg-gradient-to-r from-manifest-lavender/50 to-manifest-celeste/50 border border-white text-manifest-ink space-y-0.5 shadow-sm"
+                className="p-3 rounded-2xl bg-manifest-glassControl border border-manifest-glassBorder text-manifest-ink space-y-0.5 shadow-sm"
               >
                 <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-manifest-auraPurple">
                   <Sparkles className="w-3.5 h-3.5" />
@@ -239,7 +239,7 @@ export const CosmicOracleWheel: React.FC = () => {
               onClick={handleSpin}
               disabled={isSpinning}
               data-testid="spin-oracle-btn"
-              className="w-full py-3 px-5 rounded-2xl primary-gradient-btn text-xs font-bold shadow-md hover:shadow-lg disabled:opacity-50 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
+              className="w-full py-3 px-5 rounded-2xl primary-gradient-btn text-xs font-bold shadow-glass hover:shadow-lg disabled:opacity-50 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-manifest-glassBorderFocus"
             >
               <RotateCw className={`w-4 h-4 ${isSpinning ? 'animate-spin' : ''}`} />
               <span>{isSpinning ? 'Consultando el cosmos...' : 'Girar el Oráculo'}</span>

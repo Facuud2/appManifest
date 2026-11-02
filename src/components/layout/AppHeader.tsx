@@ -1,17 +1,18 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Navbar } from 'konsta/react';
 import { useAppStore } from '@/store';
-import { Flame, Download, Sparkles } from 'lucide-react';
+import { Flame, Download, Plus, Sparkles } from 'lucide-react';
 import { UserScopeSwitcher } from './UserScopeSwitcher';
+import { motion } from 'framer-motion';
+import { IOS_TAP_SPRING } from '@/lib/iosSprings';
 
 interface AppHeaderProps {
   onOpenInstallGuide: () => void;
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({ onOpenInstallGuide }) => {
-  const { settings, activeScope, activeTab } = useAppStore();
+  const { settings, openAffirmationEditor } = useAppStore();
   const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
@@ -23,89 +24,63 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onOpenInstallGuide }) => {
     }
   }, []);
 
-  const getScopeSubtitle = () => {
-    switch (activeScope) {
-      case 'facu':
-        return 'Santuario de Facu';
-      case 'maia':
-        return 'Santuario de Maia';
-      case 'shared':
-        return 'Espacio de Facu & Maia';
-      default:
-        return 'Santuario Consciente';
-    }
-  };
-
-  const getLargeSectionTitle = () => {
-    switch (activeTab) {
-      case 'inicio':
-        return getScopeSubtitle();
-      case 'objetivos':
-        return 'Afirmaciones';
-      case 'diario':
-        return 'Diario & Cuaderno';
-      case 'espacio':
-        return 'Mi Espacio';
-      default:
-        return getScopeSubtitle();
-    }
-  };
-
   return (
-    <div
+    <header
       data-testid="dynamic-app-header"
-      className="lg:hidden sticky top-0 z-30 w-full bg-[#FDFBF7]/85 backdrop-blur-2xl border-b border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.85),0_4px_20px_-4px_rgba(184,163,248,0.12)]"
+      className="lg:hidden sticky top-0 z-40 w-full bg-manifest-surfaceNav/95 backdrop-blur-2xl border-b border-manifest-glassBorder px-3 py-2.5 transition-all shadow-glass"
     >
-      <Navbar
-        data-testid="ios-collapsible-navbar"
-        translucent
-        centerTitle
-        title={getLargeSectionTitle()}
-        titleFontSizeIos="text-[17px]"
-        colors={{
-          bgIos: 'bg-white/80',
-          textIos: 'text-manifest-ink',
-        }}
-        bgClassName="backdrop-blur-2xl border-b border-white/60"
-        innerClassName="max-w-2xl mx-auto px-3.5 sm:px-6"
-        titleClassName="font-serif font-bold tracking-tight text-manifest-ink"
-        subnavbarClassName="max-w-2xl mx-auto w-full px-3.5 sm:px-6 pb-2 pt-0.5 h-auto"
-        left={
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-manifest-pink via-manifest-lavender to-manifest-celeste flex items-center justify-center shadow-glass border border-white/80">
-              <Sparkles className="w-3.5 h-3.5 text-manifest-ink" />
-            </div>
+      <div className="max-w-2xl mx-auto flex items-center justify-between gap-2.5">
+        {/* Left: Brand Monogram / Identity */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-manifest-glassControl border border-manifest-glassBorder flex items-center justify-center shadow-xs">
+            <Sparkles className="w-4 h-4 text-manifest-brass" />
           </div>
-        }
-        right={
-          <div className="flex items-center gap-1.5 shrink-0">
-            <div
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] backdrop-blur-xl bg-white/55 text-[11px] sm:text-xs font-semibold text-manifest-ink"
-              title="Días consecutivos de conexión personal"
-            >
-              <Flame className="w-3 h-3 text-amber-500 fill-amber-400" />
-              <span>{settings.dailyStreak}d</span>
-            </div>
+          <span className="font-serif font-bold text-base tracking-wide text-manifest-ink hidden xs:inline">
+            Santuario
+          </span>
+        </div>
 
-            {!isStandalone && (
-              <button
-                type="button"
-                onClick={onOpenInstallGuide}
-                className="p-1.5 rounded-full border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] backdrop-blur-xl bg-white/55 text-manifest-inkMuted hover:text-manifest-ink transition-colors cursor-pointer"
-                title="Instalar en tu dispositivo"
-                aria-label="Instalar app"
-              >
-                <Download className="w-3.5 h-3.5" />
-              </button>
-            )}
+        {/* Center: Sleek, compact Scope Switcher right in the header row */}
+        <div className="flex-1 max-w-[220px] sm:max-w-[260px]">
+          <UserScopeSwitcher compact idPrefix="mobile-top-header" />
+        </div>
+
+        {/* Right: Streak & Quick Action */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Flame streak */}
+          <div
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-amber-300/60 bg-amber-100/70 text-[11px] font-bold text-amber-900 shadow-neu-sm"
+            title="Días consecutivos de conexión"
+          >
+            <Flame className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+            <span className="font-sans tabular-nums">{settings.dailyStreak}d</span>
           </div>
-        }
-        subnavbar={
-          <div className="w-full">
-            <UserScopeSwitcher fullWidth idPrefix="mobile-header" className="w-full" />
-          </div>
-        }
-      />
-    </div>
+
+          {/* Quick Create Button */}
+          <motion.button
+            type="button"
+            whileTap={IOS_TAP_SPRING}
+            onClick={() => openAffirmationEditor(null)}
+            className="w-8 h-8 rounded-full primary-gradient-btn text-manifest-ink flex items-center justify-center shadow-sm cursor-pointer hover:brightness-110 focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+            title="Nuevo decreto"
+            aria-label="Nuevo decreto"
+          >
+            <Plus className="w-4 h-4" />
+          </motion.button>
+
+          {!isStandalone && (
+            <button
+              type="button"
+              onClick={onOpenInstallGuide}
+              className="p-1.5 rounded-full border border-manifest-glassBorder bg-manifest-glassControl text-manifest-inkMuted hover:text-manifest-ink transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+              title="Instalar como App"
+              aria-label="Instalar app"
+            >
+              <Download className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+    </header>
   );
 };

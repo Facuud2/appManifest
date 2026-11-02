@@ -183,7 +183,7 @@ export const VoiceDictationButton: React.FC<VoiceDictationButtonProps> = ({
   return (
     <div className={`relative inline-flex items-center ${className}`}>
       {isListening && (
-        <span className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-manifest-pink via-manifest-lavender to-manifest-celeste opacity-75 blur-sm animate-pulse pointer-events-none" />
+        <span className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-manifest-amethyst via-manifest-auraPurple to-manifest-gold opacity-75 blur-sm animate-pulse pointer-events-none" />
       )}
       <button
         type="button"
@@ -194,7 +194,7 @@ export const VoiceDictationButton: React.FC<VoiceDictationButtonProps> = ({
         } ${
           isListening
             ? 'bg-rose-500 text-white shadow-lg ring-2 ring-rose-400/80 scale-105'
-            : 'bg-white/80 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/90 shadow-sm'
+            : 'glass-pill text-purple-700 border border-purple-300/50 hover:bg-purple-100/70 shadow-neu-sm'
         }`}
       >
         {isListening ? (

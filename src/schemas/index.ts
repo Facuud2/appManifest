@@ -162,7 +162,8 @@ export const RampageSetSchema = z.object({
 export const UserSettingsSchema = z.object({
   userName: z.string().default('Facu'),
   greetingPreference: z.enum(['morning_gentle', 'intimate', 'empowered']).default('intimate'),
-  theme: z.enum(['pastel-rainbow', 'serene-lavender', 'mint-glow']).default('pastel-rainbow'),
+  theme: z.enum(['pastel-rainbow', 'serene-lavender', 'mint-glow', 'liquid-glass', 'neumorphism-esoteric']).default('neumorphism-esoteric'),
+  colorMode: z.enum(['dark', 'light', 'system']).default('light').optional(),
   reducedMotion: z.boolean().default(false),
   favoriteAffirmations: z.array(z.string()).default([]),
   firstLaunchCompleted: z.boolean().default(false),

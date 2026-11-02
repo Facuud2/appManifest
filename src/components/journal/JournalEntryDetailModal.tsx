@@ -96,7 +96,7 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
               setShowDeleteConfirm(false);
               onClose();
             }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-manifest-ink/35 backdrop-blur-md"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/35 backdrop-blur-md"
           >
             <motion.div
               data-testid="journal-detail-modal"
@@ -105,43 +105,43 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 12 }}
               transition={{ type: 'spring', stiffness: 420, damping: 30, mass: 0.8 }}
-              className="w-full max-w-xl rounded-3xl bg-[#FCFAF8]/95 backdrop-blur-2xl border border-white/90 shadow-[0_24px_70px_rgba(40,30,60,0.22),0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.95)] flex flex-col max-h-[88vh] overflow-hidden relative"
+              className="w-full max-w-xl rounded-3xl glass-card border border-manifest-glassBorder shadow-lens flex flex-col max-h-[88vh] overflow-hidden relative"
             >
               {/* Atmospheric Aura Glow according to entry type */}
               <div
                 aria-hidden="true"
-                className={`absolute -top-24 -right-24 w-56 h-56 rounded-full blur-3xl pointer-events-none opacity-50 ${
+                className={`absolute -top-24 -right-24 w-56 h-56 rounded-full blur-3xl pointer-events-none opacity-30 ${
                   isManifestation
-                    ? 'bg-gradient-to-br from-manifest-pink/40 via-manifest-lavender/50 to-manifest-celeste/30'
+                    ? 'bg-gradient-to-br from-purple-800/40 via-purple-600/30 to-pink-900/30'
                     : isProgress
-                    ? 'bg-gradient-to-br from-manifest-mint/50 via-emerald-200/40 to-teal-100/30'
-                    : 'bg-gradient-to-br from-amber-200/60 via-yellow-100/50 to-orange-100/30'
+                    ? 'bg-gradient-to-br from-emerald-800/40 via-teal-800/30 to-purple-900/20'
+                    : 'bg-gradient-to-br from-amber-200/40 via-yellow-100/30 to-orange-100/20'
                 }`}
               />
 
               {/* Modal Header */}
-              <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-manifest-ink/[0.07] bg-white/60 backdrop-blur-md select-none z-10">
+              <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-manifest-glassBorder bg-manifest-surfaceElevated select-none z-10">
                 <div className="flex items-center gap-2">
                   {isManifestation ? (
                     <span
                       data-testid="entry-type-manifestation"
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide border border-manifest-auraPurple/50 bg-gradient-to-r from-manifest-pink/30 to-manifest-lavender/40 text-manifest-auraPurple shadow-xs"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide border border-purple-300/60 bg-purple-100/80 text-purple-800 shadow-neu-sm"
                     >
-                      <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                      <Sparkles className="w-3.5 h-3.5 shrink-0 text-purple-700" />
                       <span>Manifestación</span>
                     </span>
                   ) : isProgress ? (
                     <span
                       data-testid="entry-type-progress"
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide border border-emerald-400/60 bg-gradient-to-r from-manifest-mint/40 to-emerald-100/50 text-emerald-800 shadow-xs"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide border border-emerald-300/60 bg-emerald-100/80 text-emerald-800 shadow-neu-sm"
                     >
-                      <Target className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
+                      <Target className="w-3.5 h-3.5 shrink-0 text-emerald-700" />
                       <span>Avance de manifestación</span>
                     </span>
                   ) : (
                     <span
                       data-testid="entry-type-reflection"
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide border border-amber-400/70 bg-gradient-to-r from-amber-100/80 to-yellow-50/80 text-amber-900 shadow-xs"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide border border-amber-300/60 bg-amber-100/80 text-amber-800 shadow-neu-sm"
                     >
                       <Trophy className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                       <span>Success Story</span>
@@ -168,22 +168,22 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
               {/* Scrollable Entry Body */}
               <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-4 relative z-10">
                 {/* Author & Date metadata */}
-                <div className="flex items-center justify-between pb-2 border-b border-manifest-ink/[0.06]">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border border-white/90 bg-white/80 text-manifest-ink shadow-xs">
+                <div className="flex items-center justify-between pb-2 border-b border-purple-900/30">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border border-purple-300/60 bg-purple-100/80 text-purple-900 shadow-neu-sm">
                     {entry.userId === 'shared' ? (
                       <>
-                        <Sparkles className="w-3 h-3 text-amber-500" />
-                        <span>Juntos</span>
+                        <Sparkles className="w-3 h-3 text-manifest-gold" />
+                        <span>✦ Juntos</span>
                       </>
                     ) : entry.userId === 'maia' ? (
                       <>
                         <Heart className="w-3 h-3 text-rose-400" />
-                        <span>{entry.author || 'Maia'}</span>
+                        <span>✧ {entry.author || 'Maia'}</span>
                       </>
                     ) : (
                       <>
                         <Moon className="w-3 h-3 text-manifest-auraPurple" />
-                        <span>{entry.author || 'Facu'}</span>
+                        <span>☾ {entry.author || 'Facu'}</span>
                       </>
                     )}
                   </span>
@@ -206,7 +206,7 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
                 )}
 
                 {/* Content Box */}
-                <div className="p-5 sm:p-6 rounded-2xl bg-white/70 border border-white/90 shadow-sm">
+                <div className="p-5 sm:p-6 rounded-2xl bg-manifest-glassControl border border-manifest-glassBorder shadow-sm tarot-card-border">
                   <p
                     className={`selectable-text whitespace-pre-wrap leading-relaxed text-manifest-ink select-text font-serif ${
                       isShortQuote ? 'text-base sm:text-lg italic font-medium' : 'text-sm sm:text-base font-normal'
@@ -218,11 +218,11 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
               </div>
 
               {/* Mac Dialog Footer / Actions */}
-              <div className="shrink-0 px-6 py-4 bg-manifest-ink/[0.02] border-t border-manifest-ink/[0.07] relative z-10">
+              <div className="shrink-0 px-6 py-4 bg-manifest-surfaceElevated border-t border-manifest-glassBorder relative z-10">
                 {showDeleteConfirm ? (
-                  <div className="p-3.5 rounded-2xl bg-rose-50/90 border border-rose-200/90 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 text-rose-700 text-xs font-semibold">
-                      <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <div className="p-3.5 rounded-2xl bg-rose-100/80 border border-rose-300/60 flex items-center justify-between gap-3 shadow-neu-sm">
+                    <div className="flex items-center gap-2 text-rose-800 text-xs font-semibold">
+                      <AlertTriangle className="w-4 h-4 shrink-0 text-rose-700" />
                       <span>¿Eliminar esta entrada definitivamente? Esta acción no se puede deshacer.</span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -299,20 +299,20 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
         />
         <Drawer.Content
           data-testid="journal-detail-modal"
-          className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2.25rem] ${LIQUID_GLASS_SPECULAR} bg-white/90 p-5 sm:p-7 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_-12px_48px_rgba(73,62,85,0.2)] outline-none flex flex-col max-h-[90dvh] overflow-y-auto overscroll-contain touch-pan-y select-none overflow-hidden`}
+          className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2rem] border-t border-manifest-glassBorder bg-manifest-surfaceNav/98 backdrop-blur-2xl p-5 sm:p-7 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-liquid outline-none flex flex-col max-h-[90dvh] overflow-y-auto overscroll-contain touch-pan-y select-none overflow-hidden`}
           data-vaul-no-drag=""
         >
           {/* iOS Native Grabber Handle */}
           <Drawer.Handle
             data-testid="ios-sheet-grabber"
-            className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-manifest-ink/20 mb-4 cursor-grab active:cursor-grabbing relative z-10"
+            className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-purple-300/25 mb-4 cursor-grab active:cursor-grabbing relative z-10"
           />
 
           <Drawer.Title className="sr-only">
-            {entry?.title || 'Detalle de entrada de diario'}
+            {entry?.title || 'Detalle de entrada de grimorio'}
           </Drawer.Title>
           <Drawer.Description className="sr-only">
-            Vista inmersiva de lectura de tu entrada de diario
+            Vista inmersiva de lectura de tu entrada de grimorio
           </Drawer.Description>
 
           {entry && (
@@ -320,12 +320,12 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
               {/* Atmospheric Aura Glow according to entry type */}
               <div
                 aria-hidden="true"
-                className={`absolute -top-24 -right-24 w-56 h-56 rounded-full blur-3xl pointer-events-none opacity-50 ${
+                className={`absolute -top-24 -right-24 w-56 h-56 rounded-full blur-3xl pointer-events-none opacity-30 ${
                   isManifestation
-                    ? 'bg-gradient-to-br from-manifest-pink/40 via-manifest-lavender/50 to-manifest-celeste/30'
+                    ? 'bg-gradient-to-br from-purple-800/40 via-purple-600/30 to-pink-900/30'
                     : isProgress
-                    ? 'bg-gradient-to-br from-manifest-mint/50 via-emerald-200/40 to-teal-100/30'
-                    : 'bg-gradient-to-br from-amber-200/60 via-yellow-100/50 to-orange-100/30'
+                    ? 'bg-gradient-to-br from-emerald-800/40 via-teal-800/30 to-purple-900/20'
+                    : 'bg-gradient-to-br from-amber-200/40 via-yellow-100/30 to-orange-100/20'
                 }`}
               />
 
@@ -336,33 +336,33 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
                     {isManifestation ? (
                       <span
                         data-testid="entry-type-manifestation"
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide border border-manifest-auraPurple/50 bg-gradient-to-r from-manifest-pink/30 to-manifest-lavender/40 text-manifest-auraPurple shadow-sm"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide border border-purple-300/60 bg-purple-100/80 text-purple-800 shadow-neu-sm"
                       >
-                        <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                        <Sparkles className="w-3.5 h-3.5 shrink-0 text-purple-700" />
                         <span>Manifestación</span>
                       </span>
                     ) : isProgress ? (
                       <span
                         data-testid="entry-type-progress"
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide border border-emerald-400/60 bg-gradient-to-r from-manifest-mint/40 to-emerald-100/50 text-emerald-800 shadow-sm"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide border border-emerald-300/60 bg-emerald-100/80 text-emerald-800 shadow-neu-sm"
                       >
-                        <Target className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
+                        <Target className="w-3.5 h-3.5 shrink-0 text-emerald-700" />
                         <span>Avance de manifestación</span>
                       </span>
                     ) : (
                       <span
                         data-testid="entry-type-reflection"
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide border border-amber-400/70 bg-gradient-to-r from-amber-100/80 to-yellow-50/80 text-amber-900 shadow-sm"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide border border-amber-300/60 bg-amber-100/80 text-amber-800 shadow-neu-sm"
                       >
                         <Trophy className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                         <span>Success Story</span>
                       </span>
                     )}
 
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border border-white/90 bg-white/80 text-manifest-ink shadow-xs">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border border-manifest-glassBorder bg-manifest-glassControl text-manifest-ink shadow-xs">
                       {entry.userId === 'shared' ? (
                         <>
-                          <Sparkles className="w-3 h-3 text-amber-500" />
+                          <Sparkles className="w-3 h-3 text-amber-400" />
                           <span>Juntos</span>
                         </>
                       ) : entry.userId === 'maia' ? (
@@ -398,7 +398,7 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
                   data-testid="close-detail-modal-btn"
                   title="Cerrar vista de entrada"
                   aria-label="Cerrar vista de entrada"
-                  className="p-2 rounded-full bg-white/80 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/90 shadow-sm transition-colors cursor-pointer shrink-0"
+                  className="p-2 rounded-full glass-pill text-manifest-inkMuted hover:text-manifest-ink border border-manifest-glassBorder hover:bg-manifest-glassControl shadow-neu-sm transition-colors cursor-pointer shrink-0"
                 >
                   <X className="w-4 h-4" />
                 </motion.button>
@@ -414,7 +414,7 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
               )}
 
               {/* Main Text Content Box */}
-              <div className="relative z-10 my-2 p-4 sm:p-5 rounded-2xl bg-white/80 border border-white/90 shadow-inner max-h-[46dvh] overflow-y-auto overscroll-contain touch-pan-y">
+              <div className="relative z-10 my-2 p-4 sm:p-5 rounded-2xl bg-manifest-glassControl border border-manifest-glassBorder shadow-inner max-h-[46dvh] overflow-y-auto overscroll-contain touch-pan-y tarot-card-border">
                 <p
                   className={`selectable-text whitespace-pre-wrap leading-relaxed text-manifest-ink select-text font-serif ${
                     isShortQuote ? 'text-base sm:text-lg italic font-medium' : 'text-sm font-normal'
@@ -426,12 +426,12 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
 
               {/* Bottom Actions or Delete Confirmation Bar */}
               {showDeleteConfirm ? (
-                <div className="p-3.5 rounded-2xl bg-rose-50/90 border border-rose-200/90 space-y-2.5 text-center relative z-10">
-                  <div className="flex items-center justify-center gap-1.5 text-rose-700 text-xs font-semibold">
-                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                <div className="p-3.5 rounded-2xl bg-rose-100/80 border border-rose-300/60 space-y-2.5 text-center relative z-10 shadow-neu-sm">
+                  <div className="flex items-center justify-center gap-1.5 text-rose-800 text-xs font-semibold">
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-rose-700" />
                     <span>¿Deseas eliminar esta entrada definitivamente?</span>
                   </div>
-                  <p className="text-[11px] text-rose-600/80">
+                  <p className="text-[11px] text-rose-600">
                     Esta acción no se puede deshacer.
                   </p>
                   <div className="flex items-center justify-center gap-2 pt-0.5">
@@ -439,7 +439,7 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
                       type="button"
                       whileTap={IOS_TAP_SPRING}
                       onClick={() => setShowDeleteConfirm(false)}
-                      className="px-4 py-2 rounded-xl text-xs font-medium bg-white text-manifest-inkMuted hover:text-manifest-ink border border-rose-200 transition-colors cursor-pointer"
+                      className="px-4 py-2 rounded-xl text-xs font-medium glass-pill text-manifest-inkMuted hover:text-manifest-ink border border-purple-500/20 transition-colors cursor-pointer"
                     >
                       Cancelar
                     </motion.button>

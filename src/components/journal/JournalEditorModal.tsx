@@ -209,7 +209,7 @@ export const JournalEditorModal: React.FC = () => {
           <div
             data-testid="journal-desktop-backdrop"
             onClick={closeJournalEditor}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-manifest-ink/35 backdrop-blur-md"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/35 backdrop-blur-md"
           >
             <motion.div
               data-testid="journal-desktop-modal"
@@ -218,26 +218,26 @@ export const JournalEditorModal: React.FC = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 12 }}
               transition={{ type: 'spring', stiffness: 420, damping: 30, mass: 0.8 }}
-              className="w-full max-w-xl rounded-3xl bg-[#FCFAF8]/95 backdrop-blur-2xl border border-white/90 shadow-[0_24px_70px_rgba(40,30,60,0.22),0_4px_16px_rgba(0,0,0,0.06),inset_0_1px_1px_rgba(255,255,255,0.95)] flex flex-col max-h-[88vh] overflow-hidden"
+              className="w-full max-w-xl rounded-3xl glass-card border border-manifest-glassBorder shadow-lens flex flex-col max-h-[88vh] overflow-hidden"
             >
               {/* Modal Header */}
-              <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-manifest-ink/[0.07] bg-white/60 backdrop-blur-md select-none">
+              <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-manifest-glassBorder bg-manifest-surfaceElevated select-none">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-manifest-lavender to-manifest-celeste flex items-center justify-center shadow-xs border border-white">
+                  <div className="w-8 h-8 rounded-xl bg-manifest-glassControl border border-manifest-glassBorder flex items-center justify-center shadow-xs">
                     {selectedEntryType === 'manifestation' ? (
                       <Sparkles className="w-4 h-4 text-manifest-auraPurple" />
                     ) : selectedEntryType === 'progress' ? (
-                      <Target className="w-4 h-4 text-manifest-auraRose" />
+                      <Target className="w-4 h-4 text-emerald-400" />
                     ) : (
-                      <Trophy className="w-4 h-4 text-amber-500" />
+                      <Trophy className="w-4 h-4 text-amber-400" />
                     )}
                   </div>
                   <div>
                     <h3 className="font-serif font-bold text-sm text-manifest-ink tracking-tight">
                       {getModalTitle()}
                     </h3>
-                    <p className="text-[11px] text-manifest-inkMuted">
-                      Cuaderno de manifestación y verdad
+                    <p className="text-[11px] text-manifest-inkLight">
+                      Grimorio de manifestación y sincronía
                     </p>
                   </div>
                 </div>
@@ -246,7 +246,7 @@ export const JournalEditorModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={closeJournalEditor}
-                  className="p-1.5 rounded-xl text-manifest-inkMuted hover:text-manifest-ink hover:bg-manifest-ink/5 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-xl text-manifest-inkLight hover:text-manifest-ink hover:bg-white/5 transition-colors cursor-pointer"
                   title="Cerrar (Esc)"
                   aria-label="Cerrar ventana"
                 >
@@ -417,7 +417,7 @@ export const JournalEditorModal: React.FC = () => {
                           onClick={() => setIsVoiceActiveContent(true)}
                           title="Dictar contenido con micrófono"
                           aria-label="Dictar contenido con micrófono"
-                          className="w-8 h-8 rounded-xl bg-white/80 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/90 shadow-sm flex items-center justify-center transition-colors cursor-pointer"
+                          className="w-8 h-8 rounded-xl glass-pill text-purple-700 border border-purple-300/50 hover:bg-purple-100/70 shadow-neu-sm flex items-center justify-center transition-colors cursor-pointer"
                         >
                           <Mic className="w-4 h-4" />
                         </button>
@@ -449,7 +449,7 @@ export const JournalEditorModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={closeJournalEditor}
-                    className="px-4 py-2 rounded-xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/80 border border-manifest-ink/10 shadow-xs transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink glass-pill border border-purple-500/20 shadow-xs transition-colors cursor-pointer"
                   >
                     Cancelar
                   </button>
@@ -457,7 +457,7 @@ export const JournalEditorModal: React.FC = () => {
                     type="button"
                     data-testid="submit-journal-btn"
                     onClick={handleSubmit(onSubmit)}
-                    className="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-manifest-auraPurple via-purple-600 to-indigo-600 hover:opacity-95 shadow-[0_2px_8px_rgba(184,163,248,0.35)] active:scale-[0.98] transition-all cursor-pointer flex items-center gap-1.5"
+                    className="px-5 py-2 rounded-xl text-xs font-semibold text-white primary-gradient-btn shadow-glass active:scale-[0.98] transition-all cursor-pointer flex items-center gap-1.5"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>
@@ -493,28 +493,28 @@ export const JournalEditorModal: React.FC = () => {
       repositionInputs={false}
     >
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 z-50 bg-manifest-ink/35 backdrop-blur-sm" />
+        <Drawer.Overlay className="fixed inset-0 z-50 bg-slate-900/35 backdrop-blur-sm" />
         <Drawer.Content
           data-testid="journal-vaul-drawer"
-          className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2.25rem] ${LIQUID_GLASS_SPECULAR} bg-white/95 p-5 sm:p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-liquid outline-none flex flex-col max-h-[92dvh]`}
+          className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2rem] border-t border-manifest-glassBorder bg-manifest-surfaceNav/98 backdrop-blur-2xl p-5 sm:p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-liquid outline-none flex flex-col max-h-[92dvh]`}
         >
           {/* iOS Native Grabber Handle */}
           <Drawer.Handle
             data-testid="ios-sheet-grabber"
-            className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-manifest-ink/20 mb-2 cursor-grab active:cursor-grabbing"
+            className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-manifest-auraPurple/30 mb-2 cursor-grab active:cursor-grabbing"
           />
 
           <Drawer.Title className="sr-only">{getModalTitle()}</Drawer.Title>
           <Drawer.Description className="sr-only">
-            Formulario para escribir o editar una entrada en tu diario manifestador
+            Formulario para escribir o editar una entrada en tu grimorio manifestador
           </Drawer.Description>
 
           {/* iOS Compact Navigation Bar (h-14 px-4) */}
-          <div className="shrink-0 h-14 -mx-5 sm:-mx-6 -mt-2 px-4 sm:px-6 flex items-center justify-between border-b border-manifest-lavender/30 bg-white/95 z-10">
+          <div className="shrink-0 h-14 -mx-5 sm:-mx-6 -mt-2 px-4 sm:px-6 flex items-center justify-between border-b border-manifest-glassBorder bg-manifest-surfaceNav z-10">
             <button
               type="button"
               onClick={closeJournalEditor}
-              className="text-manifest-inkMuted hover:text-manifest-ink font-medium text-sm transition-colors cursor-pointer px-1 py-1"
+              className="text-manifest-inkLight hover:text-manifest-ink font-medium text-sm transition-colors cursor-pointer px-1 py-1"
             >
               Cancelar
             </button>
@@ -530,7 +530,7 @@ export const JournalEditorModal: React.FC = () => {
               whileTap={IOS_TAP_SPRING}
               data-testid="submit-journal-nav-btn"
               onClick={handleSubmit(onSubmit)}
-              className="bg-gradient-to-r from-manifest-auraPurple to-purple-600 text-white px-4 py-1.5 rounded-full font-semibold text-xs sm:text-sm shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer"
+              className="primary-gradient-btn text-manifest-ink px-4 py-1.5 rounded-full font-semibold text-xs sm:text-sm shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer"
             >
               Guardar
             </motion.button>
@@ -548,9 +548,9 @@ export const JournalEditorModal: React.FC = () => {
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { key: 'facu' as UserScope, label: 'Facu' },
-                  { key: 'maia' as UserScope, label: 'Maia' },
-                  { key: 'shared' as UserScope, label: '✨ Juntos' },
+                  { key: 'facu' as UserScope, label: '☾ Facu' },
+                  { key: 'maia' as UserScope, label: '✧ Maia' },
+                  { key: 'shared' as UserScope, label: '✦ Juntos' },
                 ].map((sc) => (
                   <motion.button
                     key={sc.key}
@@ -559,8 +559,8 @@ export const JournalEditorModal: React.FC = () => {
                     onClick={() => setValue('userId', sc.key, { shouldDirty: true })}
                     className={`py-1.5 px-2 rounded-xl text-xs font-semibold transition-colors border cursor-pointer ${
                       selectedUserId === sc.key
-                        ? 'bg-manifest-ink text-white border-manifest-ink shadow-sm'
-                        : 'bg-white/70 hover:bg-white text-manifest-inkMuted border-white/80'
+                        ? 'bg-purple-100/90 text-purple-900 border-purple-300/70 shadow-neu-sm'
+                        : 'bg-manifest-glassControl hover:bg-manifest-glassControlHover text-manifest-inkMuted border-manifest-glassBorder'
                     }`}
                   >
                     {sc.label}
@@ -602,8 +602,8 @@ export const JournalEditorModal: React.FC = () => {
                       onClick={() => setValue('entryType', t.key, { shouldDirty: true })}
                       className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-semibold transition-colors border cursor-pointer ${
                         isSelected
-                          ? 'bg-manifest-ink text-white border-manifest-ink shadow-sm'
-                          : 'bg-white/70 hover:bg-white text-manifest-inkMuted border-white/80'
+                          ? 'bg-purple-100/90 text-purple-900 border-purple-300/70 shadow-neu-sm'
+                          : 'bg-manifest-glassControl hover:bg-manifest-glassControlHover text-manifest-inkMuted border-manifest-glassBorder'
                       }`}
                     >
                       <Icon className="w-3.5 h-3.5 shrink-0" />
@@ -661,7 +661,7 @@ export const JournalEditorModal: React.FC = () => {
                             ? 'Describe qué avance viste, qué sincronía percibiste o qué paso diste...'
                             : 'Describe con gratitud el hecho consumado, cómo se materializó tu manifestación...'
                         }
-                        className={`w-full p-3.5 pr-12 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight leading-relaxed transition-colors ${
+                        className={`w-full p-3.5 pr-12 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkMuted/40 leading-relaxed transition-colors ${
                           errors.content
                             ? 'border-rose-400 ring-1 ring-rose-400/50'
                             : currentContent.trim().length > 0
@@ -675,12 +675,12 @@ export const JournalEditorModal: React.FC = () => {
                   {/* Inline Status Icon: Check or Alert */}
                   <div className="absolute right-3 top-3 pointer-events-none">
                     {currentContent.trim().length > 0 && !errors.content && (
-                      <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs">
+                      <div className="w-5 h-5 rounded-full bg-emerald-100/80 text-emerald-700 border border-emerald-300/60 flex items-center justify-center shadow-neu-sm">
                         <Check className="w-3 h-3 stroke-[3]" />
                       </div>
                     )}
                     {errors.content && (
-                      <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center shadow-xs">
+                      <div className="w-5 h-5 rounded-full bg-rose-100/80 text-rose-700 border border-rose-300/60 flex items-center justify-center shadow-neu-sm">
                         <AlertCircle className="w-3.5 h-3.5 stroke-[2.5]" />
                       </div>
                     )}
@@ -692,7 +692,7 @@ export const JournalEditorModal: React.FC = () => {
                       onClick={() => setIsVoiceActiveContent(true)}
                       title="Dictar contenido con micrófono"
                       aria-label="Dictar contenido con micrófono"
-                      className="w-8 h-8 rounded-xl bg-white/80 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/90 shadow-sm flex items-center justify-center transition-colors cursor-pointer"
+                      className="w-8 h-8 rounded-xl glass-pill text-purple-700 border border-purple-300/50 hover:bg-purple-100/70 shadow-neu-sm flex items-center justify-center transition-colors cursor-pointer"
                     >
                       <Mic className="w-4 h-4" />
                     </button>

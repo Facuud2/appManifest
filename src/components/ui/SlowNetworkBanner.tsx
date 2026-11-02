@@ -75,11 +75,11 @@ export const SlowNetworkBanner: React.FC = () => {
           exit={{ opacity: 0, height: 0 }}
           transition={{ duration: 0.3 }}
           data-testid="slow-network-banner"
-          className="w-full bg-gradient-to-r from-manifest-lavender/30 via-white/80 to-manifest-celeste/30 border-b border-manifest-lavender/40 backdrop-blur-md px-3.5 py-2 text-manifest-ink select-none relative z-40 shadow-xs"
+          className="w-full bg-manifest-surfaceNav/95 backdrop-blur-md border-b border-manifest-glassBorder px-3.5 py-2 text-manifest-ink select-none relative z-40 shadow-xs"
         >
           <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5">
             <div className="flex items-center gap-2.5 w-full sm:w-auto">
-              <div className="w-7 h-7 rounded-xl bg-manifest-lavender/60 border border-white text-manifest-auraPurple flex items-center justify-center shrink-0">
+              <div className="w-7 h-7 rounded-xl bg-manifest-glassControl border border-manifest-glassBorder text-manifest-auraPurple flex items-center justify-center shrink-0">
                 <Gauge className="w-4 h-4 stroke-[2.2]" />
               </div>
               <div className="space-y-0.5 min-w-0">
@@ -107,10 +107,10 @@ export const SlowNetworkBanner: React.FC = () => {
                 type="button"
                 onClick={toggleLiteMode}
                 data-testid="toggle-lite-mode-btn"
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-manifest-glassBorderFocus ${
                   isLiteMode
                     ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                    : 'primary-gradient-btn text-manifest-ink'
+                    : 'primary-gradient-btn text-white'
                 }`}
               >
                 {isLiteMode ? (
@@ -129,7 +129,7 @@ export const SlowNetworkBanner: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsDismissed(true)}
-                className="p-1 rounded-lg text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/60 transition-colors"
+                className="p-1 rounded-lg text-manifest-inkMuted hover:text-manifest-ink hover:bg-manifest-glassControlHover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-manifest-glassBorderFocus"
                 title="Cerrar aviso"
               >
                 <X className="w-3.5 h-3.5" />

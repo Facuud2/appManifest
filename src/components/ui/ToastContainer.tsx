@@ -15,18 +15,18 @@ export const ToastContainer: React.FC = () => {
     >
       <AnimatePresence>
         {toasts.map((toast) => {
-          let icon = <Sparkles className="w-4 h-4 text-manifest-auraPurple" />;
-          let iconBg = 'bg-manifest-lavender/60 text-manifest-auraPurple';
+          let icon = <Sparkles className="w-4 h-4 text-purple-700" />;
+          let iconBg = 'bg-purple-100/80 text-purple-800 border border-purple-300/60 shadow-neu-sm';
 
           if (toast.type === 'success') {
-            icon = <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[3]" />;
-            iconBg = 'bg-emerald-100 text-emerald-600';
+            icon = <Check className="w-3.5 h-3.5 text-emerald-700 stroke-[3]" />;
+            iconBg = 'bg-emerald-100/80 text-emerald-800 border border-emerald-300/60 shadow-neu-sm';
           } else if (toast.type === 'celebrate') {
-            icon = <Sparkles className="w-3.5 h-3.5 text-amber-600" />;
-            iconBg = 'bg-amber-100 text-amber-600';
+            icon = <Sparkles className="w-3.5 h-3.5 text-amber-700" />;
+            iconBg = 'bg-amber-100/80 text-amber-800 border border-amber-300/60 shadow-neu-sm';
           } else if (toast.type === 'info') {
             icon = <Info className="w-3.5 h-3.5 text-manifest-inkMuted" />;
-            iconBg = 'bg-white/80 text-manifest-inkMuted';
+            iconBg = 'bg-manifest-glassControl text-manifest-ink border border-manifest-glassBorder shadow-neu-sm';
           }
 
           return (
@@ -37,7 +37,7 @@ export const ToastContainer: React.FC = () => {
               exit={{ opacity: 0, y: -14, scale: 0.94 }}
               transition={{ type: 'spring', stiffness: 450, damping: 28 }}
               onClick={() => removeToast(toast.id)}
-              className="pointer-events-auto cursor-pointer max-w-sm flex items-center gap-2.5 px-4 py-2 rounded-full glass-card border border-white/95 shadow-liquid text-xs sm:text-[13px] font-semibold text-manifest-ink backdrop-blur-xl bg-white/90 hover:bg-white active:scale-95 transition-all"
+              className="pointer-events-auto cursor-pointer max-w-sm flex items-center gap-2.5 px-4 py-2 rounded-full glass-card border border-manifest-glassBorder shadow-lens text-xs sm:text-[13px] font-semibold text-manifest-ink backdrop-blur-xl bg-manifest-surfaceNav/95 hover:bg-manifest-glassControlHover active:scale-95 transition-all"
               data-testid="liquid-toast-capsule"
             >
               <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 shadow-xs ${iconBg}`}>

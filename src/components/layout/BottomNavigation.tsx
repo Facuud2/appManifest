@@ -33,7 +33,7 @@ export const BottomNavigation: React.FC = () => {
       {/* Sellado inferior continuo contra filtración de texto bajo el dock */}
       <div
         aria-hidden="true"
-        className="lg:hidden fixed bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#FAF8FF] via-[#FAF8FF]/90 via-40% to-transparent pointer-events-none z-30"
+        className="lg:hidden fixed bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-manifest-base via-manifest-base/95 via-50% to-transparent pointer-events-none z-30"
       />
 
       <div
@@ -43,7 +43,7 @@ export const BottomNavigation: React.FC = () => {
         <nav
           role="navigation"
           aria-label="Navegación principal"
-          className="relative max-w-md mx-auto pointer-events-auto h-14 rounded-3xl bg-white/75 backdrop-blur-2xl border border-white/70 shadow-[inset_0_1px_1px_rgba(255,255,255,0.85),0_12px_36px_-4px_rgba(184,163,248,0.22)] px-2 py-1 flex items-center justify-between overflow-hidden"
+          className="relative max-w-md mx-auto pointer-events-auto h-13 rounded-2xl bg-manifest-surfaceNav/95 backdrop-blur-2xl border border-manifest-glassBorder shadow-liquid px-2 py-1 flex items-center justify-between overflow-hidden"
         >
           {NAV_ITEMS.map((item) => {
             const isActive = activeTab === item.key;
@@ -57,14 +57,14 @@ export const BottomNavigation: React.FC = () => {
                 aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
                 onClick={() => setActiveTab(item.key)}
-                className="relative flex-1 h-full flex flex-col items-center justify-center select-none cursor-pointer outline-none group py-0.5"
+                className="relative flex-1 h-full flex flex-col items-center justify-center select-none cursor-pointer outline-none group py-0.5 focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:rounded-xl focus-visible:outline-none"
               >
                 {/* Contenedor del ícono con la cápsula deslizante Liquid Glass */}
-                <div className="relative flex items-center justify-center w-13 h-7">
+                <div className="relative flex items-center justify-center w-12 h-6.5">
                   {isActive && (
                     <motion.div
                       layoutId="mobile-tabbar-active-pill"
-                      className="absolute inset-0 rounded-full bg-gradient-to-tr from-manifest-pink/65 via-manifest-lavender/75 to-manifest-celeste/65 border border-white/90 shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.95),0_3px_12px_rgba(184,163,248,0.28)]"
+                      className="absolute inset-0 rounded-xl bg-manifest-glassControlActive border border-manifest-glassBorderFocus shadow-[0_0_12px_var(--color-brass-glow)] backdrop-blur-md"
                       transition={TAB_SPRING_TRANSITION}
                     />
                   )}
@@ -81,7 +81,7 @@ export const BottomNavigation: React.FC = () => {
                   >
                     <Icon
                       className={`w-[17px] h-[17px] transition-colors duration-200 ${
-                        isActive ? 'text-manifest-ink stroke-[2.3]' : 'text-manifest-inkMuted opacity-75 group-hover:opacity-90'
+                        isActive ? 'text-manifest-ink stroke-[2.3]' : 'text-manifest-inkMuted opacity-80 group-hover:opacity-100 group-hover:text-manifest-ink'
                       }`}
                     />
                   </motion.div>
@@ -90,7 +90,7 @@ export const BottomNavigation: React.FC = () => {
                 {/* Etiqueta de texto debajo del ícono, siempre legible */}
                 <span
                   className={`text-[10px] tracking-tight block mt-0.5 select-none transition-colors duration-200 leading-tight ${
-                    isActive ? 'font-semibold text-manifest-ink' : 'font-medium text-manifest-inkMuted'
+                    isActive ? 'font-serif font-semibold text-manifest-ink' : 'font-serif font-medium text-manifest-inkMuted'
                   }`}
                 >
                   {item.label}

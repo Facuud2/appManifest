@@ -15,47 +15,49 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const audioFile = formData.get('audio') as File | null;
     const previousTextTail = (formData.get('previousTextTail') as string) || '';
+    const spokenText = (formData.get('spokenText') as string) || '';
 
-    // Guardrail: Sandbox / Mock Mode
-    if (sandbox || !audioFile) {
-      await sleep(500);
-      const mockText = generateMockTranscript(previousTextTail);
+    // 1. Guardrail: Sandbox / Mock Mode
+    if (sandbox || (!audioFile && !spokenText)) {
+      await sleep(400);
+      const mockResult = generateMockTranscript(previousTextTail, spokenText);
       return NextResponse.json({
-        text: mockText,
+        text: mockResult.text,
+        detectedTone: mockResult.detectedTone,
         source: 'SANDBOX_MOCK',
         totalTokens: 0,
       });
     }
 
-    const mimeType = audioFile.type || 'audio/webm';
-    const arrayBuffer = await audioFile.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    let buffer = Buffer.alloc(0);
+    let mimeType = 'audio/webm';
 
-    if (buffer.length < 100) {
-      return NextResponse.json(
-        { error: 'El archivo de audio está vacío o dañado.' },
-        { status: 400 }
-      );
+    if (audioFile) {
+      mimeType = audioFile.type || 'audio/webm';
+      const arrayBuffer = await audioFile.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
     }
 
     try {
       const result = await transcribeAudioWithGemini(
         buffer,
         mimeType,
-        previousTextTail
+        previousTextTail,
+        spokenText
       );
 
       return NextResponse.json({
         text: result.text,
+        detectedTone: result.detectedTone,
         source: result.source,
         totalTokens: result.totalTokens,
       });
     } catch (apiError: any) {
-      console.warn('[API transcribe] Fallback to mock on Gemini error:', apiError?.message);
-      // Fallback smoothly if Gemini encounters temporary quota or 503
-      const fallbackText = generateMockTranscript(previousTextTail);
+      console.warn('[API transcribe] Fallback on error:', apiError?.message);
+      const fallbackResult = generateMockTranscript(previousTextTail, spokenText);
       return NextResponse.json({
-        text: fallbackText,
+        text: fallbackResult.text,
+        detectedTone: fallbackResult.detectedTone,
         source: 'SANDBOX_MOCK',
         totalTokens: 0,
         fallbackReason: apiError?.message,
