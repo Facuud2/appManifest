@@ -18,6 +18,8 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { JournalEntry } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
+import { IOS_TAP_SPRING } from '@/lib/iosSprings';
 import { JournalEntryDetailModal } from '@/components/journal/JournalEntryDetailModal';
 import { LiquidEmptyState } from '@/components/ui/LiquidEmptyState';
 
@@ -34,6 +36,7 @@ export const JournalView: React.FC = () => {
 
   // Delete Confirm Modal State
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
+  const [journalListRef] = useAutoAnimate<HTMLDivElement>({ duration: 240 });
 
   const handleOpenNew = (type: 'manifestation' | 'progress' | 'reflection' = 'manifestation') => {
     openJournalEditor(type);
@@ -90,13 +93,14 @@ export const JournalView: React.FC = () => {
           </h2>
         </div>
 
-        <button
+        <motion.button
+          whileTap={IOS_TAP_SPRING}
           onClick={() => handleOpenNew('manifestation')}
           className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl primary-gradient-btn text-xs font-semibold shadow-sm cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Escribir</span>
-        </button>
+        </motion.button>
       </div>
 
       {/* Filter Tabs: Todas / Manifestaciones / Notas / Avances */}
@@ -181,7 +185,7 @@ export const JournalView: React.FC = () => {
           onAction={searchQuery ? () => setSearchQuery('') : () => handleOpenNew('manifestation')}
         />
       ) : (
-        <div className="grid grid-cols-1 gap-3.5">
+        <div ref={journalListRef} className="grid grid-cols-1 gap-3.5">
           {filteredEntries.map((entry) => {
             const formattedEntryDate = format(new Date(entry.createdAt), "d 'de' MMMM, yyyy", { locale: es });
             const isProgress = entry.entryType === 'progress';

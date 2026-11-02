@@ -24,6 +24,9 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Affirmation, JournalEntry } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Segmented, SegmentedButton } from 'konsta/react';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
+import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
 import { ManifestationCard } from '@/components/goals/ManifestationCard';
 import { PinnedAffirmationsList } from '@/components/goals/PinnedAffirmationsList';
 import { RampageSetView } from '@/components/goals/RampageSetView';
@@ -53,6 +56,8 @@ export const DashboardView: React.FC = () => {
   const [recentlyDeletedAffirmation, setRecentlyDeletedAffirmation] = useState<Affirmation | null>(null);
 
   const pinnedContainerRef = useRef<HTMLDivElement>(null);
+  const [unpinnedListRef] = useAutoAnimate<HTMLDivElement>({ duration: 240 });
+  const [recentJournalListRef] = useAutoAnimate<HTMLDivElement>({ duration: 240 });
 
   // Auto-clear recently deleted undo after 7 seconds
   useEffect(() => {
@@ -146,53 +151,42 @@ export const DashboardView: React.FC = () => {
 
       {/* 2. SECCIÓN: Afirmaciones & Sets de Rampage */}
       <section className="space-y-3">
-        {/* Switch Bar */}
+        {/* Konsta UI Cupertino Segmented Control */}
         <div className="flex items-center justify-between gap-2 px-1">
-          <div className="flex p-1 rounded-2xl bg-white/75 border border-white shadow-sm backdrop-blur-md">
-            <button
-              type="button"
+          <Segmented
+            strong
+            rounded
+            colors={{
+              strongBgIos: `${LIQUID_GLASS_SPECULAR}`,
+            }}
+            className="w-full sm:w-auto sm:min-w-[330px] p-1"
+          >
+            <SegmentedButton
+              strong
+              rounded
+              active={viewMode === 'list'}
               onClick={() => setViewMode('list')}
-              className={`relative px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors duration-200 cursor-pointer ${
-                viewMode === 'list'
-                  ? 'text-manifest-ink'
-                  : 'text-manifest-inkMuted hover:text-manifest-ink'
-              }`}
+              className="text-xs font-semibold py-1.5 px-3 !normal-case text-manifest-ink cursor-pointer"
             >
-              {viewMode === 'list' && (
-                <motion.div
-                  layoutId="dashboardViewMode"
-                  className="absolute inset-0 rounded-xl bg-white shadow-sm border border-white -z-10"
-                  transition={{ type: 'spring', stiffness: 450, damping: 35 }}
-                />
-              )}
-              <span className="flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-manifest-auraPurple" />
-                Afirmaciones ({affirmations.length})
+              <span className="flex items-center justify-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-manifest-auraPurple shrink-0" />
+                <span>Mis Fijadas ({affirmations.length})</span>
               </span>
-            </button>
+            </SegmentedButton>
 
-            <button
-              type="button"
+            <SegmentedButton
+              strong
+              rounded
+              active={viewMode === 'rampage'}
               onClick={() => setViewMode('rampage')}
-              className={`relative px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors duration-200 cursor-pointer ${
-                viewMode === 'rampage'
-                  ? 'text-manifest-ink'
-                  : 'text-manifest-inkMuted hover:text-manifest-ink'
-              }`}
+              className="text-xs font-semibold py-1.5 px-3 !normal-case text-manifest-ink cursor-pointer"
             >
-              {viewMode === 'rampage' && (
-                <motion.div
-                  layoutId="dashboardViewMode"
-                  className="absolute inset-0 rounded-xl bg-white shadow-sm border border-white -z-10"
-                  transition={{ type: 'spring', stiffness: 450, damping: 35 }}
-                />
-              )}
-              <span className="flex items-center gap-1.5">
-                <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
-                Sets de Rampage
+              <span className="flex items-center justify-center gap-1.5">
+                <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0" />
+                <span>Sets de Rampage</span>
               </span>
-            </button>
-          </div>
+            </SegmentedButton>
+          </Segmented>
         </div>
 
         {/* Section Header Row with Section Title on Left and Actions on Right */}
@@ -220,21 +214,23 @@ export const DashboardView: React.FC = () => {
               <ArrowRight className="w-3 h-3" />
             </button>
             {viewMode === 'rampage' ? (
-              <button
+              <motion.button
+                whileTap={IOS_TAP_SPRING}
                 onClick={() => openRampageSetEditor(null)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer active:scale-95 transition-transform"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Nuevo Set</span>
-              </button>
+              </motion.button>
             ) : (
-              <button
+              <motion.button
+                whileTap={IOS_TAP_SPRING}
                 onClick={() => openAffirmationEditor(null)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer active:scale-95 transition-transform"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Nueva</span>
-              </button>
+              </motion.button>
             )}
           </div>
         </div>
@@ -261,7 +257,7 @@ export const DashboardView: React.FC = () => {
 
             {/* Unpinned Affirmations - NEVER hidden when others are pinned */}
             {unpinnedAffirmations.length > 0 && (
-              <div className="flex flex-col gap-2.5">
+              <div ref={unpinnedListRef} className="flex flex-col gap-2.5">
                 {unpinnedAffirmations.slice(0, 6).map((aff) => (
                   <ManifestationCard
                     key={aff.id}
@@ -384,7 +380,7 @@ export const DashboardView: React.FC = () => {
       {/* 3. SECCIÓN: Diario & Cuaderno */}
       <section className="space-y-3 pt-1">
         {/* Quick Action: Start Notebook Entry */}
-        <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl glass-card flex items-center justify-between gap-3 border border-white/90 shadow-sm">
+        <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl liquid-glass-surface flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-manifest-peach via-manifest-pink to-manifest-lavender flex items-center justify-center shrink-0 shadow-sm">
               <PenLine className="w-5 h-5 text-manifest-ink" />
@@ -398,12 +394,14 @@ export const DashboardView: React.FC = () => {
               </p>
             </div>
           </div>
-          <button
+          <motion.button
+            whileTap={IOS_TAP_SPRING}
+            data-testid="dashboard-write-journal-btn"
             onClick={() => openJournalEditor('manifestation', null)}
             className="px-4 py-2 rounded-2xl primary-gradient-btn text-xs font-semibold shrink-0 cursor-pointer"
           >
             Escribir
-          </button>
+          </motion.button>
         </div>
 
         {/* Recent Notebook Entries */}
@@ -434,7 +432,7 @@ export const DashboardView: React.FC = () => {
               onAction={() => openJournalEditor('manifestation', null)}
             />
           ) : (
-            <div className="grid grid-cols-1 gap-2.5 sm:gap-3">
+            <div ref={recentJournalListRef} className="grid grid-cols-1 gap-2.5 sm:gap-3">
               {recentEntries.map((entry) => {
                 const formattedEntryDate = format(new Date(entry.createdAt), "d 'de' MMMM", { locale: es });
                 const isProgress = entry.entryType === 'progress';

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { App as KonstaApp } from 'konsta/react';
 import { useAppStore } from '@/store';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { BottomNavigation } from '@/components/layout/BottomNavigation';
@@ -21,8 +22,6 @@ import { DashboardView } from '@/features/dashboard/DashboardView';
 import { JournalView } from '@/features/journal/JournalView';
 import { GoalsView } from '@/features/goals/GoalsView';
 import { MySpaceView } from '@/features/space/MySpaceView';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
 
 export default function Home() {
   const { isInitialized, init, activeTab } = useAppStore();
@@ -56,14 +55,16 @@ export default function Home() {
 
   if (!isInitialized) {
     return (
-      <div className="min-h-screen aura-bg max-w-lg mx-auto p-4 flex flex-col justify-center">
-        <DashboardSkeleton />
-      </div>
+      <KonstaApp theme="ios" safeAreas className="min-h-screen aura-bg">
+        <div className="min-h-screen max-w-lg mx-auto p-4 flex flex-col justify-center">
+          <DashboardSkeleton />
+        </div>
+      </KonstaApp>
     );
   }
 
   return (
-    <div className="min-h-screen relative flex w-full aura-bg">
+    <KonstaApp theme="ios" safeAreas className="min-h-screen relative w-full aura-bg">
       {/* Toast Feedback (iOS Liquid Glass Capsule) */}
       <ToastContainer />
 
@@ -79,71 +80,78 @@ export default function Home() {
       {/* Success Celebration & Micro-particles Modal */}
       <SuccessCelebrationModal />
 
-      {/* Global Journal Editor Modal */}
+      {/* Global Journal Editor iOS Sheet (Vaul) */}
       <JournalEditorModal />
 
-      {/* Global Affirmation Editor Modal */}
+      {/* Global Affirmation Editor iOS Sheet (Vaul) */}
       <AffirmationEditorModal />
 
-      {/* Global Rampage Set Editor Modal */}
+      {/* Global Rampage Set Editor iOS Sheet (Vaul) */}
       <RampageSetEditorModal />
 
-      {/* Desktop Left Sidebar (>= 1024px) */}
-      <DesktopSidebar onOpenInstallGuide={() => setIsInstallGuideOpen(true)} />
+      {/* Vaul Background Scaling Wrapper */}
+      <div
+        vaul-drawer-wrapper=""
+        data-testid="vaul-background-wrapper"
+        className="min-h-screen relative flex w-full aura-bg"
+      >
+        {/* Desktop Left Sidebar (>= 1024px) */}
+        <DesktopSidebar onOpenInstallGuide={() => setIsInstallGuideOpen(true)} />
 
-      {/* Main Responsive Content Shell */}
-      <div className="flex-1 flex flex-col w-full min-w-0">
-        {/* Mobile Header (< 1024px) */}
-        <AppHeader onOpenInstallGuide={() => setIsInstallGuideOpen(true)} />
+        {/* Main Responsive Content Shell */}
+        <div className="flex-1 flex flex-col w-full min-w-0">
+          {/* Mobile Konsta Large Title Collapsible Navbar (< 1024px) */}
+          <AppHeader onOpenInstallGuide={() => setIsInstallGuideOpen(true)} />
 
-        <main className="flex-1 flex flex-col w-full max-w-full lg:max-w-6xl xl:max-w-7xl mx-auto px-3 sm:px-6 lg:px-10">
-          <ActionableErrorBoundary
-            simulatedError={testSimulatedError ? 'storage' : null}
-            onReset={() => setTestSimulatedError(false)}
-          >
-            {/* Dynamic Content Canvas with View Crossfading */}
-            <div className="flex-1 pt-3 sm:pt-4 lg:pt-6 pb-[calc(env(safe-area-inset-bottom,0px)+7.5rem)] lg:pb-8">
-          <div>
-            {activeTab === 'inicio' && (
-              <div key="inicio">
-                <DashboardView />
+          <main className="flex-1 flex flex-col w-full max-w-full lg:max-w-6xl xl:max-w-7xl mx-auto px-3 sm:px-6 lg:px-10">
+            <ActionableErrorBoundary
+              simulatedError={testSimulatedError ? 'storage' : null}
+              onReset={() => setTestSimulatedError(false)}
+            >
+              {/* Dynamic Content Canvas */}
+              <div className="flex-1 pt-2 sm:pt-3 lg:pt-6 pb-[calc(env(safe-area-inset-bottom,0px)+7.5rem)] lg:pb-8">
+                <div>
+                  {activeTab === 'inicio' && (
+                    <div key="inicio">
+                      <DashboardView />
+                    </div>
+                  )}
+
+                  {activeTab === 'diario' && (
+                    <div key="diario">
+                      <JournalView />
+                    </div>
+                  )}
+
+                  {activeTab === 'objetivos' && (
+                    <div key="objetivos">
+                      <GoalsView />
+                    </div>
+                  )}
+
+                  {activeTab === 'espacio' && (
+                    <div key="espacio">
+                      <MySpaceView />
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
 
-            {activeTab === 'diario' && (
-              <div key="diario">
-                <JournalView />
-              </div>
-            )}
+              {/* Mobile Konsta Translucent Floating Tabbar (< 1024px) */}
+              <BottomNavigation />
 
-            {activeTab === 'objetivos' && (
-              <div key="objetivos">
-                <GoalsView />
-              </div>
-            )}
+              {/* PWA Install Guide Dialog */}
+              <PwaInstallGuide
+                isOpen={isInstallGuideOpen}
+                onClose={() => setIsInstallGuideOpen(false)}
+              />
 
-            {activeTab === 'espacio' && (
-              <div key="espacio">
-                <MySpaceView />
-              </div>
-            )}
-          </div>
+              {/* Interactive Spotlight Onboarding Tour */}
+              <InteractiveTour />
+            </ActionableErrorBoundary>
+          </main>
         </div>
-
-        {/* Mobile Fixed Glass Bottom Navigation (< 1024px) */}
-        <BottomNavigation />
-
-        {/* PWA Install Guide Dialog */}
-        <PwaInstallGuide
-          isOpen={isInstallGuideOpen}
-          onClose={() => setIsInstallGuideOpen(false)}
-        />
-
-        {/* Interactive Spotlight Onboarding Tour */}
-        <InteractiveTour />
-      </ActionableErrorBoundary>
-    </main>
-    </div>
-  </div>
-);
+      </div>
+    </KonstaApp>
+  );
 }

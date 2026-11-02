@@ -13,6 +13,9 @@ import {
 } from 'lucide-react';
 import { UserScope, Affirmation } from '@/types';
 import { motion } from 'framer-motion';
+import { Segmented, SegmentedButton } from 'konsta/react';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
+import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
 import { ManifestationCard } from '@/components/goals/ManifestationCard';
@@ -42,6 +45,7 @@ export const GoalsView: React.FC = () => {
   const pinnedContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
+  const [unpinnedListRef] = useAutoAnimate<HTMLDivElement>({ duration: 240 });
 
   // Split pinned and unpinned manifestations
   const pinnedAffirmations = affirmations.filter((a) => a.pinned);
@@ -124,73 +128,65 @@ export const GoalsView: React.FC = () => {
           </h2>
         </div>
 
-        {/* iOS Segmented Control / Switch + Action */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <div className="flex p-1 rounded-2xl bg-white/75 border border-white shadow-sm backdrop-blur-md">
-            <button
-              type="button"
+        {/* iOS Konsta Segmented Control / Switch + Action */}
+        <div className="flex items-center gap-2 self-start sm:self-auto w-full sm:w-auto justify-between sm:justify-end">
+          <Segmented
+            strong
+            rounded
+            colors={{
+              strongBgIos: `${LIQUID_GLASS_SPECULAR}`,
+            }}
+            className="flex-1 sm:flex-initial sm:min-w-[290px] p-1"
+          >
+            <SegmentedButton
+              strong
+              rounded
+              active={viewMode === 'list'}
               onClick={() => setViewMode('list')}
-              className={`relative px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors duration-200 cursor-pointer ${
-                viewMode === 'list'
-                  ? 'text-manifest-ink'
-                  : 'text-manifest-inkMuted hover:text-manifest-ink'
-              }`}
+              className="text-xs font-semibold py-1.5 px-3 !normal-case text-manifest-ink cursor-pointer"
             >
-              {viewMode === 'list' && (
-                <motion.div
-                  layoutId="manifestationViewMode"
-                  className="absolute inset-0 rounded-xl bg-white shadow-sm border border-white -z-10"
-                  transition={{ type: 'spring', stiffness: 450, damping: 35 }}
-                />
-              )}
-              <span className="flex items-center gap-1.5">
-                <Pin className="w-3.5 h-3.5 text-manifest-auraPurple" />
-                Lista y Fijados
+              <span className="flex items-center justify-center gap-1.5">
+                <Pin className="w-3.5 h-3.5 text-manifest-auraPurple shrink-0" />
+                <span>Mis Fijadas</span>
               </span>
-            </button>
+            </SegmentedButton>
 
-            <button
-              type="button"
+            <SegmentedButton
+              strong
+              rounded
+              active={viewMode === 'rampage'}
               onClick={() => setViewMode('rampage')}
-              className={`relative px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors duration-200 cursor-pointer ${
-                viewMode === 'rampage'
-                  ? 'text-manifest-ink'
-                  : 'text-manifest-inkMuted hover:text-manifest-ink'
-              }`}
+              className="text-xs font-semibold py-1.5 px-3 !normal-case text-manifest-ink cursor-pointer"
             >
-              {viewMode === 'rampage' && (
-                <motion.div
-                  layoutId="manifestationViewMode"
-                  className="absolute inset-0 rounded-xl bg-white shadow-sm border border-white -z-10"
-                  transition={{ type: 'spring', stiffness: 450, damping: 35 }}
-                />
-              )}
-              <span className="flex items-center gap-1.5">
-                <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
-                Sets de Rampage
+              <span className="flex items-center justify-center gap-1.5">
+                <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0" />
+                <span>Sets de Rampage</span>
               </span>
-            </button>
-          </div>
+            </SegmentedButton>
+          </Segmented>
 
           {viewMode === 'rampage' ? (
-            <button
+            <motion.button
               type="button"
+              whileTap={IOS_TAP_SPRING}
               onClick={() => openRampageSetEditor(null)}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer active:scale-95 transition-transform"
+              data-testid="open-rampage-modal-btn"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Nuevo Set</span>
-            </button>
+            </motion.button>
           ) : (
-            <button
+            <motion.button
               type="button"
+              whileTap={IOS_TAP_SPRING}
               onClick={() => openAffirmationEditor(null)}
               data-testid="add-affirmation-top-btn"
-              className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer active:scale-95 transition-transform"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm shrink-0 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Nueva</span>
-            </button>
+            </motion.button>
           )}
         </div>
       </div>
@@ -238,7 +234,7 @@ export const GoalsView: React.FC = () => {
                 Todas tus afirmaciones están fijadas como prioritarias arriba.
               </p>
             ) : (
-              <div className="flex flex-col gap-2.5">
+              <div ref={unpinnedListRef} className="flex flex-col gap-2.5">
                 {unpinnedAffirmations.map((item) => (
                   <ManifestationCard
                     key={item.id}

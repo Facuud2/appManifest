@@ -11,6 +11,8 @@ import {
   Equal,
 } from 'lucide-react';
 import { useTapVsScroll } from '@/hooks/useTapVsScroll';
+import { motion } from 'framer-motion';
+import { IOS_TAP_SPRING } from '@/lib/iosSprings';
 
 interface ManifestationCardProps {
   affirmation: Affirmation;
@@ -110,55 +112,59 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
           onPointerDown={(e) => e.stopPropagation()}
         >
           {/* Pin Button */}
-          <button
+          <motion.button
             type="button"
+            whileTap={IOS_TAP_SPRING}
             onClick={handlePin}
             title={affirmation.pinned ? 'Desfijar manifestación' : 'Fijar manifestación'}
-            className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
+            className={`w-7 h-7 rounded-xl flex items-center justify-center transition-colors cursor-pointer ${
               affirmation.pinned
                 ? 'bg-manifest-lavender/70 text-manifest-auraPurple border border-manifest-auraPurple/30 shadow-xs'
                 : 'bg-white/70 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/80'
             }`}
           >
             <Pin className={`w-3.5 h-3.5 ${affirmation.pinned ? 'fill-manifest-auraPurple' : ''}`} />
-          </button>
+          </motion.button>
 
           {/* Edit Button */}
-          <button
+          <motion.button
             type="button"
+            whileTap={IOS_TAP_SPRING}
             onClick={handleEdit}
             title="Editar manifestación"
-            className="w-7 h-7 rounded-xl flex items-center justify-center bg-white/70 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/80 shadow-xs active:scale-95 transition-all cursor-pointer"
+            className="w-7 h-7 rounded-xl flex items-center justify-center bg-white/70 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/80 shadow-xs transition-colors cursor-pointer"
           >
             <Edit3 className="w-3.5 h-3.5" />
-          </button>
+          </motion.button>
 
           {/* Repeat Counter Button */}
-          <button
+          <motion.button
             type="button"
+            whileTap={IOS_TAP_SPRING}
             onClick={handleRepeat}
             title="Repeticiones"
-            className="h-7 flex items-center gap-1 px-2 rounded-xl bg-white/85 hover:bg-white text-manifest-ink border border-white/90 shadow-xs active:scale-95 transition-all cursor-pointer"
+            className="h-7 flex items-center gap-1 px-2 rounded-xl bg-white/85 hover:bg-white text-manifest-ink border border-white/90 shadow-xs transition-colors cursor-pointer"
           >
             <Flame
               className={`w-3.5 h-3.5 transition-colors ${
                 affirmation.repeatCount > 0 ? 'text-amber-500 fill-amber-400' : 'text-manifest-inkMuted'
               }`}
             />
-            <span className="text-[11px] font-bold font-mono text-manifest-ink">
+            <span className="text-[11px] font-bold tabular-nums text-manifest-ink">
               {affirmation.repeatCount || 0}
             </span>
-          </button>
+          </motion.button>
 
           {/* Delete Button */}
-          <button
+          <motion.button
             type="button"
+            whileTap={IOS_TAP_SPRING}
             onClick={handleDelete}
             title="Eliminar manifestación"
-            className="w-7 h-7 rounded-xl flex items-center justify-center bg-white/70 hover:bg-rose-50 text-manifest-inkMuted hover:text-rose-500 border border-white/80 shadow-xs active:scale-95 transition-all cursor-pointer"
+            className="w-7 h-7 rounded-xl flex items-center justify-center bg-white/70 hover:bg-rose-50 text-manifest-inkMuted hover:text-rose-500 border border-white/80 shadow-xs transition-colors cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          </motion.button>
         </div>
       </div>
 

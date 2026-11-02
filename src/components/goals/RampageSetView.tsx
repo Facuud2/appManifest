@@ -10,21 +10,23 @@ import {
   Edit3,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTapVsScroll } from '@/hooks/useTapVsScroll';
+import { useDrag } from '@use-gesture/react';
+import { IOS_VIEW_SPRING, IOS_TAP_SPRING } from '@/lib/iosSprings';
 
 export const RampageSetView: React.FC = () => {
   const {
     rampageSets,
     incrementRampageAffirmationRepeat,
     openRampageSetEditor,
+    checkAndUnlockMilestones,
   } = useAppStore();
 
   const [activeSetIndex, setActiveSetIndex] = useState(0);
   const [affirmationIndex, setAffirmationIndex] = useState(0);
   const [direction, setDirection] = useState<number>(1);
+  const [dragOffsetX, setDragOffsetX] = useState<number>(0);
 
   const totalSets = rampageSets.length;
-  // Ensure valid set index
   const safeSetIndex = totalSets > 0 ? ((activeSetIndex % totalSets) + totalSets) % totalSets : 0;
   const currentSet = rampageSets[safeSetIndex];
 
@@ -51,59 +53,69 @@ export const RampageSetView: React.FC = () => {
     setAffirmationIndex(0);
   };
 
-  const handleCardTap = () => {
+  const advanceAffirmation = (dir = 1) => {
     if (!currentSet || totalAffirmationsInSet === 0 || !currentAffirmation) return;
 
-    // 1. Increment independent affirmation counter (+1)
     incrementRampageAffirmationRepeat(currentSet.id, currentAffirmation.id);
+    checkAndUnlockMilestones({ suppressModal: true });
 
-    // 2. Set direction forward
-    setDirection(1);
-
-    // 3. Advance to next affirmation in continuous loop
-    setAffirmationIndex((prev) => (prev + 1) % totalAffirmationsInSet);
+    setDirection(dir);
+    setAffirmationIndex((prev) => (prev + dir + totalAffirmationsInSet) % totalAffirmationsInSet);
   };
 
-  const cardTapHandlers = useTapVsScroll({
-    onTap: handleCardTap,
-  });
+  // @use-gesture/react: Rubber-banding horizontal drag + tap detection
+  const bindCardGesture = useDrag(
+    ({ down, movement: [mx], velocity: [vx], direction: [dx], tap }) => {
+      if (tap) {
+        setDragOffsetX(0);
+        advanceAffirmation(1);
+        return;
+      }
+
+      if (down) {
+        // Elastic rubber-banding resistance
+        setDragOffsetX(mx * 0.45);
+      } else {
+        setDragOffsetX(0);
+        if (Math.abs(mx) > 48 || vx > 0.45) {
+          const swipeDir = dx < 0 || mx < 0 ? 1 : -1;
+          advanceAffirmation(swipeDir);
+        }
+      }
+    },
+    {
+      axis: 'x',
+      filterTaps: true,
+      rubberband: true,
+    }
+  );
 
   const slideVariants = {
     enter: (dir: number) => ({
       x: dir > 0 ? 50 : -50,
       opacity: 0,
-      scale: 0.97,
+      scale: 0.96,
       filter: 'blur(3px)',
     }),
     center: {
-      x: 0,
+      x: dragOffsetX,
       opacity: 1,
       scale: 1,
       filter: 'blur(0px)',
-      transition: {
-        type: 'spring' as const,
-        stiffness: 380,
-        damping: 32,
-        mass: 0.8,
-      },
+      transition: IOS_VIEW_SPRING,
     },
     exit: (dir: number) => ({
       x: dir > 0 ? -50 : 50,
       opacity: 0,
-      scale: 0.97,
+      scale: 0.96,
       filter: 'blur(3px)',
-      transition: {
-        type: 'spring' as const,
-        stiffness: 380,
-        damping: 32,
-        mass: 0.8,
-      },
+      transition: IOS_VIEW_SPRING,
     }),
   };
 
   if (!currentSet || totalSets === 0) {
     return (
-      <div className="p-8 rounded-3xl glass-card text-center space-y-3 border border-white/90">
+      <div className="p-8 rounded-3xl liquid-glass-surface text-center space-y-3">
         <Sparkles className="w-8 h-8 text-manifest-auraPurple mx-auto" />
         <h4 className="font-serif text-base font-bold text-manifest-ink">
           Crea tu primer Set de Rampage
@@ -111,12 +123,13 @@ export const RampageSetView: React.FC = () => {
         <p className="text-xs text-manifest-inkMuted max-w-sm mx-auto">
           Un set de rampage es una secuencia rítmica de afirmaciones para repetir en bucle y elevar tu frecuencia.
         </p>
-        <button
+        <motion.button
+          whileTap={IOS_TAP_SPRING}
           onClick={() => openRampageSetEditor(null)}
           className="px-4 py-2 rounded-xl primary-gradient-btn text-xs font-semibold cursor-pointer"
         >
           + Crear Set
-        </button>
+        </motion.button>
       </div>
     );
   }
@@ -124,17 +137,18 @@ export const RampageSetView: React.FC = () => {
   return (
     <div className="space-y-4">
       {/* Set Navigation Bar */}
-      <div className="p-3 sm:p-4 rounded-3xl glass-card border border-white/90 shadow-sm flex items-center justify-between gap-3">
+      <div className="p-3 sm:p-4 rounded-3xl liquid-glass-surface flex items-center justify-between gap-3">
         {/* Set Prev Arrow */}
-        <button
+        <motion.button
           type="button"
+          whileTap={IOS_TAP_SPRING}
           onClick={handlePrevSet}
           disabled={totalSets <= 1}
           title="Set anterior"
-          className="w-8 h-8 rounded-full flex items-center justify-center bg-white/80 hover:bg-white text-manifest-ink disabled:opacity-35 transition-all shadow-sm active:scale-95 cursor-pointer"
+          className="w-8 h-8 rounded-full flex items-center justify-center bg-white/80 hover:bg-white text-manifest-ink disabled:opacity-35 transition-colors shadow-sm cursor-pointer"
         >
           <ChevronLeft className="w-4 h-4" />
-        </button>
+        </motion.button>
 
         {/* Set Title & Dynamic 1/X Indicator */}
         <div className="flex-1 text-center min-w-0 px-2">
@@ -142,7 +156,7 @@ export const RampageSetView: React.FC = () => {
             <h3 className="text-sm sm:text-base font-serif font-bold text-manifest-ink truncate">
               {currentSet.title}
             </h3>
-            <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-manifest-lavender/60 text-manifest-auraPurple shrink-0">
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-manifest-lavender/60 text-manifest-auraPurple shrink-0">
               {safeSetIndex + 1}/{totalSets}
             </span>
           </div>
@@ -153,34 +167,36 @@ export const RampageSetView: React.FC = () => {
 
         {/* Set Next Arrow */}
         <div className="flex items-center gap-1.5 shrink-0">
-          <button
+          <motion.button
             type="button"
+            whileTap={IOS_TAP_SPRING}
             onClick={handleNextSet}
             disabled={totalSets <= 1}
             title="Set siguiente"
-            className="w-8 h-8 rounded-full flex items-center justify-center bg-white/80 hover:bg-white text-manifest-ink disabled:opacity-35 transition-all shadow-sm active:scale-95 cursor-pointer"
+            className="w-8 h-8 rounded-full flex items-center justify-center bg-white/80 hover:bg-white text-manifest-ink disabled:opacity-35 transition-colors shadow-sm cursor-pointer"
           >
             <ChevronRight className="w-4 h-4" />
-          </button>
+          </motion.button>
         </div>
       </div>
 
-      {/* Subheader: Affirmation index and Edit Set (without "Nuevo Set" or "bucle continuo") */}
+      {/* Subheader: Affirmation index and Edit Set */}
       <div className="flex items-center justify-between px-2">
         <span className="text-[11px] font-semibold text-manifest-inkMuted">
           Afirmación {safeAffirmationIndex + 1}
         </span>
-        <button
+        <motion.button
           type="button"
+          whileTap={IOS_TAP_SPRING}
           onClick={() => openRampageSetEditor(currentSet)}
           className="flex items-center gap-1 text-[11px] font-semibold text-manifest-inkMuted hover:text-manifest-ink transition-colors cursor-pointer"
         >
           <Edit3 className="w-3 h-3" />
           <span>Editar Set</span>
-        </button>
+        </motion.button>
       </div>
 
-      {/* Protagonist Affirmation Card with Corner Quotation Marks & Apple Physics */}
+      {/* Protagonist Affirmation Card with Corner Quotation Marks & Apple Spring Physics */}
       <div className="relative overflow-hidden contain-layout w-full min-h-[220px] sm:min-h-[250px] flex items-center justify-center">
         <AnimatePresence mode="popLayout" custom={direction}>
           {currentAffirmation && (
@@ -191,32 +207,30 @@ export const RampageSetView: React.FC = () => {
               initial="enter"
               animate="center"
               exit="exit"
-              {...cardTapHandlers}
-              className="w-full relative p-6 sm:p-9 rounded-3xl sm:rounded-[2rem] glass-card border border-white shadow-liquid cursor-pointer select-none transition-shadow hover:shadow-xl active:scale-[0.985] flex flex-col justify-between min-h-[220px] sm:min-h-[250px] touch-pan-y"
+              whileTap={IOS_TAP_SPRING}
+              {...(bindCardGesture() as any)}
+              data-testid="rampage-next-btn"
+              className="w-full relative p-6 sm:p-9 rounded-3xl sm:rounded-[2rem] liquid-glass-surface shadow-liquid cursor-pointer select-none flex flex-col justify-between min-h-[220px] sm:min-h-[250px] touch-pan-y"
             >
               {/* Corner Decorative Quotation Marks (4 corners) */}
-              {/* Top-Left */}
               <span
                 aria-hidden="true"
                 className="absolute top-3.5 left-4 font-serif text-3xl sm:text-4xl text-manifest-ink/20 select-none pointer-events-none leading-none"
               >
                 “
               </span>
-              {/* Top-Right */}
               <span
                 aria-hidden="true"
                 className="absolute top-3.5 right-4 font-serif text-3xl sm:text-4xl text-manifest-ink/20 select-none pointer-events-none leading-none rotate-180"
               >
                 “
               </span>
-              {/* Bottom-Left */}
               <span
                 aria-hidden="true"
                 className="absolute bottom-3.5 left-4 font-serif text-3xl sm:text-4xl text-manifest-ink/20 select-none pointer-events-none leading-none rotate-180"
               >
                 ”
               </span>
-              {/* Bottom-Right */}
               <span
                 aria-hidden="true"
                 className="absolute bottom-3.5 right-4 font-serif text-3xl sm:text-4xl text-manifest-ink/20 select-none pointer-events-none leading-none"
@@ -227,7 +241,7 @@ export const RampageSetView: React.FC = () => {
               {/* Sub-header inside card: Category & Independent Affirmation Counter */}
               <div className="relative z-10 flex items-center justify-between pb-2">
                 <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-manifest-lavender/50 text-manifest-auraPurple border border-white">
-                  Afirmación #{safeAffirmationIndex + 1}
+                  AFIRMACIÓN #{safeAffirmationIndex + 1}
                 </span>
 
                 {/* Independent Affirmation Repeat Counter */}
@@ -242,7 +256,10 @@ export const RampageSetView: React.FC = () => {
                         : 'text-manifest-inkMuted'
                     }`}
                   />
-                  <span className="text-xs font-bold font-mono text-manifest-ink">
+                  <span
+                    data-testid="rampage-repeat-counter"
+                    className="text-xs font-bold text-manifest-ink"
+                  >
                     {currentAffirmation.repeatCount || 0}
                   </span>
                 </div>

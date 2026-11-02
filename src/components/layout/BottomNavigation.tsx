@@ -1,9 +1,11 @@
 'use client';
 
 import React from 'react';
+import { Tabbar, TabbarLink } from 'konsta/react';
 import { useAppStore, AppTab } from '@/store';
 import { Sparkles, BookOpen, Target, Compass } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { IOS_TAP_SPRING } from '@/lib/iosSprings';
 
 interface NavItem {
   key: AppTab;
@@ -22,47 +24,77 @@ export const BottomNavigation: React.FC = () => {
   const { activeTab, setActiveTab } = useAppStore();
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-0.5 pointer-events-none">
+    <div
+      data-testid="ios-floating-tabbar-wrap"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-3 pb-[max(0.55rem,env(safe-area-inset-bottom))] pt-0.5 pointer-events-none"
+    >
       <div className="max-w-md mx-auto pointer-events-auto">
-        <div className="glass-nav rounded-2xl p-1 flex items-center justify-around border border-white/95 shadow-glass backdrop-blur-2xl bg-white/80">
+        <Tabbar
+          labels
+          icons
+          {...({
+            translucent: true,
+            colors: {
+              bgIos: 'bg-white/65',
+            },
+            bgClassName:
+              'rounded-3xl border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.85),0_12px_36px_-4px_rgba(184,163,248,0.22)] backdrop-blur-2xl',
+            innerClassName: 'px-1.5 py-1 h-14 rounded-3xl overflow-hidden',
+          } as Record<string, unknown>)}
+          className="!relative !bottom-auto !left-auto !right-auto rounded-3xl overflow-hidden"
+        >
           {NAV_ITEMS.map((item) => {
             const isActive = activeTab === item.key;
             const Icon = item.icon;
 
             return (
-              <button
+              <TabbarLink
                 key={item.key}
-                data-tour={`mobile-nav-${item.key}`}
+                active={isActive}
+                component="button"
+                linkProps={{
+                  type: 'button',
+                  'data-tour': `mobile-nav-${item.key}`,
+                  'aria-label': item.label,
+                }}
                 onClick={() => setActiveTab(item.key)}
-                className={`relative flex flex-col items-center justify-center py-1.5 px-2.5 rounded-xl transition-all duration-200 select-none ${
-                  isActive ? 'text-manifest-ink' : 'text-manifest-inkMuted hover:text-manifest-ink'
-                }`}
-                aria-label={item.label}
-              >
-                {isActive && (
-                  <div
-                    className="absolute inset-0 rounded-xl bg-gradient-to-tr from-manifest-pink/40 via-manifest-lavender/50 to-manifest-celeste/40 border border-white/80 shadow-sm transition-opacity duration-200"
-                  />
-                )}
-                <div className="relative z-10 flex flex-col items-center gap-0.5">
-                  <Icon
-                    className={`w-4 h-4 transition-transform duration-200 ${
-                      isActive ? 'scale-110 text-manifest-ink' : 'opacity-70'
+                {...({
+                  colors: {
+                    textIos: 'text-manifest-inkMuted',
+                    textActiveIos: 'text-manifest-ink font-semibold',
+                  },
+                } as Record<string, unknown>)}
+                className="relative rounded-2xl transition-colors select-none cursor-pointer"
+                icon={
+                  <motion.div
+                    whileTap={IOS_TAP_SPRING}
+                    className={`relative px-3 py-1 rounded-xl flex items-center justify-center transition-colors ${
+                      isActive
+                        ? 'bg-gradient-to-tr from-manifest-pink/55 via-manifest-lavender/65 to-manifest-celeste/55 border border-white/80 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9)]'
+                        : ''
                     }`}
-                  />
+                  >
+                    <Icon
+                      className={`w-4 h-4 ${
+                        isActive ? 'text-manifest-ink stroke-[2.3]' : 'text-manifest-inkMuted opacity-80'
+                      }`}
+                    />
+                  </motion.div>
+                }
+                label={
                   <span
-                    className={`text-[9.5px] font-medium tracking-tight ${
-                      isActive ? 'font-semibold text-manifest-ink' : 'opacity-80'
+                    className={`text-[10px] tracking-tight block mt-0.5 ${
+                      isActive ? 'font-semibold text-manifest-ink' : 'font-medium text-manifest-inkMuted'
                     }`}
                   >
                     {item.label}
                   </span>
-                </div>
-              </button>
+                }
+              />
             );
           })}
-        </div>
+        </Tabbar>
       </div>
-    </nav>
+    </div>
   );
 };

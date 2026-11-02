@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { Drawer } from 'vaul';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,7 +10,8 @@ import { useAppStore } from '@/store';
 import { X, Target, Sparkles, Trophy, Mic, Check, AlertCircle } from 'lucide-react';
 import { EntryType, JournalEntry, UserScope } from '@/types';
 import { UserScopeEnum } from '@/schemas';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
 
@@ -54,6 +57,7 @@ export const JournalEditorModal: React.FC = () => {
   const currentContent = watch('content') || '';
 
   const [isVoiceActiveContent, setIsVoiceActiveContent] = useState(false);
+  const [validationContainerRef] = useAutoAnimate<HTMLDivElement>({ duration: 180 });
 
   // Hydrate form whenever modal opens or editing entry changes
   useEffect(() => {
@@ -88,8 +92,6 @@ export const JournalEditorModal: React.FC = () => {
     }
   }, [isJournalEditorOpen, editingJournalEntry, journalEditorInitialMode, activeScope, reset]);
 
-  if (!isJournalEditorOpen) return null;
-
   const onSubmit = (data: JournalFormData) => {
     const trimmedContent = data.content.trim();
 
@@ -122,7 +124,6 @@ export const JournalEditorModal: React.FC = () => {
 
     const tags = editingJournalEntry?.tags || [];
 
-    // Auto-derive clean title from content for DB storage and backwards compatibility
     const firstLine = trimmedContent.split('\n')[0].trim();
     const autoTitle = firstLine.length > 55 ? `${firstLine.slice(0, 52)}...` : firstLine;
 
@@ -162,21 +163,32 @@ export const JournalEditorModal: React.FC = () => {
   };
 
   return (
-    <AnimatePresence>
-      <div
-        onClick={closeJournalEditor}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-manifest-ink/35 backdrop-blur-sm"
-      >
-        <motion.div
-          onClick={(e) => e.stopPropagation()}
-          initial={{ opacity: 0, scale: 0.95, y: 12 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 12 }}
-          transition={{ type: 'spring', stiffness: 380, damping: 32, mass: 0.8 }}
-          className="w-full max-w-lg rounded-3xl glass-card p-5 sm:p-6 border border-white shadow-liquid space-y-4 max-h-[88dvh] overflow-y-auto"
+    <Drawer.Root
+      open={isJournalEditorOpen}
+      onOpenChange={(open) => {
+        if (!open) closeJournalEditor();
+      }}
+      shouldScaleBackground
+    >
+      <Drawer.Portal>
+        <Drawer.Overlay className="fixed inset-0 z-50 bg-manifest-ink/35 backdrop-blur-sm" />
+        <Drawer.Content
+          data-testid="journal-vaul-drawer"
+          className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2.25rem] ${LIQUID_GLASS_SPECULAR} bg-white/85 p-5 sm:p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-liquid outline-none flex flex-col max-h-[92dvh]`}
         >
+          {/* iOS Native Grabber Handle */}
+          <div
+            data-testid="ios-sheet-grabber"
+            className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-manifest-ink/20 mb-3.5 cursor-grab active:cursor-grabbing"
+          />
+
+          <Drawer.Title className="sr-only">{getModalTitle()}</Drawer.Title>
+          <Drawer.Description className="sr-only">
+            Formulario para escribir o editar una entrada en tu diario manifestador
+          </Drawer.Description>
+
           {/* Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-white/70">
+          <div className="flex items-center justify-between pb-3 border-b border-white/70 shrink-0">
             <div className="flex items-center gap-2.5">
               <div
                 className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-sm ${
@@ -210,7 +222,10 @@ export const JournalEditorModal: React.FC = () => {
             </button>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-4 pt-3 overflow-y-auto flex-1 min-h-0 pr-0.5"
+          >
             {/* Espacio / Perfil */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-manifest-ink">
@@ -222,18 +237,19 @@ export const JournalEditorModal: React.FC = () => {
                   { key: 'maia' as UserScope, label: 'Maia' },
                   { key: 'shared' as UserScope, label: '✨ Juntos' },
                 ].map((sc) => (
-                  <button
+                  <motion.button
                     key={sc.key}
                     type="button"
+                    whileTap={IOS_TAP_SPRING}
                     onClick={() => setValue('userId', sc.key, { shouldDirty: true })}
-                    className={`py-1.5 px-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer ${
+                    className={`py-1.5 px-2 rounded-xl text-xs font-semibold transition-colors border cursor-pointer ${
                       selectedUserId === sc.key
                         ? 'bg-manifest-ink text-white border-manifest-ink shadow-sm'
                         : 'bg-white/70 hover:bg-white text-manifest-inkMuted border-white/80'
                     }`}
                   >
                     {sc.label}
-                  </button>
+                  </motion.button>
                 ))}
               </div>
             </div>
@@ -244,11 +260,11 @@ export const JournalEditorModal: React.FC = () => {
                 Tipo de entrada
               </label>
               <div className="grid grid-cols-3 gap-1 sm:gap-2 p-1 rounded-2xl bg-white/60 border border-white/80">
-                {/* 1. Manifestación */}
-                <button
+                <motion.button
                   type="button"
+                  whileTap={IOS_TAP_SPRING}
                   onClick={() => setValue('entryType', 'manifestation', { shouldDirty: true })}
-                  className={`flex items-center justify-center gap-1 py-2 px-1 rounded-xl text-[10.5px] sm:text-xs font-semibold tracking-tight transition-all cursor-pointer whitespace-nowrap ${
+                  className={`flex items-center justify-center gap-1 py-2 px-1 rounded-xl text-[10.5px] sm:text-xs font-semibold tracking-tight transition-colors cursor-pointer whitespace-nowrap ${
                     selectedEntryType === 'manifestation'
                       ? 'bg-gradient-to-tr from-manifest-pink/50 to-manifest-lavender text-manifest-auraPurple border border-manifest-auraPurple/40 shadow-sm'
                       : 'hover:bg-white/80 text-manifest-inkMuted'
@@ -256,13 +272,13 @@ export const JournalEditorModal: React.FC = () => {
                 >
                   <Target className="w-3.5 h-3.5 shrink-0" />
                   <span>Manifestación</span>
-                </button>
+                </motion.button>
 
-                {/* 2. Avance de manifestación (reemplaza Nota de Cuaderno) */}
-                <button
+                <motion.button
                   type="button"
+                  whileTap={IOS_TAP_SPRING}
                   onClick={() => setValue('entryType', 'progress', { shouldDirty: true })}
-                  className={`flex items-center justify-center gap-1 py-2 px-1 rounded-xl text-[10.5px] sm:text-xs font-semibold tracking-tight transition-all cursor-pointer whitespace-nowrap ${
+                  className={`flex items-center justify-center gap-1 py-2 px-1 rounded-xl text-[10.5px] sm:text-xs font-semibold tracking-tight transition-colors cursor-pointer whitespace-nowrap ${
                     selectedEntryType === 'progress'
                       ? 'bg-manifest-mint text-emerald-800 border border-emerald-400/50 shadow-sm'
                       : 'hover:bg-white/80 text-manifest-inkMuted'
@@ -270,13 +286,13 @@ export const JournalEditorModal: React.FC = () => {
                 >
                   <Sparkles className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
                   <span>Avance</span>
-                </button>
+                </motion.button>
 
-                {/* 3. Success Story (tercer botón) */}
-                <button
+                <motion.button
                   type="button"
+                  whileTap={IOS_TAP_SPRING}
                   onClick={() => setValue('entryType', 'reflection', { shouldDirty: true })}
-                  className={`flex items-center justify-center gap-1 py-2 px-1 rounded-xl text-[10.5px] sm:text-xs font-semibold tracking-tight transition-all cursor-pointer whitespace-nowrap ${
+                  className={`flex items-center justify-center gap-1 py-2 px-1 rounded-xl text-[10.5px] sm:text-xs font-semibold tracking-tight transition-colors cursor-pointer whitespace-nowrap ${
                     selectedEntryType === 'reflection'
                       ? 'bg-amber-100/90 text-amber-900 border border-amber-300 shadow-sm'
                       : 'hover:bg-white/80 text-manifest-inkMuted'
@@ -284,12 +300,12 @@ export const JournalEditorModal: React.FC = () => {
                 >
                   <Trophy className="w-3.5 h-3.5 shrink-0 text-amber-600" />
                   <span>Success Story</span>
-                </button>
+                </motion.button>
               </div>
             </div>
 
-            {/* Contenido con AutoResizeTextarea y Micrófono (Describe adaptado dinámicamente) */}
-            <div className="space-y-1.5">
+            {/* Contenido con AutoResizeTextarea y Micrófono */}
+            <div ref={validationContainerRef} className="space-y-1.5">
               <label className="text-xs font-semibold text-manifest-ink block">
                 {selectedEntryType === 'manifestation'
                   ? 'Describe tu manifestación'
@@ -325,6 +341,7 @@ export const JournalEditorModal: React.FC = () => {
                     render={({ field }) => (
                       <AutoResizeTextarea
                         {...field}
+                        data-testid="journal-content-input"
                         minRows={4}
                         placeholder={
                           selectedEntryType === 'manifestation'
@@ -333,7 +350,7 @@ export const JournalEditorModal: React.FC = () => {
                             ? 'Describe qué avance viste, qué sincronía percibiste o qué paso diste...'
                             : 'Describe con gratitud el hecho consumado, cómo se materializó tu manifestación...'
                         }
-                        className={`w-full p-3.5 pr-12 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight leading-relaxed transition-all ${
+                        className={`w-full p-3.5 pr-12 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight leading-relaxed transition-colors ${
                           errors.content
                             ? 'border-rose-400 ring-1 ring-rose-400/50'
                             : currentContent.trim().length > 0
@@ -347,12 +364,12 @@ export const JournalEditorModal: React.FC = () => {
                   {/* Inline Status Icon: Check or Alert */}
                   <div className="absolute right-3 top-3 pointer-events-none">
                     {currentContent.trim().length > 0 && !errors.content && (
-                      <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs animate-in zoom-in duration-200">
+                      <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs">
                         <Check className="w-3 h-3 stroke-[3]" />
                       </div>
                     )}
                     {errors.content && (
-                      <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center shadow-xs animate-in zoom-in duration-200">
+                      <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center shadow-xs">
                         <AlertCircle className="w-3.5 h-3.5 stroke-[2.5]" />
                       </div>
                     )}
@@ -364,7 +381,7 @@ export const JournalEditorModal: React.FC = () => {
                       onClick={() => setIsVoiceActiveContent(true)}
                       title="Dictar contenido con micrófono"
                       aria-label="Dictar contenido con micrófono"
-                      className="w-8 h-8 rounded-xl bg-white/80 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/90 shadow-sm flex items-center justify-center transition-all cursor-pointer"
+                      className="w-8 h-8 rounded-xl bg-white/80 hover:bg-white text-manifest-inkMuted hover:text-manifest-ink border border-white/90 shadow-sm flex items-center justify-center transition-colors cursor-pointer"
                     >
                       <Mic className="w-4 h-4" />
                     </button>
@@ -372,37 +389,33 @@ export const JournalEditorModal: React.FC = () => {
                 </div>
               )}
 
-              {/* Animated Inline Error Message */}
-              <AnimatePresence>
-                {errors.content && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0, y: -4 }}
-                    animate={{ opacity: 1, height: 'auto', y: 0 }}
-                    exit={{ opacity: 0, height: 0, y: -4 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="flex items-center gap-1.5 text-[11px] text-rose-500 font-medium pt-1 pl-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                      <span>{errors.content.message}</span>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {/* Auto-animated Inline Error Message */}
+              {errors.content && (
+                <div
+                  data-testid="journal-content-error"
+                  className="flex items-center gap-1.5 text-[11px] text-rose-500 font-medium pt-1 pl-1"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                  <span>{errors.content.message}</span>
+                </div>
+              )}
             </div>
 
             {/* Footer Buttons */}
             <div className="flex items-center justify-end gap-2 pt-2">
-              <button
+              <motion.button
                 type="button"
+                whileTap={IOS_TAP_SPRING}
                 onClick={closeJournalEditor}
-                className="px-4 py-2.5 rounded-2xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/70 active:scale-95 transition-all cursor-pointer"
+                className="px-4 py-2.5 rounded-2xl text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/70 transition-colors cursor-pointer"
               >
                 Cancelar
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 type="submit"
-                className="px-5 py-2.5 rounded-2xl primary-gradient-btn text-xs font-semibold shadow-sm active:scale-95 transition-transform cursor-pointer"
+                whileTap={IOS_TAP_SPRING}
+                data-testid="submit-journal-btn"
+                className="px-5 py-2.5 rounded-2xl primary-gradient-btn text-xs font-semibold shadow-sm cursor-pointer"
               >
                 {editingJournalEntry
                   ? 'Guardar Cambios'
@@ -411,11 +424,11 @@ export const JournalEditorModal: React.FC = () => {
                   : selectedEntryType === 'progress'
                   ? 'Guardar Avance'
                   : 'Guardar Success Story'}
-              </button>
+              </motion.button>
             </div>
           </form>
-        </motion.div>
-      </div>
-    </AnimatePresence>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.Root>
   );
 };
