@@ -13,7 +13,6 @@ import { motion } from 'framer-motion';
 import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
-import { useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 
 const rampageFormSchema = z
   .object({
@@ -77,8 +76,6 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
   const isOpen = propIsOpen !== undefined ? propIsOpen : isRampageSetEditorOpen;
   const onClose = propOnClose || closeRampageSetEditor;
   const setOrNull = propSetOrNull !== undefined ? propSetOrNull : editingRampageSet;
-
-  const { keyboardHeight, isKeyboardOpen } = useVirtualKeyboard(isOpen);
 
   const {
     control,
@@ -274,7 +271,6 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
-      shouldScaleBackground
       handleOnly
       repositionInputs={false}
     >
@@ -535,12 +531,7 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
             </div>
 
             {/* Fixed Footer Buttons (shrink-0) */}
-            <div
-              className="shrink-0 flex items-center justify-end gap-2 px-5 py-3.5 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-white/80 bg-white/90 backdrop-blur-md z-10 transition-all"
-              style={{
-                paddingBottom: isKeyboardOpen ? `${keyboardHeight + 12}px` : undefined,
-              }}
-            >
+            <div className="shrink-0 flex items-center justify-end gap-2 px-5 py-3.5 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-white/80 bg-white/90 backdrop-blur-md z-10">
               <motion.button
                 type="button"
                 whileTap={IOS_TAP_SPRING}

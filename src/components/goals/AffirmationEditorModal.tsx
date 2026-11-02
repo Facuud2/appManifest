@@ -14,7 +14,6 @@ import { motion } from 'framer-motion';
 import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
-import { useVirtualKeyboard } from '@/hooks/useVirtualKeyboard';
 
 const affirmationFormSchema = z.object({
   text: z.string().min(1, 'Escribe tu manifestación o afirmación consciente'),
@@ -33,8 +32,6 @@ export const AffirmationEditorModal: React.FC = () => {
     showToast,
     checkAndUnlockMilestones,
   } = useAppStore();
-
-  const { keyboardHeight, isKeyboardOpen } = useVirtualKeyboard(isAffirmationEditorOpen);
 
   const {
     control,
@@ -164,7 +161,6 @@ export const AffirmationEditorModal: React.FC = () => {
       onOpenChange={(open) => {
         if (!open) closeAffirmationEditor();
       }}
-      shouldScaleBackground
       handleOnly
       repositionInputs={false}
     >
@@ -214,9 +210,6 @@ export const AffirmationEditorModal: React.FC = () => {
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-4 pt-3 overflow-y-auto flex-1 min-h-0 pr-0.5"
-            style={{
-              paddingBottom: isKeyboardOpen ? `${keyboardHeight + 20}px` : undefined,
-            }}
           >
             {/* Espacio / Perfil */}
             <div className="space-y-1.5">

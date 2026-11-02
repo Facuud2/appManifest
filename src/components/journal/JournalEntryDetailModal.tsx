@@ -89,7 +89,6 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
           onClose();
         }
       }}
-      shouldScaleBackground
       handleOnly
     >
       <Drawer.Portal>
