@@ -9,6 +9,9 @@ import { useState, useEffect } from 'react';
 export function useIsDesktop(breakpoint = 1024): boolean {
   const [isDesktop, setIsDesktop] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
+      if (window.matchMedia) {
+        return window.matchMedia(`(min-width: ${breakpoint}px)`).matches;
+      }
       return window.innerWidth >= breakpoint;
     }
     return false;
@@ -19,7 +22,7 @@ export function useIsDesktop(breakpoint = 1024): boolean {
 
     const mql = window.matchMedia(`(min-width: ${breakpoint}px)`);
     const update = () => {
-      setIsDesktop(window.innerWidth >= breakpoint);
+      setIsDesktop(mql.matches);
     };
 
     update();
