@@ -122,7 +122,7 @@ export const DashboardView: React.FC = () => {
   };
 
   return (
-    <div className="w-full space-y-5 pt-1">
+    <div className="w-full space-y-4 pt-0.5">
       {/* Saludo iOS (Desktop: en mobile está en MobileTopHeader) */}
       <motion.div
         key={`${greeting}-${displayName}`}
@@ -171,20 +171,20 @@ export const DashboardView: React.FC = () => {
             transition={IOS_LAYOUT_SPRING}
             className="lg:col-span-8 space-y-6"
           >
-            {/* A. HERO SPOTLIGHT CARD con Estabilidad Dimensional (220-260px) y Tipografía Adaptativa */}
+            {/* A. HERO SPOTLIGHT CARD con Estabilidad Dimensional y Tipografía Proporcional */}
             {spotlightAffirmation && (
               <motion.div
                 layout="position"
                 transition={IOS_LAYOUT_SPRING}
                 onClick={handleAdvanceSpotlight}
                 data-testid="home-spotlight-card"
-                className="relative rounded-3xl bg-gradient-to-br from-[#FAF3F8] via-[#F6EEFA] to-[#F0E8F9] border border-purple-200/80 shadow-[6px_6px_18px_rgba(215,200,240,0.45),-6px_-6px_18px_rgba(255,255,255,0.95)] cursor-pointer select-none group min-h-[220px] max-h-[260px] h-[240px] flex flex-col justify-between p-6 overflow-hidden"
+                className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#FAF3F8] via-[#F6EEFA] to-[#F0E8F9] border border-purple-200/80 shadow-[6px_6px_18px_rgba(215,200,240,0.45),-6px_-6px_18px_rgba(255,255,255,0.95)] cursor-pointer select-none group min-h-[175px] sm:min-h-[220px] max-h-[220px] sm:max-h-[260px] h-[185px] sm:h-[240px] flex flex-col justify-between p-4 sm:p-6 overflow-hidden"
               >
                 {/* Corner decorative quotation marks */}
-                <span className="absolute top-2 left-4 font-serif text-3xl sm:text-4xl text-purple-400/40 select-none pointer-events-none leading-none z-0">
+                <span className="absolute top-1.5 left-3 sm:top-2 sm:left-4 font-serif text-2xl sm:text-4xl text-purple-400/40 select-none pointer-events-none leading-none z-0">
                   “
                 </span>
-                <span className="absolute bottom-2 right-4 font-serif text-3xl sm:text-4xl text-pink-400/40 select-none pointer-events-none leading-none z-0">
+                <span className="absolute bottom-1.5 right-3 sm:bottom-2 sm:right-4 font-serif text-2xl sm:text-4xl text-pink-400/40 select-none pointer-events-none leading-none z-0">
                   ”
                 </span>
 
@@ -196,9 +196,9 @@ export const DashboardView: React.FC = () => {
 
                 {/* Card Header: Pastel pill counter + Edit button */}
                 <div className="flex items-center justify-between gap-2 relative z-10">
-                  <div className="flex items-center gap-1.5 pl-2">
+                  <div className="flex items-center gap-1.5 pl-1 sm:pl-2">
                     {displayAffirmations.length > 1 && (
-                      <span className="text-[11px] font-sans font-bold text-purple-900 bg-purple-100/90 px-3 py-1 rounded-full border border-purple-300/70 tabular-nums shadow-neu-sm">
+                      <span className="text-[10px] sm:text-[11px] font-sans font-bold text-purple-900 bg-purple-100/90 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full border border-purple-300/70 tabular-nums shadow-neu-sm">
                         {(spotlightIndex % displayAffirmations.length) + 1} / {displayAffirmations.length}
                       </span>
                     )}
@@ -211,9 +211,9 @@ export const DashboardView: React.FC = () => {
                       openAffirmationEditor(spotlightAffirmation);
                     }}
                     title="Editar decreto"
-                    className="p-2 rounded-full bg-white/80 hover:bg-white text-purple-700 hover:text-purple-900 border border-purple-200/70 shadow-neu-sm transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+                    className="p-1.5 sm:p-2 rounded-full bg-white/80 hover:bg-white text-purple-700 hover:text-purple-900 border border-purple-200/70 shadow-neu-sm transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
                   >
-                    <Edit3 className="w-3.5 h-3.5" />
+                    <Edit3 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                   </button>
                 </div>
 
@@ -231,10 +231,10 @@ export const DashboardView: React.FC = () => {
                       <p
                         className={`text-slate-800 font-medium tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,0.85)] ${
                           spotlightAffirmation.text.length < 60
-                            ? 'text-2xl font-serif leading-snug text-center my-auto'
+                            ? 'text-base sm:text-2xl font-serif leading-snug text-center my-auto'
                             : spotlightAffirmation.text.length <= 160
-                            ? 'text-lg leading-relaxed text-center my-auto'
-                            : 'text-[15px] leading-relaxed text-center my-auto overflow-y-auto no-scrollbar max-h-[140px]'
+                            ? 'text-[14px] sm:text-lg leading-relaxed text-center my-auto'
+                            : 'text-[12.5px] sm:text-[15px] leading-relaxed text-center my-auto overflow-y-auto no-scrollbar max-h-[105px] sm:max-h-[140px]'
                         }`}
                       >
                         “{spotlightAffirmation.text}”
@@ -244,7 +244,7 @@ export const DashboardView: React.FC = () => {
                 </div>
 
                 {/* Subtle indicator footer */}
-                <div className="flex items-center justify-between text-[10px] text-purple-600/70 font-sans relative z-10 px-1">
+                <div className="flex items-center justify-between text-[9px] sm:text-[10px] text-purple-600/70 font-sans relative z-10 px-1">
                   <span>Toca para avanzar ({((spotlightIndex % displayAffirmations.length) + 1)}/{displayAffirmations.length})</span>
                   <span>✧</span>
                 </div>
@@ -255,10 +255,10 @@ export const DashboardView: React.FC = () => {
             <motion.section
               layout="position"
               transition={IOS_LAYOUT_SPRING}
-              className="space-y-3 pt-1"
+              className="space-y-2.5 pt-0.5"
             >
               <div className="flex items-center justify-between px-1">
-                <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
+                <h3 className="text-[11px] sm:text-xs font-sans font-bold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-manifest-brass" />
                   <span>Últimas Afirmaciones</span>
                 </h3>
@@ -266,9 +266,9 @@ export const DashboardView: React.FC = () => {
                 <motion.button
                   whileTap={IOS_TAP_SPRING}
                   onClick={() => openAffirmationEditor(null)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-full primary-gradient-btn text-xs font-serif tracking-wide shadow-sm shrink-0 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+                  className="flex items-center gap-1 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full primary-gradient-btn text-[11px] sm:text-xs font-serif tracking-wide shadow-sm shrink-0 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                   <span>Nuevo Decreto</span>
                 </motion.button>
               </div>
@@ -281,16 +281,16 @@ export const DashboardView: React.FC = () => {
                   onAction={() => openAffirmationEditor(null)}
                 />
               ) : (
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   {latestTwoAffirmations.map((aff) => (
                     <motion.div
                       key={aff.id}
                       layout="position"
                       transition={IOS_LAYOUT_SPRING}
                       onClick={() => openAffirmationEditor(aff)}
-                      className="p-4 rounded-2xl glass-card border border-manifest-glassBorder hover:border-manifest-glassBorderFocus transition-all cursor-pointer shadow-neu-sm flex items-start justify-between gap-3 group"
+                      className="p-3 sm:p-4 rounded-xl sm:rounded-2xl glass-card border border-manifest-glassBorder hover:border-manifest-glassBorderFocus transition-all cursor-pointer shadow-neu-sm flex items-start justify-between gap-2.5 group"
                     >
-                      <p className="font-serif text-sm sm:text-base text-manifest-ink leading-relaxed group-hover:text-manifest-brass transition-colors flex-1 select-text line-clamp-2">
+                      <p className="font-serif text-[13px] sm:text-base text-manifest-ink leading-relaxed group-hover:text-manifest-brass transition-colors flex-1 select-text line-clamp-2">
                         “{aff.text}”
                       </p>
                       <button
@@ -300,9 +300,9 @@ export const DashboardView: React.FC = () => {
                           openAffirmationEditor(aff);
                         }}
                         title="Editar afirmación"
-                        className="p-2 rounded-xl bg-white hover:bg-slate-100 text-slate-500 hover:text-slate-800 border border-slate-200/90 shadow-xs shrink-0 transition-colors"
+                        className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-500 hover:text-slate-800 border border-slate-200/90 shadow-xs shrink-0 transition-colors"
                       >
-                        <Edit3 className="w-3.5 h-3.5" />
+                        <Edit3 className="w-3 h-3" />
                       </button>
                     </motion.div>
                   ))}
@@ -313,10 +313,10 @@ export const DashboardView: React.FC = () => {
                     transition={IOS_LAYOUT_SPRING}
                     whileTap={IOS_TAP_SPRING}
                     onClick={() => setActiveTab('objetivos')}
-                    className="w-full py-3 px-4 rounded-2xl glass-card border border-manifest-glassBorder text-xs sm:text-sm font-serif text-manifest-ink flex items-center justify-center gap-2 hover:bg-manifest-glassControlHover active:scale-98 transition-all cursor-pointer shadow-neu-sm"
+                    className="w-full py-2.5 px-3 rounded-xl sm:rounded-2xl glass-card border border-manifest-glassBorder text-xs sm:text-sm font-serif text-manifest-ink flex items-center justify-center gap-1.5 hover:bg-manifest-glassControlHover active:scale-98 transition-all cursor-pointer shadow-neu-sm"
                   >
                     <span>Ver todas las afirmaciones</span>
-                    <ArrowRight className="w-4 h-4 text-manifest-brass" />
+                    <ArrowRight className="w-3.5 h-3.5 text-manifest-brass" />
                   </motion.button>
                 </div>
               )}
@@ -331,10 +331,10 @@ export const DashboardView: React.FC = () => {
           <motion.section
             layout="position"
             transition={IOS_LAYOUT_SPRING}
-            className="space-y-3"
+            className="space-y-2.5"
           >
             <div className="flex items-center justify-between px-1">
-              <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
+              <h3 className="text-[11px] sm:text-xs font-sans font-bold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
                 <BookOpen className="w-3.5 h-3.5 text-manifest-brass" />
                 <span>Grimorio & Diario</span>
               </h3>
@@ -343,7 +343,7 @@ export const DashboardView: React.FC = () => {
                 {journalEntries.length > 0 && (
                   <button
                     onClick={() => setActiveTab('diario')}
-                    className="text-xs font-sans text-manifest-inkMuted hover:text-manifest-brass transition-colors flex items-center gap-0.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none rounded"
+                    className="text-[11px] sm:text-xs font-sans text-manifest-inkMuted hover:text-manifest-brass transition-colors flex items-center gap-0.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none rounded"
                   >
                     <span>Ver todas</span>
                     <ArrowRight className="w-3 h-3" />
@@ -353,7 +353,7 @@ export const DashboardView: React.FC = () => {
                   whileTap={IOS_TAP_SPRING}
                   data-testid="dashboard-write-journal-btn"
                   onClick={() => openJournalEditor('manifestation', null)}
-                  className="flex items-center gap-1 px-3 py-1 rounded-full primary-gradient-btn text-xs font-sans font-semibold tracking-wide shadow-sm shrink-0 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+                  className="flex items-center gap-1 px-2.5 py-1 sm:px-3 sm:py-1 rounded-full primary-gradient-btn text-[11px] sm:text-xs font-sans font-semibold tracking-wide shadow-sm shrink-0 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
                 >
                   <PenLine className="w-3 h-3" />
                   <span>Escribir</span>
@@ -371,7 +371,7 @@ export const DashboardView: React.FC = () => {
                 onAction={() => openJournalEditor('manifestation', null)}
               />
             ) : (
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 {recentEntries.map((entry) => {
                   const formattedEntryDate = format(new Date(entry.createdAt), "d 'de' MMMM", { locale: es });
                   const isProgress = entry.entryType === 'progress';
@@ -388,7 +388,7 @@ export const DashboardView: React.FC = () => {
                       transition={IOS_LAYOUT_SPRING}
                       onClick={() => setSelectedJournalEntryForView(entry)}
                       data-testid={`journal-card-${entry.id}`}
-                      className={`p-4 rounded-2xl tarot-card-border glass-card-interactive cursor-pointer space-y-2 select-none ${
+                      className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl tarot-card-border glass-card-interactive cursor-pointer space-y-1.5 sm:space-y-2 select-none ${
                         isProgress
                           ? 'border-l-[3.5px] border-l-emerald-500/70'
                           : isManifestation
@@ -399,7 +399,7 @@ export const DashboardView: React.FC = () => {
                       <div className="flex items-center justify-between gap-1">
                         <div className="flex items-center gap-1.5 min-w-0">
                           <span
-                            className={`inline-flex items-center gap-1 text-[9.5px] font-sans font-bold uppercase tracking-wider px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 shadow-neu-sm ${
+                            className={`inline-flex items-center gap-1 text-[9px] font-sans font-bold uppercase tracking-wider px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 shadow-neu-sm ${
                               isProgress
                                 ? 'bg-emerald-100/80 text-emerald-800 border border-emerald-300/60'
                                 : isManifestation
@@ -424,7 +424,7 @@ export const DashboardView: React.FC = () => {
                               </>
                             )}
                           </span>
-                          <span className="text-[10px] font-sans text-manifest-inkMuted whitespace-nowrap shrink-0">
+                          <span className="text-[9.5px] sm:text-[10px] font-sans text-manifest-inkMuted whitespace-nowrap shrink-0">
                             {formattedEntryDate}
                           </span>
                         </div>
@@ -438,7 +438,7 @@ export const DashboardView: React.FC = () => {
                             }}
                             title="Editar entrada"
                             data-testid={`edit-journal-card-${entry.id}`}
-                            className="w-6.5 h-6.5 rounded-lg flex items-center justify-center bg-manifest-glassControl hover:bg-manifest-glassControlHover text-manifest-inkMuted hover:text-manifest-ink border border-manifest-glassBorder active:scale-95 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+                            className="w-6 h-6 rounded-md flex items-center justify-center bg-manifest-glassControl hover:bg-manifest-glassControlHover text-manifest-inkMuted hover:text-manifest-ink border border-manifest-glassBorder active:scale-95 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
                           >
                             <Edit3 className="w-3 h-3" />
                           </button>
@@ -450,7 +450,7 @@ export const DashboardView: React.FC = () => {
                             }}
                             title="Eliminar entrada"
                             data-testid={`delete-journal-card-${entry.id}`}
-                            className="w-6.5 h-6.5 rounded-lg flex items-center justify-center bg-manifest-glassControl hover:bg-rose-100/80 text-manifest-inkMuted hover:text-rose-600 border border-manifest-glassBorder active:scale-95 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:outline-none"
+                            className="w-6 h-6 rounded-md flex items-center justify-center bg-manifest-glassControl hover:bg-rose-100/80 text-manifest-inkMuted hover:text-rose-600 border border-manifest-glassBorder active:scale-95 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:outline-none"
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
@@ -468,7 +468,7 @@ export const DashboardView: React.FC = () => {
                             </p>
                           </div>
                         ) : (
-                          <p className="text-xs sm:text-[13px] font-serif text-manifest-ink leading-snug line-clamp-2">
+                          <p className="text-[11.5px] sm:text-[13px] font-serif text-manifest-ink leading-snug line-clamp-2">
                             “{entry.content}”
                           </p>
                         )}

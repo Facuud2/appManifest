@@ -110,7 +110,7 @@ export default function Home() {
               onReset={() => setTestSimulatedError(false)}
             >
               {/* Dynamic Content Canvas with Smooth Micro-Transition */}
-              <div className="flex-1 pt-2 sm:pt-3 lg:pt-6 pb-[calc(env(safe-area-inset-bottom,0px)+7.5rem)] lg:pb-8">
+              <div className="flex-1 pt-1.5 sm:pt-3 lg:pt-6 pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] lg:pb-8">
                 <motion.div
                   key={activeTab}
                   initial={{ opacity: 0, y: 6 }}

@@ -72,106 +72,106 @@ export const TrackingView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Overview Metric Cards (Bento Style, Anti-Slop, Witchy Refined) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="p-3.5 sm:p-4 rounded-2xl tarot-card-border glass-card border border-purple-400/15 shadow-sm space-y-1">
-          <div className="w-7 h-7 rounded-lg bg-purple-100/80 border border-purple-300/60 flex items-center justify-center shadow-neu-sm">
-            <CheckCircle2 className="w-3.5 h-3.5 text-purple-700" />
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <div className="p-2 sm:p-4 rounded-xl sm:rounded-2xl tarot-card-border glass-card border border-purple-400/15 shadow-sm space-y-0.5 sm:space-y-1">
+          <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md sm:rounded-lg bg-purple-100/80 border border-purple-300/60 flex items-center justify-center shadow-neu-sm">
+            <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-purple-700" />
           </div>
-          <span className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink block pt-1">
+          <span className="text-base sm:text-2xl font-serif font-bold text-manifest-ink block pt-0.5 sm:pt-1">
             {affirmationsCount}
           </span>
-          <p className="text-[11px] text-slate-600 font-medium">
+          <p className="text-[9.5px] sm:text-[11px] text-slate-600 font-medium leading-tight line-clamp-2">
             Decretos consagrados
           </p>
         </div>
 
-        <div className="p-3.5 sm:p-4 rounded-2xl tarot-card-border glass-card border border-purple-400/15 shadow-sm space-y-1">
-          <div className="w-7 h-7 rounded-lg bg-emerald-100/80 border border-emerald-300/60 flex items-center justify-center shadow-neu-sm">
-            <Feather className="w-3.5 h-3.5 text-emerald-700" />
+        <div className="p-2 sm:p-4 rounded-xl sm:rounded-2xl tarot-card-border glass-card border border-purple-400/15 shadow-sm space-y-0.5 sm:space-y-1">
+          <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md sm:rounded-lg bg-emerald-100/80 border border-emerald-300/60 flex items-center justify-center shadow-neu-sm">
+            <Feather className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-700" />
           </div>
-          <span className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink block pt-1">
+          <span className="text-base sm:text-2xl font-serif font-bold text-manifest-ink block pt-0.5 sm:pt-1">
             {journalEntries.length}
           </span>
-          <p className="text-[11px] text-slate-600 font-medium">
-            Entradas en el grimorio
+          <p className="text-[9.5px] sm:text-[11px] text-slate-600 font-medium leading-tight line-clamp-2">
+            Entradas grimorio
           </p>
         </div>
 
-        <div className="p-3.5 sm:p-4 rounded-2xl tarot-card-border glass-card border border-manifest-glassBorder shadow-sm space-y-1">
-          <div className="w-7 h-7 rounded-lg bg-manifest-glassControl border border-manifest-glassBorder flex items-center justify-center">
-            <Sparkles className="w-3.5 h-3.5 text-manifest-auraPurple" />
+        <div className="p-2 sm:p-4 rounded-xl sm:rounded-2xl tarot-card-border glass-card border border-manifest-glassBorder shadow-sm space-y-0.5 sm:space-y-1">
+          <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md sm:rounded-lg bg-manifest-glassControl border border-manifest-glassBorder flex items-center justify-center">
+            <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-manifest-auraPurple" />
           </div>
-          <span className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink block pt-1">
+          <span className="text-base sm:text-2xl font-serif font-bold text-manifest-ink block pt-0.5 sm:pt-1">
             {settings.totalReleases}
           </span>
-          <p className="text-[11px] text-slate-600 font-medium">
-            Cargas transmutadas
+          <p className="text-[9.5px] sm:text-[11px] text-slate-600 font-medium leading-tight line-clamp-2">
+            Transmutadas
           </p>
         </div>
       </div>
 
       {/* Gentle Milestones & Badges */}
-      <div className="space-y-3">
+      <div className="space-y-2.5 sm:space-y-3">
         <div className="flex items-center justify-between px-1">
-          <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
-            <Award className="w-4 h-4 text-manifest-auraPurple" />
+          <h3 className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
+            <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-manifest-auraPurple" />
             Hitos de Conexión Sagrada ({unlockedCount}/{milestones.length})
           </h3>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
           {milestones.map((milestone) => (
             <div
               key={milestone.id}
-              className={`p-3.5 sm:p-4 rounded-2xl border flex items-center gap-3 transition-colors ${
+              className={`p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border flex items-center gap-2.5 sm:gap-3 transition-colors ${
                 milestone.unlocked
                   ? 'glass-card border-manifest-glassBorder shadow-sm'
                   : 'bg-manifest-glassControl/50 border-manifest-glassBorder'
               }`}
             >
               <div
-                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 ${
                   milestone.unlocked
                     ? 'bg-manifest-glassControl border border-manifest-glassBorderFocus text-manifest-auraPurple shadow-xs'
                     : 'bg-manifest-glassControl text-manifest-inkMuted border border-manifest-glassBorder'
                 }`}
               >
                 {milestone.category === 'writing' ? (
-                  <Feather className="w-4 h-4" />
+                  <Feather className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 ) : milestone.category === 'action' ? (
-                  <Target className="w-4 h-4" />
+                  <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 ) : milestone.category === 'streak' ? (
-                  <Sun className="w-4 h-4" />
+                  <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 ) : (
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 )}
               </div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-xs font-bold text-manifest-ink">
+                <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="text-xs font-bold text-manifest-ink truncate">
                       {milestone.title}
                     </h4>
                     {milestone.unlocked ? (
-                      <span className="text-[9px] uppercase font-semibold px-2 py-0.5 rounded-full bg-emerald-100/80 border border-emerald-300/60 text-emerald-800 shadow-neu-sm">
+                      <span className="text-[8.5px] sm:text-[9px] uppercase font-semibold px-1.5 py-0.5 rounded-full bg-emerald-100/80 border border-emerald-300/60 text-emerald-800 shadow-neu-sm">
                         Conseguido
                       </span>
                     ) : milestone.progress ? (
-                      <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-purple-100/80 text-purple-800 border border-purple-300/60 shadow-neu-sm">
+                      <span className="text-[8.5px] sm:text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-100/80 text-purple-800 border border-purple-300/60 shadow-neu-sm">
                         {milestone.progress.current}/{milestone.progress.target}
                       </span>
                     ) : (
-                      <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-manifest-glassControl text-manifest-inkMuted border border-manifest-glassBorder">
+                      <span className="text-[8.5px] sm:text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-manifest-glassControl text-manifest-inkMuted border border-manifest-glassBorder">
                         Por desbloquear
                       </span>
                     )}
                   </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100/80 text-purple-800 border border-purple-300/60 shadow-neu-sm">
+                  <span className="text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-purple-100/80 text-purple-800 border border-purple-300/60 shadow-neu-sm">
                     +{milestone.rewardFragments} Éter
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-normal">
+                <p className="text-[10px] sm:text-[11px] text-slate-600 mt-0.5 leading-snug font-normal line-clamp-2">
                   {milestone.description}
                 </p>
               </div>

@@ -66,14 +66,14 @@ export const MobileTopHeader: React.FC = () => {
   return (
     <header
       data-testid="mobile-top-header"
-      className="lg:hidden sticky top-0 z-40 w-full bg-white/85 backdrop-blur-2xl border-b border-purple-100/80 px-4 pt-2.5 pb-2 transition-all shadow-[0_2px_16px_rgba(100,70,160,0.05)] space-y-2 select-none"
+      className="lg:hidden sticky top-0 z-40 w-full bg-white/85 backdrop-blur-2xl border-b border-purple-100/80 px-3.5 pt-2 pb-1.5 transition-all shadow-[0_2px_16px_rgba(100,70,160,0.05)] space-y-1.5 select-none"
     >
       {/* 1. Fila Principal: Título Editorial a la izquierda, Acción rápida contextual a la derecha */}
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h1
             data-testid="mobile-header-title"
-            className="text-lg font-serif font-bold text-slate-900 tracking-tight truncate leading-snug"
+            className="text-[16px] sm:text-lg font-serif font-bold text-slate-900 tracking-tight truncate leading-snug"
           >
             {getHeaderTitle()}
           </h1>
@@ -86,9 +86,9 @@ export const MobileTopHeader: React.FC = () => {
               type="button"
               whileTap={IOS_TAP_SPRING}
               onClick={() => openAffirmationEditor(null)}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full primary-gradient-btn text-xs font-serif tracking-wide shadow-xs cursor-pointer active:scale-95 transition-all"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full primary-gradient-btn text-[11px] font-serif tracking-wide shadow-xs cursor-pointer active:scale-95 transition-all"
             >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <Plus className="w-3 h-3 stroke-[2.5]" />
               <span>+ Decreto</span>
             </motion.button>
           )}
@@ -99,9 +99,9 @@ export const MobileTopHeader: React.FC = () => {
               whileTap={IOS_TAP_SPRING}
               data-testid="mobile-header-action-decreto"
               onClick={() => openAffirmationEditor(null)}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full primary-gradient-btn text-xs font-serif tracking-wide shadow-xs cursor-pointer active:scale-95 transition-all"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full primary-gradient-btn text-[11px] font-serif tracking-wide shadow-xs cursor-pointer active:scale-95 transition-all"
             >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <Plus className="w-3 h-3 stroke-[2.5]" />
               <span>+ Decreto</span>
             </motion.button>
           )}
@@ -112,9 +112,9 @@ export const MobileTopHeader: React.FC = () => {
               whileTap={IOS_TAP_SPRING}
               data-testid="mobile-header-action-escribir"
               onClick={() => openJournalEditor('manifestation', null)}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full primary-gradient-btn text-xs font-serif tracking-wide shadow-xs cursor-pointer active:scale-95 transition-all"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full primary-gradient-btn text-[11px] font-serif tracking-wide shadow-xs cursor-pointer active:scale-95 transition-all"
             >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <Plus className="w-3 h-3 stroke-[2.5]" />
               <span>+ Escribir</span>
             </motion.button>
           )}
@@ -126,7 +126,7 @@ export const MobileTopHeader: React.FC = () => {
         <div
           role="tablist"
           aria-label="Selector de Espacio"
-          className="relative w-full max-w-[320px] mx-auto rounded-full p-0.5 bg-purple-50/70 border border-purple-100/90 shadow-inner flex items-center justify-between"
+          className="relative w-full max-w-[290px] mx-auto rounded-full p-0.5 bg-purple-50/70 border border-purple-100/90 shadow-inner flex items-center justify-between"
         >
           {SCOPES.map((scope) => {
             const isActive = activeScope === scope.key;
@@ -139,7 +139,7 @@ export const MobileTopHeader: React.FC = () => {
                 type="button"
                 aria-selected={isActive}
                 onClick={() => setActiveScope(scope.key)}
-                className={`relative z-10 flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-full font-sans text-xs transition-colors duration-150 select-none cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-manifest-auraPurple ${
+                className={`relative z-10 flex-1 flex items-center justify-center gap-1 py-0.5 px-2 rounded-full font-sans text-[11px] sm:text-xs transition-colors duration-150 select-none cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-manifest-auraPurple ${
                   isActive ? `${scope.activeColor} font-bold` : 'text-slate-500 hover:text-slate-800 font-medium'
                 }`}
               >
@@ -150,7 +150,7 @@ export const MobileTopHeader: React.FC = () => {
                     transition={{ type: 'spring', stiffness: 450, damping: 32 }}
                   />
                 )}
-                <Icon className={`w-3.5 h-3.5 shrink-0 transition-transform ${isActive ? 'scale-105' : ''}`} />
+                <Icon className={`w-3 h-3 shrink-0 transition-transform ${isActive ? 'scale-105' : ''}`} />
                 <span className="tracking-tight whitespace-nowrap">{scope.label}</span>
               </button>
             );

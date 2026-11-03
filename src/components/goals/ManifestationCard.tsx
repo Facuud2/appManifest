@@ -90,7 +90,7 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
       whileTap={{ scale: 0.992 }}
       onClick={() => handleRepeat()}
       data-testid={`manifestation-card-${affirmation.id}`}
-      className={`group relative w-full p-4 sm:p-5 rounded-2xl sm:rounded-3xl cursor-pointer select-none ${
+      className={`group relative w-full p-3.5 sm:p-5 rounded-xl sm:rounded-3xl cursor-pointer select-none ${
         showMenu ? 'z-30' : 'z-0'
       } ${
         isDragging
@@ -99,8 +99,8 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
       }`}
     >
       {/* Corner Tarot Accents */}
-      <span aria-hidden="true" className="absolute top-2.5 left-3 text-[10px] text-manifest-brass/35 select-none pointer-events-none group-hover:text-manifest-brass transition-colors">✦</span>
-      <span aria-hidden="true" className="absolute top-2.5 right-3 text-[10px] text-manifest-brass/35 select-none pointer-events-none group-hover:text-manifest-brass transition-colors">✦</span>
+      <span aria-hidden="true" className="absolute top-2 left-2.5 text-[9px] sm:text-[10px] text-manifest-brass/35 select-none pointer-events-none group-hover:text-manifest-brass transition-colors">✦</span>
+      <span aria-hidden="true" className="absolute top-2 right-2.5 text-[9px] sm:text-[10px] text-manifest-brass/35 select-none pointer-events-none group-hover:text-manifest-brass transition-colors">✦</span>
 
       {/* Energy pulse on tap */}
       <AnimatePresence>
@@ -110,14 +110,14 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
             animate={{ opacity: 0, scale: 1.12 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.45, ease: 'easeOut' }}
-            className="absolute inset-0 bg-gradient-to-r from-manifest-auraPurple/20 via-manifest-brass/25 to-manifest-auraPurple/20 pointer-events-none rounded-3xl"
+            className="absolute inset-0 bg-gradient-to-r from-manifest-auraPurple/20 via-manifest-brass/25 to-manifest-auraPurple/20 pointer-events-none rounded-2xl sm:rounded-3xl"
           />
         )}
       </AnimatePresence>
 
       {/* Card Header Bar */}
-      <div className={`flex items-center justify-between gap-2 mb-2 relative ${showMenu ? 'z-30' : 'z-10'}`}>
-        <div className="flex items-center gap-2">
+      <div className={`flex items-center justify-between gap-1.5 mb-1 sm:mb-2 relative ${showMenu ? 'z-30' : 'z-10'}`}>
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {isPinnedMode && (
             <button
               type="button"
@@ -127,15 +127,15 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
                 if (onDragHandlePointerDown) onDragHandlePointerDown(e);
               }}
               title="Arrastrar para reordenar"
-              className="touch-none cursor-grab active:cursor-grabbing p-1 -ml-1 rounded-lg text-manifest-inkMuted/60 hover:text-manifest-ink transition-colors flex items-center justify-center shrink-0 focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+              className="touch-none cursor-grab active:cursor-grabbing p-0.5 sm:p-1 -ml-1 rounded-lg text-manifest-inkMuted/60 hover:text-manifest-ink transition-colors flex items-center justify-center shrink-0 focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
             >
-              <Equal className="w-3.5 h-3.5 stroke-[2]" />
+              <Equal className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2]" />
             </button>
           )}
 
           {affirmation.pinned && (
             <span className="text-[10px] text-manifest-brass" title="Fijado en el altar">
-              <Pin className="w-3 h-3 fill-manifest-brass stroke-none" />
+              <Pin className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-manifest-brass stroke-none" />
             </span>
           )}
         </div>
@@ -153,14 +153,14 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
             onClick={handleRepeat}
             data-testid={`affirmation-repeat-btn-${affirmation.id}`}
             title="Tocar para elevar la vibración del decreto"
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-manifest-glassBorder bg-manifest-glassControl hover:bg-manifest-glassControlHover text-manifest-ink shadow-xs cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+            className="flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border border-manifest-glassBorder bg-manifest-glassControl hover:bg-manifest-glassControlHover text-manifest-ink shadow-xs cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
           >
             <Flame
-              className={`w-3.5 h-3.5 transition-colors ${
+              className={`w-3 h-3 sm:w-3.5 sm:h-3.5 transition-colors ${
                 affirmation.repeatCount > 0 ? 'text-amber-500 fill-amber-500' : 'text-slate-500'
               }`}
             />
-            <span className="text-xs font-bold font-sans tabular-nums text-manifest-ink">
+            <span className="text-[11px] sm:text-xs font-bold font-sans tabular-nums text-manifest-ink">
               {affirmation.repeatCount || 0}
             </span>
           </motion.button>
@@ -175,14 +175,14 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
                 e.stopPropagation();
                 setShowMenu((prev) => !prev);
               }}
-              className="w-7 h-7 rounded-full flex items-center justify-center text-manifest-inkMuted hover:text-manifest-ink bg-white/80 hover:bg-white border border-purple-200/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.7)] backdrop-blur-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+              className="w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-manifest-inkMuted hover:text-manifest-ink bg-white/80 hover:bg-white border border-purple-200/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.7)] backdrop-blur-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
               title="Opciones del decreto"
             >
               <motion.div
                 animate={{ rotate: showMenu ? 90 : 0, scale: showMenu ? 1.08 : 1 }}
                 transition={{ type: 'spring', stiffness: 420, damping: 22 }}
               >
-                <MoreHorizontal className="w-4 h-4 stroke-[2.2]" />
+                <MoreHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.2]" />
               </motion.div>
             </motion.button>
 
@@ -203,7 +203,7 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -6, scale: 0.95 }}
                     transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute right-0 top-9 z-50 min-w-[200px] p-1.5 rounded-2xl bg-white border border-slate-200/90 shadow-[0_14px_36px_rgba(30,20,50,0.22),0_4px_12px_rgba(0,0,0,0.08)] space-y-0.5 before:content-[''] before:absolute before:-top-1.5 before:right-2.5 before:w-3 before:h-3 before:bg-white before:border-t before:border-l before:border-slate-200/90 before:rotate-45"
+                    className="absolute right-0 top-8 sm:top-9 z-50 min-w-[190px] p-1.5 rounded-2xl bg-white border border-slate-200/90 shadow-[0_14px_36px_rgba(30,20,50,0.22),0_4px_12px_rgba(0,0,0,0.08)] space-y-0.5 before:content-[''] before:absolute before:-top-1.5 before:right-2.5 before:w-3 before:h-3 before:bg-white before:border-t before:border-l before:border-slate-200/90 before:rotate-45"
                   >
                     <button
                       type="button"
@@ -263,8 +263,8 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
       </div>
 
       {/* Sacred Affirmation Text: Highly Legible Lora Regular */}
-      <div className="relative z-0 py-1">
-        <p className="font-serif text-[16px] sm:text-[18px] text-manifest-ink leading-relaxed font-normal tracking-normal selection:bg-manifest-auraPurple/30">
+      <div className="relative z-0 py-0.5 sm:py-1">
+        <p className="font-serif text-[13.5px] sm:text-[17px] text-manifest-ink leading-relaxed font-normal tracking-normal selection:bg-manifest-auraPurple/30">
           “{affirmation.text}”
         </p>
       </div>

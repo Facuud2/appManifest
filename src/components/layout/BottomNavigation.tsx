@@ -33,18 +33,18 @@ export const BottomNavigation: React.FC = () => {
       <div
         aria-hidden="true"
         data-testid="bottom-dock-blur-shield"
-        className="lg:hidden fixed bottom-0 left-0 right-0 h-28 pointer-events-none z-30 bg-gradient-to-t from-[#FAF8FF] via-[#FAF8FF]/95 to-transparent backdrop-blur-[2px]"
+        className="lg:hidden fixed bottom-0 left-0 right-0 h-20 sm:h-28 pointer-events-none z-30 bg-gradient-to-t from-[#FAF8FF] via-[#FAF8FF]/95 to-transparent backdrop-blur-[2px]"
       />
 
       {/* 2. Dock cápsula compacta estilo iOS 18 */}
       <div
         data-testid="ios-floating-tabbar-wrap"
-        className="lg:hidden fixed bottom-[max(env(safe-area-inset-bottom),12px)] left-0 right-0 z-40 px-3 pointer-events-none flex justify-center"
+        className="lg:hidden fixed bottom-[max(env(safe-area-inset-bottom),10px)] left-0 right-0 z-40 px-3 pointer-events-none flex justify-center"
       >
         <nav
           role="navigation"
           aria-label="Navegación principal"
-          className="relative w-full mx-auto max-w-[350px] pointer-events-auto rounded-full bg-white/85 backdrop-blur-2xl border border-white/90 shadow-[0_12px_32px_rgba(100,70,160,0.14)] px-2 py-1.5 flex items-center justify-between overflow-hidden"
+          className="relative w-full mx-auto max-w-[335px] pointer-events-auto rounded-full bg-white/85 backdrop-blur-2xl border border-white/90 shadow-[0_10px_28px_rgba(100,70,160,0.12)] px-1.5 py-1 flex items-center justify-between overflow-hidden"
         >
           {NAV_ITEMS.map((item) => {
             const isActive = activeTab === item.key;
@@ -61,7 +61,7 @@ export const BottomNavigation: React.FC = () => {
                 className="relative flex-1 h-full flex flex-col items-center justify-center select-none cursor-pointer outline-none group py-0.5 focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:rounded-full focus-visible:outline-none"
               >
                 {/* Contenedor del ícono con la cápsula deslizante Liquid Glass */}
-                <div className="relative flex items-center justify-center w-12 h-6.5">
+                <div className="relative flex items-center justify-center w-11 h-6">
                   {isActive && (
                     <motion.div
                       layoutId="mobile-tabbar-active-pill"
@@ -81,7 +81,7 @@ export const BottomNavigation: React.FC = () => {
                     className="relative z-10 flex items-center justify-center"
                   >
                     <Icon
-                      className={`w-[17px] h-[17px] transition-colors duration-200 ${
+                      className={`w-[15px] h-[15px] transition-colors duration-200 ${
                         isActive ? 'text-purple-900 stroke-[2.4]' : 'text-slate-500 group-hover:text-slate-800'
                       }`}
                     />
@@ -90,7 +90,7 @@ export const BottomNavigation: React.FC = () => {
 
                 {/* Etiqueta de texto debajo del ícono, siempre legible */}
                 <span
-                  className={`text-[10px] tracking-tight block mt-0.5 select-none transition-colors duration-200 leading-tight ${
+                  className={`text-[9.5px] tracking-tight block mt-0.5 select-none transition-colors duration-200 leading-tight ${
                     isActive ? 'font-serif font-bold text-purple-950' : 'font-serif font-medium text-slate-600 group-hover:text-slate-900'
                   }`}
                 >

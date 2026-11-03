@@ -131,11 +131,11 @@ export const GoalsView: React.FC = () => {
 
         {/* Liquid Glass pill switcher + Action */}
         <div className="flex items-center gap-2 self-start sm:self-auto w-full sm:w-auto justify-between sm:justify-end">
-          <div className="inline-flex p-1 rounded-full bg-white/85 border border-purple-200/80 shadow-sm backdrop-blur-md">
+          <div className="inline-flex p-0.5 sm:p-1 rounded-full bg-white/85 border border-purple-200/80 shadow-sm backdrop-blur-md">
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 text-xs font-serif tracking-wide rounded-full transition-all flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
+              className={`px-2.5 py-1 sm:px-3 sm:py-1.5 text-[11px] sm:text-xs font-serif tracking-wide rounded-full transition-all flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
                 viewMode === 'list'
                   ? 'bg-white text-purple-950 font-bold shadow-xs border border-purple-300/80'
                   : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-100/50'
@@ -147,7 +147,7 @@ export const GoalsView: React.FC = () => {
             <button
               type="button"
               onClick={() => setViewMode('rampage')}
-              className={`px-3 py-1.5 text-xs font-serif tracking-wide rounded-full transition-all flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
+              className={`px-2.5 py-1 sm:px-3 sm:py-1.5 text-[11px] sm:text-xs font-serif tracking-wide rounded-full transition-all flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
                 viewMode === 'rampage'
                   ? 'bg-white text-purple-950 font-bold shadow-xs border border-purple-300/80'
                   : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-100/50'
@@ -164,9 +164,9 @@ export const GoalsView: React.FC = () => {
               whileTap={IOS_TAP_SPRING}
               onClick={() => openRampageConfig()}
               data-testid="open-rampage-modal-btn"
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full primary-gradient-btn text-xs font-serif tracking-wide shadow-sm shrink-0 cursor-pointer"
+              className="flex items-center gap-1 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full primary-gradient-btn text-[11px] sm:text-xs font-serif tracking-wide shadow-sm shrink-0 cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               <span>Nuevo Set</span>
             </motion.button>
           ) : (
@@ -175,9 +175,9 @@ export const GoalsView: React.FC = () => {
               whileTap={IOS_TAP_SPRING}
               onClick={() => openAffirmationEditor(null)}
               data-testid="add-affirmation-top-btn"
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full primary-gradient-btn text-xs font-serif tracking-wide shadow-sm shrink-0 cursor-pointer"
+              className="flex items-center gap-1 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full primary-gradient-btn text-[11px] sm:text-xs font-serif tracking-wide shadow-sm shrink-0 cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               <span>Nuevo Decreto</span>
             </motion.button>
           )}
@@ -185,19 +185,19 @@ export const GoalsView: React.FC = () => {
       </div>
 
       {/* Nota sutil única debajo del encabezado de la lista */}
-      <div className="px-1.5 py-0.5 flex items-center gap-1.5 text-[11px] text-slate-500 font-sans">
+      <div className="px-1.5 py-0.5 flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-500 font-sans">
         <span className="text-manifest-auraPurple text-xs">✦</span>
         <span>Toca en cualquier parte de una tarjeta para sumar repetición</span>
       </div>
 
       {/* VIEW MODE 1: LISTA Y FIJADOS */}
       {viewMode === 'list' && (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {/* SECTION: PINNED (DRAG & DROP RESTRICTED) */}
           {pinnedAffirmations.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between px-1">
-                <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
+                <h3 className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
                   <Pin className="w-3.5 h-3.5 text-manifest-auraPurple fill-manifest-auraPurple" />
                   <span>Decretos Fijados ({pinnedAffirmations.length})</span>
                 </h3>

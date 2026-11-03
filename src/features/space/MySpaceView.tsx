@@ -38,19 +38,19 @@ export const MySpaceView: React.FC = () => {
         colors={{
           strongBgIos: `${LIQUID_GLASS_SPECULAR}`,
         }}
-        className="w-full p-1 bg-white/80 border border-purple-200/70 shadow-sm"
+        className="w-full p-0.5 sm:p-1 bg-white/80 border border-purple-200/70 shadow-sm"
       >
         <SegmentedButton
           strong
           rounded
           active={subTab === 'tracking'}
           onClick={() => setSubTab('tracking')}
-          className={`text-xs font-semibold py-2 px-2 !normal-case cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
+          className={`text-[11px] sm:text-xs font-semibold py-1.5 px-1.5 sm:py-2 sm:px-2 !normal-case cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
             subTab === 'tracking' ? 'text-purple-950 font-bold bg-white border border-purple-200/90 shadow-sm' : 'text-slate-600 font-medium hover:text-slate-900'
           }`}
         >
           <span className="flex items-center justify-center gap-1 whitespace-nowrap">
-            <Award className="w-3.5 h-3.5 shrink-0" />
+            <Award className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
             <span>Progreso</span>
           </span>
         </SegmentedButton>
@@ -60,12 +60,12 @@ export const MySpaceView: React.FC = () => {
           rounded
           active={subTab === 'signs'}
           onClick={() => setSubTab('signs')}
-          className={`text-xs font-semibold py-2 px-2 !normal-case cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
+          className={`text-[11px] sm:text-xs font-semibold py-1.5 px-1.5 sm:py-2 sm:px-2 !normal-case cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
             subTab === 'signs' ? 'text-purple-950 font-bold bg-white border border-purple-200/90 shadow-sm' : 'text-slate-600 font-medium hover:text-slate-900'
           }`}
         >
           <span className="flex items-center justify-center gap-1 whitespace-nowrap">
-            <Sparkles className="w-3.5 h-3.5 shrink-0" />
+            <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
             <span>Señales ({manifestationSigns.length})</span>
           </span>
         </SegmentedButton>
@@ -75,12 +75,12 @@ export const MySpaceView: React.FC = () => {
           rounded
           active={subTab === 'release'}
           onClick={() => setSubTab('release')}
-          className={`text-xs font-semibold py-2 px-2 !normal-case cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
+          className={`text-[11px] sm:text-xs font-semibold py-1.5 px-1.5 sm:py-2 sm:px-2 !normal-case cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
             subTab === 'release' ? 'text-purple-950 font-bold bg-white border border-purple-200/90 shadow-sm' : 'text-slate-600 font-medium hover:text-slate-900'
           }`}
         >
           <span className="flex items-center justify-center gap-1 whitespace-nowrap">
-            <Flame className="w-3.5 h-3.5 shrink-0" />
+            <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
             <span>Liberación</span>
           </span>
         </SegmentedButton>
@@ -91,12 +91,12 @@ export const MySpaceView: React.FC = () => {
           active={subTab === 'settings'}
           onClick={() => setSubTab('settings')}
           data-testid="subtab-settings"
-          className={`text-xs font-semibold py-2 px-2 !normal-case cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
+          className={`text-[11px] sm:text-xs font-semibold py-1.5 px-1.5 sm:py-2 sm:px-2 !normal-case cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
             subTab === 'settings' ? 'text-purple-950 font-bold bg-white border border-purple-200/90 shadow-sm' : 'text-slate-600 font-medium hover:text-slate-900'
           }`}
         >
           <span className="flex items-center justify-center gap-1 whitespace-nowrap">
-            <Settings className="w-3.5 h-3.5 shrink-0" />
+            <Settings className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
             <span>Ajustes</span>
           </span>
         </SegmentedButton>
