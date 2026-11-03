@@ -17,10 +17,6 @@ export function isSandboxRequest(req: Request): boolean {
   if (process.env.AI_MOCK_MODE === 'true') {
     return true;
   }
-  const sandboxHeader = req.headers.get('x-ai-sandbox');
-  if (sandboxHeader === 'true' || sandboxHeader === '1') {
-    return true;
-  }
   const key = getGeminiApiKey();
   if (!key) {
     return true;
@@ -68,7 +64,7 @@ export function cleanSpokenText(spokenText: string, previousTextTail?: string): 
 }
 
 /**
- * Generates simulated transcript or cleans real spoken text when offline / sandbox.
+ * Cleans real spoken text when offline / fallback. Never generates fake decrees.
  */
 export function generateMockTranscript(
   previousTextTail?: string,
@@ -76,7 +72,6 @@ export function generateMockTranscript(
 ): { text: string; detectedTone: string } {
   const detectedTone = 'calma, firme, íntima';
 
-  // If user actually spoke words, NEVER replace them with random decrees
   if (spokenText && spokenText.trim().length > 0) {
     return {
       text: cleanSpokenText(spokenText, previousTextTail),
@@ -84,69 +79,46 @@ export function generateMockTranscript(
     };
   }
 
-  const sampleSentences = [
-    'Decreto abundancia en mi vida y recibo con gratitud cada bendición del universo.',
-    'Estoy en perfecta alineación con la paz, el amor y la prosperidad que me rodean.',
-    'Cada paso que doy abre nuevos caminos de éxito, tranquilidad y sabiduría.',
-    'Confío plenamente en el proceso de la vida y elijo vibrar en mi más alta frecuencia.',
-    'Hoy agradezco todo lo que soy, lo que tengo y todo lo maravilloso que está por manifestarse.',
-  ];
-
-  const randomSentence = sampleSentences[Math.floor(Math.random() * sampleSentences.length)];
-
-  const tail = (previousTextTail || '').trim();
-  if (!tail) {
-    return { text: randomSentence, detectedTone };
-  }
-
-  const lastChar = tail.slice(-1);
-  const isTerminated = ['.', '!', '?', ';', '\n'].includes(lastChar);
-
-  if (isTerminated) {
-    return { text: randomSentence, detectedTone };
-  }
-
   return {
-    text: randomSentence.charAt(0).toLowerCase() + randomSentence.slice(1),
+    text: '',
     detectedTone,
   };
 }
 
 /**
- * Generates coherent mystical numbered affirmations connected to centralTheme (AYA Method prosody).
+ * Short, natural 2-7 word subliminal affirmations (zero template concatenations).
  */
 export function generateMockRampage(
   centralTheme: string,
   batchIndex: number = 0,
   batchSize: number = 3
 ): string[] {
-  const theme = centralTheme.trim() || 'mi paz y plenitud';
-
-  const templates = [
+  const theme = (centralTheme || '').trim().replace(/^(mi|el|la|los|las|un|una)\s+/i, '');
+  const pool = [
     [
-      `Siento cómo ${theme}... fluye ahora en mi pecho, con serenidad absoluta.`,
-      `Permito que la certeza de ${theme} se expanda; mi cuerpo lo sabe real.`,
-      `Yo soy la presencia viva de ${theme}, anclada para siempre en mi presente.`,
+      theme ? `Soy ${theme}.` : 'Soy Dios.',
+      'Todo fluye a mi favor.',
+      'Soy profundamente amado.',
     ],
     [
-      `Respiro hondo... y elijo soltar toda resistencia, recibiendo plenamente ${theme}.`,
-      `Cada latido de mi corazón sintoniza, con gratitud profunda, la verdad de ${theme}.`,
-      `Reclamo mi poder creador; ${theme} ya es una realidad palpable en mi vida.`,
+      'Siempre me eligen.',
+      theme ? `Merezco ${theme}.` : 'Merezco todo lo bueno.',
+      'Soy deseado.',
     ],
     [
-      `En este instante sagrado, reconozco que ${theme}... camina junto a mí.`,
-      `Siento una calma infinita sabiendo que el universo ya orquestó ${theme}.`,
-      `Mi energía vibra alta; sostengo con firmeza la victoria pacífica de ${theme}.`,
+      'Mi mente está en paz.',
+      'Todo se acomoda perfecto.',
+      'Soy magnético.',
     ],
     [
-      `Mi mente y mi voz declaran con amor: ${theme} ya habita en mi mundo.`,
-      `Abro mis brazos con certeza plena... celebrando la llegada de ${theme}.`,
-      `Agradezco aquí y ahora, porque ${theme} se manifiesta con perfecta sincronía.`,
+      'Confío en mi poder.',
+      'La abundancia me busca.',
+      'Soy paz infinita.',
     ],
   ];
 
-  const pool = templates[batchIndex % templates.length];
-  return pool.slice(0, batchSize);
+  const set = pool[batchIndex % pool.length];
+  return set.slice(0, batchSize);
 }
 
 /**
@@ -164,10 +136,9 @@ export async function transcribeAudioWithGemini(
 
   // Prioritize gemini-2.5-flash-lite, fallback to 3.5-flash-lite / 3.5-flash
   const modelsToTry = [
-    'gemini-2.5-flash-lite',
-    'gemini-2.0-flash-lite',
     'gemini-3.5-flash-lite',
     'gemini-3.5-flash',
+    'gemini-3.8-flash',
   ];
 
   const hasAudio = audioBuffer && audioBuffer.length > 200;
@@ -275,47 +246,72 @@ Elimina muletillas. Devuelve ÚNICAMENTE un JSON: { "text": "...", "detectedTone
   throw lastError || new Error('No se pudo procesar la transcripción con Gemini.');
 }
 
+export interface RampageGenerationOptions {
+  centralTheme?: string;
+  specifications?: string;
+  userAffirmations?: string[];
+  journalHighlights?: string[];
+  userScope?: string;
+  detectedTone?: string;
+  previousAffirmations?: string[];
+  batchSize?: number;
+}
+
 /**
- * Generates Rampage batch of 3 affirmations using Gemini Flash-Lite and AYA Method prompt.
+ * Generates Rampage batch of 3 subliminal affirmations using Gemini Flash and user dynamic popurrí.
  */
 export async function generateRampageWithGemini(
-  centralTheme: string,
+  centralThemeOrOptions: string | RampageGenerationOptions,
   specifications?: string,
   detectedTone?: string,
   previousAffirmations: string[] = [],
   batchSize: number = 3
 ): Promise<{ affirmations: string[]; source: 'GEMINI_LIVE'; totalTokens: number }> {
+  const options: RampageGenerationOptions =
+    typeof centralThemeOrOptions === 'object'
+      ? centralThemeOrOptions
+      : {
+          centralTheme: centralThemeOrOptions,
+          specifications,
+          detectedTone,
+          previousAffirmations,
+          batchSize,
+        };
+
+  const count = options.batchSize || 3;
   const apiKey = getGeminiApiKey();
   const ai = new GoogleGenAI({ apiKey });
 
   const modelsToTry = [
-    'gemini-2.5-flash-lite',
-    'gemini-2.0-flash-lite',
     'gemini-3.5-flash-lite',
     'gemini-3.5-flash',
+    'gemini-3.8-flash',
   ];
 
-  const tone = detectedTone || 'calma, firme, íntima';
+  const prompt = `Eres el motor de Reprogramación Subliminal y Rampage AYA.
+Tu objetivo es generar lotes de ${count} afirmaciones en primera persona para escuchar en bucle subliminal con auriculares en modo automático o mientras duermes.
 
-  const prompt = `Eres un arquitecto de reprogramación subconsciente estilo Método AYA. Genera un lote de exactamente ${batchSize} afirmaciones encadenadas en primera persona ('Yo...', 'Mi...', 'Siento cómo...') basadas en:
-- Tema central: "${centralTheme}"
-${specifications ? `- Especificaciones opcionales: "${specifications}"` : ''}
-- Cadencia vocal del usuario: "${tone}"
-${
-  previousAffirmations && previousAffirmations.length > 0
-    ? `- Afirmaciones previas inmediatas:
-${previousAffirmations.map((a, i) => `${i + 1}. ${a}`).join('\n')}`
-    : ''
-}
+FUENTES DEL USUARIO PARA EL POPURRÍ VIVO:
+${options.userAffirmations && options.userAffirmations.length > 0 ? `✦ Afirmaciones personales guardadas por el usuario:\n${options.userAffirmations.slice(0, 8).map((a) => `  - "${a}"`).join('\n')}` : ''}
+${options.journalHighlights && options.journalHighlights.length > 0 ? `✦ Fragmentos e intenciones del diario del usuario:\n${options.journalHighlights.slice(0, 5).map((j) => `  - "${j}"`).join('\n')}` : ''}
+${options.specifications ? `✦ Deseos y matices específicos dictados/escritos para hoy: "${options.specifications}"` : ''}
+${options.centralTheme ? `✦ Enfoque complementario: "${options.centralTheme}"` : ''}
+${options.previousAffirmations && options.previousAffirmations.length > 0 ? `✦ Afirmaciones previas ya pronunciadas (no repetir idénticas):\n${options.previousAffirmations.map((a, i) => `  ${i + 1}. ${a}`).join('\n')}` : ''}
 
-REGLAS DE ORO PARA REPRODUCCIÓN EN VOZ PROPIA:
-1. Longitud hablada: Cada afirmación debe tener entre 8 y 16 palabras para poder pronunciarse en una sola respiración natural.
-2. Puntuación prosódica obligatoria: Usa comas (,), puntos y coma (;) y puntos suspensivos (...) estratégicos para marcar pausas respiratorias naturales y dar peso emocional a las palabras clave.
-3. Encadenamiento progresivo: La afirmación 1 conecta con la anterior; la 2 profundiza la sensación física del deseo cumplido; la 3 ancla la certeza absoluta en el presente.
-
-Responde ÚNICAMENTE con un array JSON válido de exactamente ${batchSize} strings con las afirmaciones.
-Ejemplo de formato:
-["Primera afirmación...", "Segunda afirmación...", "Tercera afirmación..."]`;
+REGLAS ESTRICTAS DE ESTILO SUBLIMINAL (CERO TEXTOS POÉTICOS LARGOS):
+1. SIMPLICIDAD Y LONGITUD ESTRICTA: Cada afirmación debe tener estrictamente entre 2 y 7 palabras como máximo.
+2. NATURALIDAD Y LENGUAJE DIRECTO: Usa lenguaje cotidiano, asertivo, íntimo y poderoso en tiempo presente o certeza absoluta.
+   Ejemplos del estilo requerido:
+   - "Soy Dios."
+   - "Soy profundamente amado."
+   - "Soy deseado."
+   - "Todo fluye a mi favor."
+   - "Siempre me eligen."
+   - "Mi cabello es muy sedoso."
+   - "El dinero llega constante."
+   - "Soy magnético."
+3. SÍNTESIS DE POPURRÍ: Conecta de manera armónica las afirmaciones guardadas y los matices del usuario en frases cortas y contundentes.
+4. Devuelve ÚNICAMENTE un JSON { "affirmations": string[] } con ${count} afirmaciones nuevas encadenadas.`;
 
   let lastError: any = null;
 
@@ -342,9 +338,16 @@ Ejemplo de formato:
         .trim();
 
       const parsed = JSON.parse(cleaned);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      let items: string[] = [];
+      if (Array.isArray(parsed)) {
+        items = parsed;
+      } else if (parsed && Array.isArray(parsed.affirmations)) {
+        items = parsed.affirmations;
+      }
+
+      if (items.length > 0) {
         return {
-          affirmations: parsed.slice(0, batchSize).map((s) => String(s).trim()),
+          affirmations: items.slice(0, batchSize).map((s) => String(s).trim()),
           source: 'GEMINI_LIVE',
           totalTokens: response.usageMetadata?.totalTokenCount || 0,
         };

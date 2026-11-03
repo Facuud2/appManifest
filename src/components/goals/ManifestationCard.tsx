@@ -42,6 +42,7 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
 
   const [showMenu, setShowMenu] = useState(false);
   const [pulseCharge, setPulseCharge] = useState(false);
+  const [floatingParticles, setFloatingParticles] = useState<{ id: number }[]>([]);
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -58,6 +59,13 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
     if (e) e.stopPropagation();
     setPulseCharge(true);
     setTimeout(() => setPulseCharge(false), 450);
+
+    const newId = Date.now() + Math.random();
+    setFloatingParticles((prev) => [...prev.slice(-2), { id: newId }]);
+    setTimeout(() => {
+      setFloatingParticles((prev) => prev.filter((p) => p.id !== newId));
+    }, 650);
+
     incrementAffirmationRepeat(affirmation.id);
   };
 
@@ -146,26 +154,65 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
         >
-          {/* Flame Counter Button */}
-          <motion.button
-            type="button"
-            whileTap={IOS_TAP_SPRING}
-            onClick={handleRepeat}
-            data-testid={`affirmation-repeat-btn-${affirmation.id}`}
-            title="Tocar para elevar la vibración del decreto"
-            className="flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border border-manifest-glassBorder bg-manifest-glassControl hover:bg-manifest-glassControlHover text-manifest-ink shadow-xs cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
-          >
-            <Flame
-              className={`w-3 h-3 sm:w-3.5 sm:h-3.5 transition-colors ${
-                affirmation.repeatCount > 0 ? 'text-amber-500 fill-amber-500' : 'text-slate-500'
-              }`}
-            />
-            <span className="text-[11px] sm:text-xs font-bold font-sans tabular-nums text-manifest-ink">
-              {affirmation.repeatCount || 0}
-            </span>
-          </motion.button>
+          {/* Flame Counter Button with Number Pop-in & Floating +1 */}
+          <div className="relative">
+            <motion.button
+              type="button"
+              whileTap={IOS_TAP_SPRING}
+              onClick={handleRepeat}
+              data-testid={`affirmation-repeat-btn-${affirmation.id}`}
+              title="Tocar para elevar la vibración del decreto"
+              className="flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border border-manifest-glassBorder bg-manifest-glassControl hover:bg-manifest-glassControlHover text-manifest-ink shadow-xs cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+            >
+              <motion.div
+                animate={{
+                  scale: pulseCharge ? [1, 1.25, 1] : 1,
+                  rotate: pulseCharge ? [-6, 6, 0] : 0,
+                }}
+                transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+              >
+                <Flame
+                  className={`w-3 h-3 sm:w-3.5 sm:h-3.5 transition-colors ${
+                    affirmation.repeatCount > 0 ? 'text-amber-500 fill-amber-500' : 'text-slate-500'
+                  }`}
+                />
+              </motion.div>
 
-          {/* Quick Action Toggle Button (•••) - Premium Split Button / Popover */}
+              {/* Number Pop-in */}
+              <div className="relative overflow-hidden h-4 flex items-center justify-center min-w-[12px]">
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.span
+                    key={affirmation.repeatCount || 0}
+                    initial={{ y: 8, opacity: 0, filter: 'blur(2px)' }}
+                    animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
+                    exit={{ y: -8, opacity: 0, filter: 'blur(2px)' }}
+                    transition={{ type: 'spring', stiffness: 450, damping: 25 }}
+                    className="text-[11px] sm:text-xs font-bold font-sans tabular-nums text-manifest-ink block"
+                  >
+                    {affirmation.repeatCount || 0}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
+            </motion.button>
+
+            {/* Floating +1 ascending particle */}
+            <AnimatePresence>
+              {floatingParticles.map((particle) => (
+                <motion.span
+                  key={particle.id}
+                  initial={{ opacity: 1, y: 0, scale: 0.8 }}
+                  animate={{ opacity: 0, y: -22, scale: 1.15 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+                  className="absolute -top-1 right-2 pointer-events-none text-[11px] font-extrabold text-amber-600 drop-shadow-xs select-none z-20"
+                >
+                  +1
+                </motion.span>
+              ))}
+            </AnimatePresence>
+          </div>
+
+          {/* Quick Action Toggle Button (•••) - Origin-Aware Menu Dropdown */}
           <div className="relative">
             <motion.button
               type="button"
@@ -186,7 +233,7 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
               </motion.div>
             </motion.button>
 
-            {/* Dropdown Menu - Fully Opaque with Native Icons (No emojis, no text bleed) */}
+            {/* Dropdown Menu - Origin Aware Expansion */}
             <AnimatePresence>
               {showMenu && (
                 <>
@@ -199,11 +246,11 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
                   />
                   <motion.div
                     data-testid={`affirmation-dropdown-${affirmation.id}`}
-                    initial={{ opacity: 0, y: -6, scale: 0.95 }}
+                    initial={{ opacity: 0, y: -6, scale: 0.92, transformOrigin: 'top right' }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -6, scale: 0.95 }}
-                    transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute right-0 top-8 sm:top-9 z-50 min-w-[190px] p-1.5 rounded-2xl bg-white border border-slate-200/90 shadow-[0_14px_36px_rgba(30,20,50,0.22),0_4px_12px_rgba(0,0,0,0.08)] space-y-0.5 before:content-[''] before:absolute before:-top-1.5 before:right-2.5 before:w-3 before:h-3 before:bg-white before:border-t before:border-l before:border-slate-200/90 before:rotate-45"
+                    exit={{ opacity: 0, y: -6, scale: 0.94 }}
+                    transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+                    className="absolute right-0 top-8 sm:top-9 z-50 min-w-[190px] p-1.5 rounded-2xl bg-white/95 backdrop-blur-xl border border-slate-200/90 shadow-[0_14px_36px_rgba(30,20,50,0.18),0_4px_12px_rgba(0,0,0,0.06)] space-y-0.5 before:content-[''] before:absolute before:-top-1.5 before:right-2.5 before:w-3 before:h-3 before:bg-white/95 before:border-t before:border-l before:border-slate-200/90 before:rotate-45"
                   >
                     <button
                       type="button"

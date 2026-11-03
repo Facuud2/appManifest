@@ -12,6 +12,8 @@ export interface VoiceProfileMeta {
   sampleName?: string;
   blobSize?: number;
   mimeType?: string;
+  detectedPitch?: number; // 0.75 - 1.25 for SpeechSynthesisUtterance.pitch
+  fundamentalFrequency?: number; // e.g. 150 Hz
 }
 
 const DB_NAME = 'aya_voice_db';
@@ -56,6 +58,93 @@ function openDatabase(): Promise<IDBDatabase | null> {
 }
 
 /**
+ * Detect fundamental frequency (F0) and pitch multiplier using autocorrelation.
+ */
+export function detectPitchFromAudioBuffer(audioBuffer: AudioBuffer): {
+  f0: number;
+  pitchRate: number;
+} {
+  try {
+    const channelData = audioBuffer.getChannelData(0);
+    const sampleRate = audioBuffer.sampleRate;
+    const windowSize = Math.min(channelData.length, 4096);
+    if (windowSize < 512) return { f0: 160, pitchRate: 1.0 };
+
+    let bestOffset = 0;
+    let maxRms = 0;
+    const step = 256;
+    for (let offset = 0; offset + windowSize < channelData.length; offset += step) {
+      let sum = 0;
+      for (let i = 0; i < windowSize; i += 4) {
+        sum += channelData[offset + i] * channelData[offset + i];
+      }
+      const rms = Math.sqrt(sum / (windowSize / 4));
+      if (rms > maxRms) {
+        maxRms = rms;
+        bestOffset = offset;
+      }
+    }
+
+    const minPeriod = Math.floor(sampleRate / 300);
+    const maxPeriod = Math.floor(sampleRate / 70);
+
+    let bestLag = -1;
+    let bestCorr = 0;
+
+    for (let lag = minPeriod; lag <= maxPeriod; lag++) {
+      let corr = 0;
+      let norm1 = 0;
+      let norm2 = 0;
+      for (let i = 0; i < windowSize - lag; i += 2) {
+        const x1 = channelData[bestOffset + i];
+        const x2 = channelData[bestOffset + i + lag];
+        corr += x1 * x2;
+        norm1 += x1 * x1;
+        norm2 += x2 * x2;
+      }
+      const norm = Math.sqrt(norm1 * norm2);
+      if (norm > 0.0001) {
+        const r = corr / norm;
+        if (r > bestCorr) {
+          bestCorr = r;
+          bestLag = lag;
+        }
+      }
+    }
+
+    if (bestLag > 0 && bestCorr > 0.3) {
+      const f0 = Math.round(sampleRate / bestLag);
+      const pitchRate = Math.max(0.78, Math.min(1.22, 0.85 + ((f0 - 90) / 160) * 0.3));
+      return { f0, pitchRate: Number(pitchRate.toFixed(2)) };
+    }
+  } catch (err) {
+    console.warn('[pitchDetector] Autocorrelation error:', err);
+  }
+  return { f0: 160, pitchRate: 1.0 };
+}
+
+export async function analyzeAudioBlobPitch(blob: Blob): Promise<{ f0: number; pitchRate: number }> {
+  try {
+    if (typeof window === 'undefined') return { f0: 160, pitchRate: 1.0 };
+    const AudioCtxClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioCtxClass || blob.size < 500) return { f0: 160, pitchRate: 1.0 };
+    const ctx = new AudioCtxClass();
+    const arrayBuffer = await blob.arrayBuffer();
+    const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+    const result = detectPitchFromAudioBuffer(audioBuffer);
+    if (ctx.state !== 'closed') {
+      try {
+        ctx.close();
+      } catch (_) {}
+    }
+    return result;
+  } catch (err) {
+    console.warn('[analyzeAudioBlobPitch] Error:', err);
+    return { f0: 160, pitchRate: 1.0 };
+  }
+}
+
+/**
  * Save master audio blob and update profile metadata
  */
 export async function saveMasterVoiceSample(
@@ -65,6 +154,13 @@ export async function saveMasterVoiceSample(
   const existingMeta = getVoiceProfileMeta();
   const voiceProfileId = existingMeta?.voiceProfileId || `voice_aya_${Date.now()}`;
 
+  let pitchInfo = { f0: 160, pitchRate: 1.0 };
+  if (!metadata?.detectedPitch && blob.size > 800) {
+    try {
+      pitchInfo = await analyzeAudioBlobPitch(blob);
+    } catch (_) {}
+  }
+
   const meta: VoiceProfileMeta = {
     voiceProfileId,
     recordedAt: new Date().toISOString(),
@@ -73,6 +169,8 @@ export async function saveMasterVoiceSample(
     sampleName: metadata?.sampleName || 'Muestra Maestra AYA',
     blobSize: blob.size,
     mimeType: blob.type || 'audio/webm',
+    detectedPitch: metadata?.detectedPitch ?? pitchInfo.pitchRate,
+    fundamentalFrequency: metadata?.fundamentalFrequency ?? pitchInfo.f0,
     ...metadata,
   };
 

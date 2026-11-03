@@ -15,6 +15,7 @@ import {
   RotateCcw,
   Volume2,
   VolumeX,
+  Headphones,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDrag } from '@use-gesture/react';
@@ -26,6 +27,8 @@ import { RampageDecisionModal } from './RampageDecisionModal';
 import { logAiTelemetry } from '@/lib/gemini';
 import { audioEngine, AmbienceType } from '@/lib/audioEngine';
 import { useVoiceProfile } from '@/hooks/useVoiceProfile';
+import { WaveBars } from '@/components/ui/WaveBars';
+import { RampageCardSkeleton } from '@/components/ui/LiquidSkeleton';
 
 export const RampageSetView: React.FC = () => {
   const {
@@ -65,6 +68,10 @@ export const RampageSetView: React.FC = () => {
   const [autoAdvance, setAutoAdvance] = useState(true);
   const [isVoicePlaying, setIsVoicePlaying] = useState(false);
   const [reactiveEnergy, setReactiveEnergy] = useState<number>(0);
+  const [isSubliminalSavedSession, setIsSubliminalSavedSession] = useState(false);
+
+  // Debounce ref to fix step counter skipping 2 by 2
+  const lastAdvanceTimeRef = useRef<number>(0);
 
   // Audio object URL cache mapping affirmation.id -> objectUrl
   const audioCacheRef = useRef<Map<string, string>>(new Map());
@@ -76,6 +83,9 @@ export const RampageSetView: React.FC = () => {
   const aiSpecsRef = useRef<string>('');
   const aiIndexRef = useRef<number>(0);
   const aiAffirmationsRef = useRef<RampageAffirmation[]>([]);
+  const userAffirmationsRef = useRef<string[]>([]);
+  const journalHighlightsRef = useRef<string[]>([]);
+  const userScopeRef = useRef<string>('facu');
 
   // Keep refs synchronized
   useEffect(() => {
@@ -102,7 +112,7 @@ export const RampageSetView: React.FC = () => {
   useEffect(() => {
     let animId: number;
     const updateHalo = () => {
-      if (isAiSession) {
+      if (isAiSession || isSubliminalSavedSession) {
         const energy = audioEngine.getReactiveEnergy();
         setReactiveEnergy(energy);
         setIsVoicePlaying(audioEngine.isPlaying());
@@ -111,7 +121,7 @@ export const RampageSetView: React.FC = () => {
     };
     animId = requestAnimationFrame(updateHalo);
     return () => cancelAnimationFrame(animId);
-  }, [isAiSession]);
+  }, [isAiSession, isSubliminalSavedSession]);
 
   // Clean all audio URLs from memory on unmount
   useEffect(() => {
@@ -153,10 +163,6 @@ export const RampageSetView: React.FC = () => {
       }
 
       try {
-        const isSandbox =
-          aiSandboxMode ||
-          (typeof window !== 'undefined' && (window.navigator as any)?.webdriver === true);
-
         const voiceProfileId = profile?.voiceProfileId || 'voice_aya_master';
         const detectedTone = profile?.detectedTone || 'calma, firme, íntima';
 
@@ -164,7 +170,6 @@ export const RampageSetView: React.FC = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...(isSandbox ? { 'x-ai-sandbox': 'true' } : {}),
           },
           body: JSON.stringify({
             text: aff.text,
@@ -174,10 +179,19 @@ export const RampageSetView: React.FC = () => {
         });
 
         if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
+          return null;
+        }
+
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const json = await res.json();
+          if (json.useLocalSynthesis) {
+            return null; // Triggers Zero-Failure Local Speech Synthesis
+          }
         }
 
         const blob = await res.blob();
+        if (blob.size < 200) return null;
         const objectUrl = URL.createObjectURL(blob);
         audioCacheRef.current.set(aff.id, objectUrl);
         return objectUrl;
@@ -186,7 +200,45 @@ export const RampageSetView: React.FC = () => {
         return null;
       }
     },
-    [aiSandboxMode, profile]
+    [profile]
+  );
+
+  /**
+   * Unified voice player: Cloned audio buffer OR Zero-Failure Local Speech Engine (rate: 0.88, calibrated pitch)
+   */
+  const playAffirmationVoice = useCallback(
+    async (aff: RampageAffirmation, onEndedCallback: () => void) => {
+      if (!autoPlayVoice) {
+        onEndedCallback();
+        return;
+      }
+
+      if (autoAdvanceTimerRef.current) {
+        clearTimeout(autoAdvanceTimerRef.current);
+        autoAdvanceTimerRef.current = null;
+      }
+
+      const audioUrl = audioCacheRef.current.get(aff.id) || (await synthesizeAffirmationAudio(aff));
+
+      if (audioUrl) {
+        await audioEngine.playVoice(audioUrl, onEndedCallback);
+        setIsVoicePlaying(true);
+      } else {
+        // Zero-Failure Local Speech Synthesis Engine (pausado e hipnótico, rate: 0.88)
+        const pitch = profile?.detectedPitch || 1.0;
+        const spoke = audioEngine.speakVoice(
+          aff.text,
+          { pitch, rate: 0.88 },
+          onEndedCallback
+        );
+        if (spoke) {
+          setIsVoicePlaying(true);
+        } else {
+          onEndedCallback();
+        }
+      }
+    },
+    [autoPlayVoice, profile?.detectedPitch, synthesizeAffirmationAudio]
   );
 
   /**
@@ -200,21 +252,19 @@ export const RampageSetView: React.FC = () => {
       isFetchingBatchRef.current = true;
 
       try {
-        const isSandbox =
-          aiSandboxMode ||
-          (typeof window !== 'undefined' && (window.navigator as any)?.webdriver === true);
-
         const lastTwoAffirmations = currentAffs.slice(-2).map((a) => a.text);
 
         const res = await fetch('/api/ai/rampage', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...(isSandbox ? { 'x-ai-sandbox': 'true' } : {}),
           },
           body: JSON.stringify({
             centralTheme: aiThemeRef.current,
             specifications: aiSpecsRef.current,
+            userAffirmations: userAffirmationsRef.current,
+            journalHighlights: journalHighlightsRef.current,
+            userScope: userScopeRef.current,
             detectedTone: profile?.detectedTone || 'calma, firme, íntima',
             previousAffirmations: lastTwoAffirmations,
             batchSize: 3,
@@ -261,7 +311,7 @@ export const RampageSetView: React.FC = () => {
         isFetchingBatchRef.current = false;
       }
     },
-    [aiSandboxMode, profile, synthesizeAffirmationAudio]
+    [profile, synthesizeAffirmationAudio]
   );
 
   /**
@@ -269,6 +319,10 @@ export const RampageSetView: React.FC = () => {
    */
   const advanceAiAffirmation = useCallback(
     (dir = 1) => {
+      const now = Date.now();
+      if (now - lastAdvanceTimeRef.current < 450) return;
+      lastAdvanceTimeRef.current = now;
+
       const currentList = aiAffirmationsRef.current;
       if (currentList.length === 0) return;
 
@@ -305,51 +359,77 @@ export const RampageSetView: React.FC = () => {
     [checkAndUnlockMilestones, fetchNextBatch]
   );
 
+  // Manual Set Navigation
+  const totalSets = rampageSets.length;
+  const safeSetIndex = totalSets > 0 ? ((activeSetIndex % totalSets) + totalSets) % totalSets : 0;
+  const currentSet = rampageSets[safeSetIndex];
+
+  const totalAffirmationsInSet = currentSet?.affirmations?.length || 0;
+  const safeAffirmationIndex =
+    totalAffirmationsInSet > 0
+      ? ((affirmationIndex % totalAffirmationsInSet) + totalAffirmationsInSet) %
+        totalAffirmationsInSet
+      : 0;
+  const currentAffirmation = currentSet?.affirmations?.[safeAffirmationIndex];
+
+  const advanceManualAffirmation = useCallback(
+    (dir = 1) => {
+      const now = Date.now();
+      if (now - lastAdvanceTimeRef.current < 450) return;
+      lastAdvanceTimeRef.current = now;
+
+      if (!currentSet || totalAffirmationsInSet === 0 || !currentAffirmation) return;
+      incrementRampageAffirmationRepeat(currentSet.id, currentAffirmation.id);
+      checkAndUnlockMilestones({ suppressModal: true });
+      setDirection(dir);
+      setAffirmationIndex(
+        (prev) => (prev + dir + totalAffirmationsInSet) % totalAffirmationsInSet
+      );
+    },
+    [
+      currentSet,
+      totalAffirmationsInSet,
+      currentAffirmation,
+      incrementRampageAffirmationRepeat,
+      checkAndUnlockMilestones,
+    ]
+  );
+
   /**
-   * Handle audio completion of current affirmation (triggers 1.8s integration pause)
+   * Handle audio completion of current affirmation (triggers 2.5s integration pause)
    */
   const handleAffirmationAudioEnded = useCallback(() => {
     setIsVoicePlaying(false);
-    if (!autoAdvance) return;
+    if (!autoAdvance && !isSubliminalSavedSession) return;
 
     if (autoAdvanceTimerRef.current) {
       clearTimeout(autoAdvanceTimerRef.current);
     }
 
-    // 1.8s Integration Pause before auto-advancing to next affirmation
+    // 2.5s Subconscious Assimilation Pause (as required for sleep/automatic mode)
     autoAdvanceTimerRef.current = setTimeout(() => {
-      advanceAiAffirmation(1);
-    }, 1800);
-  }, [autoAdvance, advanceAiAffirmation]);
+      if (isAiSession) {
+        advanceAiAffirmation(1);
+      } else if (isSubliminalSavedSession) {
+        advanceManualAffirmation(1);
+      }
+    }, 2500);
+  }, [
+    autoAdvance,
+    isSubliminalSavedSession,
+    isAiSession,
+    advanceAiAffirmation,
+    advanceManualAffirmation,
+  ]);
 
   /**
-   * Play audio of current affirmation
+   * Play audio of current affirmation in AI Session
    */
   const playCurrentAffirmationAudio = useCallback(async () => {
-    if (autoAdvanceTimerRef.current) {
-      clearTimeout(autoAdvanceTimerRef.current);
-      autoAdvanceTimerRef.current = null;
-    }
-
     const currentAff = aiAffirmations[aiIndex];
     if (!currentAff) return;
-
-    let audioUrl = audioCacheRef.current.get(currentAff.id);
-    if (!audioUrl) {
-      audioUrl = (await synthesizeAffirmationAudio(currentAff)) || undefined;
-    }
-
-    if (audioUrl && autoPlayVoice) {
-      await audioEngine.playVoice(audioUrl, handleAffirmationAudioEnded);
-      setIsVoicePlaying(true);
-    }
-  }, [
-    aiAffirmations,
-    aiIndex,
-    autoPlayVoice,
-    synthesizeAffirmationAudio,
-    handleAffirmationAudioEnded,
-  ]);
+    await playAffirmationVoice(currentAff, handleAffirmationAudioEnded);
+  }, [aiAffirmations, aiIndex, playAffirmationVoice, handleAffirmationAudioEnded]);
 
   // Play audio whenever current affirmation changes in AI Session
   useEffect(() => {
@@ -364,7 +444,13 @@ export const RampageSetView: React.FC = () => {
   const handleStartAiSession = async (
     theme: string,
     specs: string,
-    options?: { autoPlayVoice: boolean; ambience: AmbienceType }
+    options?: {
+      autoPlayVoice: boolean;
+      ambience: AmbienceType;
+      userAffirmations?: string[];
+      journalHighlights?: string[];
+      userScope?: string;
+    }
   ) => {
     setIsAiSession(true);
     setAiTheme(theme);
@@ -375,6 +461,9 @@ export const RampageSetView: React.FC = () => {
     setIsInitialLoading(true);
     isFetchingBatchRef.current = false;
     batchCountRef.current = 1;
+    userAffirmationsRef.current = options?.userAffirmations || [];
+    journalHighlightsRef.current = options?.journalHighlights || [];
+    userScopeRef.current = options?.userScope || 'facu';
 
     // Apply audio preferences
     setAutoPlayVoice(options?.autoPlayVoice ?? true);
@@ -404,6 +493,9 @@ export const RampageSetView: React.FC = () => {
         body: JSON.stringify({
           centralTheme: theme,
           specifications: specs,
+          userAffirmations: userAffirmationsRef.current,
+          journalHighlights: journalHighlightsRef.current,
+          userScope: userScopeRef.current,
           detectedTone: profile?.detectedTone || 'calma, firme, íntima',
           previousAffirmations: [],
           batchSize: 3,
@@ -443,24 +535,18 @@ export const RampageSetView: React.FC = () => {
     } catch (err) {
       console.error('[AI Rampage] Error starting session:', err);
       showToast('Error al conectar con IA. Usando modo de contingencia.', 'info');
-      // Contingency affirmations
-      const fallbackAffs: RampageAffirmation[] = [
-        {
-          id: `ai-aff-${Date.now()}-0`,
-          text: `Siento cómo ${theme}... fluye ahora en mi pecho, con serenidad absoluta.`,
-          repeatCount: 0,
-        },
-        {
-          id: `ai-aff-${Date.now()}-1`,
-          text: `Permito que la certeza de ${theme} se expanda; mi cuerpo lo sabe real.`,
-          repeatCount: 0,
-        },
-        {
-          id: `ai-aff-${Date.now()}-2`,
-          text: `Yo soy la presencia viva de ${theme}, anclada para siempre en mi presente.`,
-          repeatCount: 0,
-        },
+      // Contingency affirmations: Short, natural 2-7 words subliminal affirmations (zero poetic templates)
+      const cleanThemeWord = theme.replace(/^(mi|el|la|los|las|un|una)\s+/i, '').trim();
+      const fallbackTexts = [
+        cleanThemeWord ? `Soy ${cleanThemeWord}.` : 'Soy Dios.',
+        'Todo fluye a mi favor.',
+        'Soy profundamente amado.',
       ];
+      const fallbackAffs: RampageAffirmation[] = fallbackTexts.map((text, idx) => ({
+        id: `ai-aff-${Date.now()}-${idx}`,
+        text,
+        repeatCount: 0,
+      }));
       setAiAffirmations(fallbackAffs);
       fallbackAffs.forEach((item) => synthesizeAffirmationAudio(item));
     } finally {
@@ -501,7 +587,7 @@ export const RampageSetView: React.FC = () => {
     };
 
     saveRampageSet(newSet);
-    showToast('Set guardado en tu Santuario ✨', 'success');
+    showToast('Set guardado en tu Santuario', 'success');
 
     // Cleanup resources
     audioCacheRef.current.forEach((url) => {
@@ -536,31 +622,100 @@ export const RampageSetView: React.FC = () => {
     setIsDecisionOpen(false);
     setAiAffirmations([]);
     setAiIndex(0);
-    showToast('Rampage descartado limpiamente 🗑️', 'gentle');
+    showToast('Rampage descartado limpiamente', 'gentle');
   };
 
-  // Manual Set Navigation
-  const totalSets = rampageSets.length;
-  const safeSetIndex = totalSets > 0 ? ((activeSetIndex % totalSets) + totalSets) % totalSets : 0;
-  const currentSet = rampageSets[safeSetIndex];
 
-  const totalAffirmationsInSet = currentSet?.affirmations?.length || 0;
-  const safeAffirmationIndex =
-    totalAffirmationsInSet > 0
-      ? ((affirmationIndex % totalAffirmationsInSet) + totalAffirmationsInSet) %
-        totalAffirmationsInSet
-      : 0;
-  const currentAffirmation = currentSet?.affirmations?.[safeAffirmationIndex];
+  /**
+   * Play current affirmation audio in saved set
+   */
+  const playManualCurrentAffirmationAudio = useCallback(async () => {
+    if (!currentAffirmation) return;
+    await playAffirmationVoice(currentAffirmation, handleAffirmationAudioEnded);
+  }, [currentAffirmation, playAffirmationVoice, handleAffirmationAudioEnded]);
 
-  const advanceManualAffirmation = (dir = 1) => {
-    if (!currentSet || totalAffirmationsInSet === 0 || !currentAffirmation) return;
-    incrementRampageAffirmationRepeat(currentSet.id, currentAffirmation.id);
-    checkAndUnlockMilestones({ suppressModal: true });
-    setDirection(dir);
-    setAffirmationIndex(
-      (prev) => (prev + dir + totalAffirmationsInSet) % totalAffirmationsInSet
-    );
+  /**
+   * Toggle Subliminal Audio Mode for Saved Sets
+   */
+  const toggleSubliminalSavedSession = async () => {
+    if (isSubliminalSavedSession) {
+      setIsSubliminalSavedSession(false);
+      audioEngine.stopVoice();
+      audioEngine.stopAmbience();
+      setIsVoicePlaying(false);
+      if (autoAdvanceTimerRef.current) {
+        clearTimeout(autoAdvanceTimerRef.current);
+        autoAdvanceTimerRef.current = null;
+      }
+      showToast('Sesión subliminal pausada', 'info');
+    } else {
+      await audioEngine.unlock();
+      audioEngine.setAmbience('white_noise');
+      setIsSubliminalSavedSession(true);
+      setAutoPlayVoice(true);
+      setAutoAdvance(true);
+      showToast('Modo Audio Subliminal activado en bucle', 'success');
+      playManualCurrentAffirmationAudio();
+    }
   };
+
+  // Play audio on affirmation change if subliminal saved session is active
+  useEffect(() => {
+    if (isSubliminalSavedSession && currentAffirmation) {
+      playManualCurrentAffirmationAudio();
+    }
+  }, [isSubliminalSavedSession, safeAffirmationIndex, currentAffirmation, playManualCurrentAffirmationAudio]);
+
+  // Setup iOS lockscreen & headphone controls via MediaSession API
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && 'mediaSession' in navigator) {
+      const activeText = isAiSession
+        ? aiAffirmations[aiIndex]?.text
+        : currentAffirmation?.text;
+      const title = isAiSession ? aiTheme || 'Rampage con IA' : currentSet?.title || 'Rampage';
+
+      if (activeText) {
+        try {
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: activeText,
+            artist: 'Voz Propia · Reprogramación Subliminal AYA',
+            album: title,
+          });
+
+          navigator.mediaSession.setActionHandler('play', () => {
+            if (isAiSession) playCurrentAffirmationAudio();
+            else playManualCurrentAffirmationAudio();
+          });
+
+          navigator.mediaSession.setActionHandler('pause', () => {
+            audioEngine.stopVoice();
+            setIsVoicePlaying(false);
+          });
+
+          navigator.mediaSession.setActionHandler('nexttrack', () => {
+            if (isAiSession) advanceAiAffirmation(1);
+            else advanceManualAffirmation(1);
+          });
+
+          navigator.mediaSession.setActionHandler('previoustrack', () => {
+            if (isAiSession) advanceAiAffirmation(-1);
+            else advanceManualAffirmation(-1);
+          });
+        } catch (_) {}
+      }
+    }
+  }, [
+    isAiSession,
+    aiAffirmations,
+    aiIndex,
+    aiTheme,
+    currentAffirmation,
+    currentSet,
+    advanceAiAffirmation,
+    advanceManualAffirmation,
+    playCurrentAffirmationAudio,
+    playManualCurrentAffirmationAudio,
+  ]);
 
   // Gesture handling
   const bindCardGesture = useDrag(
@@ -598,21 +753,24 @@ export const RampageSetView: React.FC = () => {
 
   const slideVariants = {
     enter: (dir: number) => ({
-      x: dir > 0 ? 110 : -110,
+      x: dir > 0 ? 90 : -90,
       opacity: 0,
-      scale: 0.94,
+      scale: 0.95,
+      filter: 'blur(5px)',
     }),
     center: {
       x: dragOffsetX,
       opacity: 1,
       scale: 1,
+      filter: 'blur(0px)',
       transition: IOS_LAYOUT_SPRING,
     },
     exit: (dir: number) => ({
-      x: dir > 0 ? -110 : 110,
+      x: dir > 0 ? -90 : 90,
       opacity: 0,
-      scale: 0.94,
-      transition: { duration: 0.2, ease: [0.32, 0.72, 0, 1] as const },
+      scale: 0.95,
+      filter: 'blur(5px)',
+      transition: { duration: 0.22, ease: [0.32, 0.72, 0, 1] as const },
     }),
   };
 
@@ -703,7 +861,7 @@ export const RampageSetView: React.FC = () => {
               }`}
               title={autoAdvance ? 'Avance automático activado' : 'Modo manual por toque'}
             >
-              {autoAdvance ? '⚡ Auto' : '👆 Toque'}
+              {autoAdvance ? 'Auto' : 'Manual'}
             </button>
           </div>
         </div>
@@ -711,34 +869,7 @@ export const RampageSetView: React.FC = () => {
         {/* Protagonist Card / Liquid Skeleton with Real-Time Reactive Pastel Halo */}
         <div className="relative overflow-hidden contain-layout w-full min-h-[230px] sm:min-h-[260px] flex items-center justify-center p-2">
           {isInitialLoading ? (
-            /* Liquid Glass Skeleton with Quotation Marks */
-            <div className="w-full relative p-6 sm:p-9 rounded-3xl sm:rounded-[2rem] liquid-glass-surface shadow-liquid flex flex-col justify-between min-h-[220px] sm:min-h-[250px] animate-pulse">
-              <span
-                aria-hidden="true"
-                className="absolute top-3.5 left-4 font-serif text-3xl sm:text-4xl text-manifest-ink/10 select-none"
-              >
-                “
-              </span>
-              <span
-                aria-hidden="true"
-                className="absolute bottom-3.5 right-4 font-serif text-3xl sm:text-4xl text-manifest-ink/10 select-none"
-              >
-                ”
-              </span>
-              <div className="flex items-center justify-between">
-                <div className="h-4 w-28 bg-manifest-lavender/60 rounded-full" />
-                <div className="h-5 w-12 bg-manifest-lavender/60 rounded-full" />
-              </div>
-              <div className="my-auto py-5 space-y-2.5 text-center flex flex-col items-center">
-                <div className="h-5 w-4/5 bg-manifest-lavender/80 rounded-lg" />
-                <div className="h-5 w-3/5 bg-manifest-lavender/60 rounded-lg" />
-                <span className="text-[11px] text-manifest-auraPurple font-medium pt-2 flex items-center gap-1.5">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Sintonizando frecuencias y sintetizando tu voz...</span>
-                </span>
-              </div>
-              <div className="h-3 w-40 bg-manifest-lavender/40 rounded-full mx-auto" />
-            </div>
+            <RampageCardSkeleton />
           ) : (
             <AnimatePresence mode="popLayout" custom={direction}>
               {currentAiAff && (
@@ -843,8 +974,9 @@ export const RampageSetView: React.FC = () => {
                     <div className="relative z-10 flex items-center justify-between pt-2 border-t border-black/[0.04]">
                       {/* Play / Pause / Replay Buttons */}
                       <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                        <button
+                        <motion.button
                           type="button"
+                          whileTap={IOS_TAP_SPRING}
                           onClick={() => {
                             if (isVoicePlaying) {
                               audioEngine.stopVoice();
@@ -857,12 +989,30 @@ export const RampageSetView: React.FC = () => {
                           className="w-7 h-7 rounded-full glass-pill text-manifest-ink flex items-center justify-center shadow-xs transition-colors cursor-pointer hover:bg-manifest-glassControlHover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-manifest-glassBorderFocus"
                           title={isVoicePlaying ? 'Pausar audio' : 'Reproducir voz'}
                         >
-                          {isVoicePlaying ? (
-                            <Pause className="w-3.5 h-3.5" />
-                          ) : (
-                            <Play className="w-3.5 h-3.5 ml-0.5" />
-                          )}
-                        </button>
+                          <AnimatePresence mode="wait" initial={false}>
+                            {isVoicePlaying ? (
+                              <motion.div
+                                key="pause"
+                                initial={{ opacity: 0, scale: 0.7, rotate: -25 }}
+                                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                                exit={{ opacity: 0, scale: 0.7, rotate: 25 }}
+                                transition={{ type: 'spring', stiffness: 500, damping: 26 }}
+                              >
+                                <Pause className="w-3.5 h-3.5" />
+                              </motion.div>
+                            ) : (
+                              <motion.div
+                                key="play"
+                                initial={{ opacity: 0, scale: 0.7, rotate: 25 }}
+                                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                                exit={{ opacity: 0, scale: 0.7, rotate: -25 }}
+                                transition={{ type: 'spring', stiffness: 500, damping: 26 }}
+                              >
+                                <Play className="w-3.5 h-3.5 ml-0.5" />
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </motion.button>
 
                         <button
                           type="button"
@@ -875,10 +1025,16 @@ export const RampageSetView: React.FC = () => {
                         </button>
                       </div>
 
-                      <span className="text-[10px] font-medium text-manifest-inkMuted/70 flex items-center gap-1">
-                        <span>Toca para sumar 🔥 y avanzar</span>
-                        <span>→</span>
-                      </span>
+                      {isVoicePlaying ? (
+                        <div className="flex items-center gap-1.5 text-manifest-auraPurple">
+                          <span className="text-[10px] font-semibold">Tu Voz AYA</span>
+                          <WaveBars count={10} active={true} minHeight={3} maxHeight={12} className="h-3.5" />
+                        </div>
+                      ) : (
+                        <span className="text-[10px] font-medium text-manifest-inkMuted/60">
+                          Bucle Subliminal
+                        </span>
+                      )}
                     </div>
                   </motion.div>
                 </div>
@@ -1021,6 +1177,25 @@ export const RampageSetView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Subliminal Audio Mode for Saved Set */}
+          <motion.button
+            type="button"
+            whileTap={IOS_TAP_SPRING}
+            onClick={toggleSubliminalSavedSession}
+            data-testid="toggle-saved-subliminal-btn"
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs ${
+              isSubliminalSavedSession
+                ? 'bg-emerald-500 text-white shadow-emerald-500/25 ring-2 ring-emerald-300/40'
+                : 'glass-pill text-manifest-auraPurple hover:text-manifest-ink border border-manifest-glassBorder hover:bg-manifest-glassControlHover'
+            }`}
+            title="Escuchar este set en bucle continuo para dormir o meditar"
+          >
+            <Headphones className="w-3.5 h-3.5" />
+            <span>{isSubliminalSavedSession ? 'Subliminal Activo' : 'Modo Audio Subliminal'}</span>
+          </motion.button>
+
+          <span className="text-manifest-ink/20">•</span>
+
           <motion.button
             type="button"
             whileTap={IOS_TAP_SPRING}
@@ -1115,18 +1290,80 @@ export const RampageSetView: React.FC = () => {
                 </div>
 
                 {/* Affirmation Text Protagonist */}
-                <div className="relative z-10 my-auto py-5 text-center px-4 sm:px-6">
-                  <p className="text-base sm:text-xl md:text-2xl font-serif font-bold text-manifest-ink leading-relaxed tracking-tight">
+                <div className="relative z-10 my-auto py-6 text-center px-4 sm:px-6">
+                  <p className="text-lg sm:text-2xl md:text-3xl font-serif font-bold text-manifest-ink leading-relaxed tracking-tight">
                     {currentAffirmation.text}
                   </p>
                 </div>
 
-                {/* Bottom Tactile Affordance Hint */}
-                <div className="relative z-10 flex items-center justify-center pt-2">
-                  <span className="text-[10px] font-medium text-manifest-inkMuted/70 flex items-center gap-1">
-                    <span>Toca la tarjeta o desliza para avanzar</span>
-                    <span>→</span>
-                  </span>
+                {/* Bottom Bar: Audio controls & wave indicator */}
+                <div className="relative z-10 flex items-center justify-between pt-2 border-t border-black/[0.04]">
+                  <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    <motion.button
+                      type="button"
+                      whileTap={IOS_TAP_SPRING}
+                      onClick={() => {
+                        if (isVoicePlaying) {
+                          audioEngine.stopVoice();
+                          setIsVoicePlaying(false);
+                        } else {
+                          playManualCurrentAffirmationAudio();
+                        }
+                      }}
+                      data-testid="audio-play-pause-btn"
+                      className="w-7 h-7 rounded-full glass-pill text-manifest-ink flex items-center justify-center shadow-xs transition-colors cursor-pointer hover:bg-manifest-glassControlHover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-manifest-glassBorderFocus"
+                      title={isVoicePlaying ? 'Pausar audio' : 'Reproducir voz'}
+                    >
+                      <AnimatePresence mode="wait" initial={false}>
+                        {isVoicePlaying ? (
+                          <motion.div
+                            key="pause"
+                            initial={{ opacity: 0, scale: 0.7, rotate: -25 }}
+                            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                            exit={{ opacity: 0, scale: 0.7, rotate: 25 }}
+                            transition={{ type: 'spring', stiffness: 500, damping: 26 }}
+                          >
+                            <Pause className="w-3.5 h-3.5" />
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="play"
+                            initial={{ opacity: 0, scale: 0.7, rotate: 25 }}
+                            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                            exit={{ opacity: 0, scale: 0.7, rotate: -25 }}
+                            transition={{ type: 'spring', stiffness: 500, damping: 26 }}
+                          >
+                            <Play className="w-3.5 h-3.5 ml-0.5" />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.button>
+
+                    <button
+                      type="button"
+                      onClick={() => playManualCurrentAffirmationAudio()}
+                      data-testid="audio-repeat-btn"
+                      className="w-7 h-7 rounded-full glass-pill text-manifest-ink flex items-center justify-center shadow-xs transition-colors cursor-pointer hover:bg-manifest-glassControlHover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-manifest-glassBorderFocus"
+                      title="Repetir audio actual"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  {isVoicePlaying ? (
+                    <div className="flex items-center gap-1.5 text-manifest-auraPurple">
+                      <span className="text-[10px] font-semibold">Tu Voz AYA</span>
+                      <WaveBars count={10} active={true} minHeight={3} maxHeight={12} className="h-3.5" />
+                    </div>
+                  ) : isSubliminalSavedSession ? (
+                    <span className="text-[10px] font-semibold text-emerald-600">
+                      Bucle Subliminal Activo
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-manifest-inkMuted/60 font-medium">
+                      Modo Subliminal
+                    </span>
+                  )}
                 </div>
               </motion.div>
             )}

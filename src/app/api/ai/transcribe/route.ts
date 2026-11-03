@@ -17,9 +17,18 @@ export async function POST(req: NextRequest) {
     const previousTextTail = (formData.get('previousTextTail') as string) || '';
     const spokenText = (formData.get('spokenText') as string) || '';
 
-    // 1. Guardrail: Sandbox / Mock Mode
-    if (sandbox || (!audioFile && !spokenText)) {
-      await sleep(400);
+    // 1. Guardrail: Empty input or Sandbox / Mock Mode
+    if (!audioFile && !spokenText) {
+      return NextResponse.json({
+        text: '',
+        detectedTone: 'calma, firme, íntima',
+        source: 'SANDBOX_MOCK',
+        totalTokens: 0,
+      });
+    }
+
+    if (sandbox) {
+      await sleep(200);
       const mockResult = generateMockTranscript(previousTextTail, spokenText);
       return NextResponse.json({
         text: mockResult.text,

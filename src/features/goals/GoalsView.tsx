@@ -131,28 +131,42 @@ export const GoalsView: React.FC = () => {
 
         {/* Liquid Glass pill switcher + Action */}
         <div className="flex items-center gap-2 self-start sm:self-auto w-full sm:w-auto justify-between sm:justify-end">
-          <div className="inline-flex p-0.5 sm:p-1 rounded-full bg-white/85 border border-purple-200/80 shadow-sm backdrop-blur-md">
+          <div className="inline-flex p-0.5 sm:p-1 rounded-full bg-white/85 border border-purple-200/80 shadow-sm backdrop-blur-md relative">
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              className={`px-2.5 py-1 sm:px-3 sm:py-1.5 text-[11px] sm:text-xs font-serif tracking-wide rounded-full transition-all flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
+              className={`relative z-10 px-2.5 py-1 sm:px-3 sm:py-1.5 text-[11px] sm:text-xs font-serif tracking-wide rounded-full transition-all flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
                 viewMode === 'list'
-                  ? 'bg-white text-purple-950 font-bold shadow-xs border border-purple-300/80'
-                  : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-100/50'
+                  ? 'text-purple-950 font-bold'
+                  : 'text-slate-600 font-medium hover:text-slate-900'
               }`}
             >
+              {viewMode === 'list' && (
+                <motion.div
+                  layoutId="goalsViewModePill"
+                  className="absolute inset-0 rounded-full bg-white border border-purple-300/80 shadow-xs -z-10"
+                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                />
+              )}
               <Pin className="w-3 h-3 text-purple-600" />
               <span>Mis Fijadas ({pinnedAffirmations.length})</span>
             </button>
             <button
               type="button"
               onClick={() => setViewMode('rampage')}
-              className={`px-2.5 py-1 sm:px-3 sm:py-1.5 text-[11px] sm:text-xs font-serif tracking-wide rounded-full transition-all flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
+              className={`relative z-10 px-2.5 py-1 sm:px-3 sm:py-1.5 text-[11px] sm:text-xs font-serif tracking-wide rounded-full transition-all flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
                 viewMode === 'rampage'
-                  ? 'bg-white text-purple-950 font-bold shadow-xs border border-purple-300/80'
-                  : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-100/50'
+                  ? 'text-purple-950 font-bold'
+                  : 'text-slate-600 font-medium hover:text-slate-900'
               }`}
             >
+              {viewMode === 'rampage' && (
+                <motion.div
+                  layoutId="goalsViewModePill"
+                  className="absolute inset-0 rounded-full bg-white border border-purple-300/80 shadow-xs -z-10"
+                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                />
+              )}
               <Flame className="w-3 h-3 text-amber-500 fill-amber-500" />
               <span>Rampage</span>
             </button>
@@ -184,11 +198,6 @@ export const GoalsView: React.FC = () => {
         </div>
       </div>
 
-      {/* Nota sutil única debajo del encabezado de la lista */}
-      <div className="px-1.5 py-0.5 flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-500 font-sans">
-        <span className="text-manifest-auraPurple text-xs">✦</span>
-        <span>Toca en cualquier parte de una tarjeta para sumar repetición</span>
-      </div>
 
       {/* VIEW MODE 1: LISTA Y FIJADOS */}
       {viewMode === 'list' && (

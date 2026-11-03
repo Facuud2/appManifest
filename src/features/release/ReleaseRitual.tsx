@@ -219,16 +219,40 @@ export const ReleaseRitual: React.FC = () => {
             exit={{ opacity: 0 }}
             className="py-12 px-6 rounded-2xl tarot-card-border glass-card border border-purple-400/20 text-center relative overflow-hidden"
           >
-            {/* Luminous burning particles */}
+            {/* Luminous burning particles & ambient warmth */}
             <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
               <motion.div
-                className="w-48 h-48 rounded-full bg-gradient-to-tr from-amber-600/30 via-rose-600/30 to-purple-600/30 blur-3xl"
+                className="w-56 h-56 rounded-full bg-gradient-to-tr from-amber-600/35 via-rose-600/30 to-purple-600/30 blur-3xl"
                 animate={{
-                  scale: [1, 1.4, 0.8, 1.6, 0],
-                  opacity: [0.6, 1, 0.8, 1, 0],
+                  scale: [1, 1.45, 0.85, 1.6, 0],
+                  opacity: [0.6, 1, 0.85, 1, 0],
                 }}
                 transition={{ duration: 2.7, ease: 'easeInOut' }}
               />
+              {/* Ascending ember sparks */}
+              {[...Array(12)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-1.5 h-1.5 rounded-full bg-gradient-to-t from-amber-400 to-rose-300 shadow-[0_0_8px_rgba(251,191,36,0.9)]"
+                  initial={{
+                    opacity: 0,
+                    x: (i % 2 === 0 ? 1 : -1) * (i * 14 - 30),
+                    y: 40,
+                    scale: 0.5,
+                  }}
+                  animate={{
+                    opacity: [0, 1, 0.8, 0],
+                    y: [-20, -110 - i * 12],
+                    x: [(i % 2 === 0 ? 1 : -1) * (i * 14 - 30), (i % 2 === 0 ? 1 : -1) * (i * 18 - 40) + (i * 4)],
+                    scale: [0.5, 1.2, 0.8, 0.2],
+                  }}
+                  transition={{
+                    duration: 2.2 + (i % 3) * 0.2,
+                    delay: 0.15 + (i * 0.12),
+                    ease: 'easeOut',
+                  }}
+                />
+              ))}
             </div>
 
             {/* Fading dissolving digital paper */}
@@ -245,7 +269,7 @@ export const ReleaseRitual: React.FC = () => {
                 y: [0, -5, -15, -30],
               }}
               transition={{ duration: 2.7, ease: 'easeOut' }}
-              className="p-6 rounded-xl glass-card border border-amber-500/30 shadow-inner max-w-xs mx-auto"
+              className="p-6 rounded-xl glass-card border border-amber-500/30 shadow-inner max-w-xs mx-auto relative z-10"
             >
               <p className="text-xs text-manifest-ink font-medium line-clamp-3">
                 {fearContent}
@@ -253,11 +277,11 @@ export const ReleaseRitual: React.FC = () => {
             </motion.div>
 
             {/* Sparkles rising */}
-            <div className="mt-8 space-y-2">
+            <div className="mt-8 space-y-2 relative z-10">
               <motion.div
-                animate={{ rotate: 360 }}
+                animate={{ rotate: 360, scale: [1, 1.15, 1] }}
                 transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-                className="w-8 h-8 mx-auto text-amber-400"
+                className="w-8 h-8 mx-auto text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.7)]"
               >
                 <Sparkles className="w-8 h-8" />
               </motion.div>
@@ -275,16 +299,29 @@ export const ReleaseRitual: React.FC = () => {
         {stage === 'released' && (
           <motion.div
             key="stage-released"
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="p-8 rounded-2xl tarot-card-border glass-card border border-purple-400/20 shadow-liquid text-center space-y-4"
+            transition={{ type: 'spring', stiffness: 380, damping: 26 }}
+            className="p-8 rounded-2xl tarot-card-border glass-card border border-purple-400/20 shadow-liquid text-center space-y-4 relative overflow-hidden"
           >
-            <div className="w-14 h-14 mx-auto rounded-full bg-emerald-100/80 border border-emerald-300/60 text-emerald-700 flex items-center justify-center shadow-neu-sm">
-              <Wind className="w-7 h-7" />
-            </div>
+            {/* Soft radial aura bloom */}
+            <motion.div
+              className="absolute inset-0 pointer-events-none bg-radial from-emerald-500/10 via-transparent to-transparent"
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1.3 }}
+              transition={{ duration: 1.2, ease: 'easeOut' }}
+            />
 
-            <div className="space-y-1">
+            <motion.div
+              initial={{ scale: 0.5, rotate: -15 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 22, delay: 0.08 }}
+              className="w-14 h-14 mx-auto rounded-full bg-emerald-100/90 border border-emerald-300/70 text-emerald-700 flex items-center justify-center shadow-neu-sm relative z-10"
+            >
+              <Wind className="w-7 h-7" />
+            </motion.div>
+
+            <div className="space-y-1 relative z-10">
               <h3 className="font-serif text-lg font-bold text-manifest-ink">
                 Liberado y devuelto a la paz
               </h3>

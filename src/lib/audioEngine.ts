@@ -4,12 +4,39 @@
  * ambient sound generation (Silencio, 432Hz, Lluvia Astral), and voice playback.
  */
 
-export type AmbienceType = 'none' | '432hz' | 'astral_rain';
+export type AmbienceType = 'none' | 'white_noise' | 'astral_rain';
+
+export function getBestSpanishVoice(): SpeechSynthesisVoice | null {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
+  const voices = window.speechSynthesis.getVoices();
+  const spanish = voices.filter((v) => v.lang.toLowerCase().startsWith('es'));
+  if (spanish.length === 0) return null;
+
+  // Prioritize enhanced natural Siri / neural voices on iOS / macOS
+  const enhanced = spanish.find(
+    (v) =>
+      v.name.toLowerCase().includes('enhanced') ||
+      v.name.toLowerCase().includes('natural') ||
+      v.name.toLowerCase().includes('siri') ||
+      v.name.toLowerCase().includes('premium') ||
+      v.name.toLowerCase().includes('mónica') ||
+      v.name.toLowerCase().includes('monica') ||
+      v.name.toLowerCase().includes('jorge') ||
+      v.name.toLowerCase().includes('paulina')
+  );
+  if (enhanced) return enhanced;
+
+  const preferredLocale = spanish.find(
+    (v) => v.lang === 'es-ES' || v.lang === 'es-US' || v.lang === 'es-MX'
+  );
+  return preferredLocale || spanish[0];
+}
 
 class AyaAudioEngine {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private analyser: AnalyserNode | null = null;
+  private warmFilter: BiquadFilterNode | null = null;
 
   // Ambience nodes
   private ambienceGain: GainNode | null = null;
@@ -24,6 +51,7 @@ class AyaAudioEngine {
   private audioEl: HTMLAudioElement | null = null;
   private isUnlocked: boolean = false;
   private isVoicePlaying: boolean = false;
+  private isSpeechSynthesisPlaying: boolean = false;
   private animFrame: number | null = null;
   private currentEnergy: number = 0;
 
@@ -51,6 +79,12 @@ class AyaAudioEngine {
     this.masterGain = this.ctx.createGain();
     this.masterGain.gain.setValueAtTime(1.0, this.ctx.currentTime);
 
+    // Warm Lowpass Filter (3400Hz) for soothing hypnotic vocal sound
+    this.warmFilter = this.ctx.createBiquadFilter();
+    this.warmFilter.type = 'lowpass';
+    this.warmFilter.frequency.setValueAtTime(3400, this.ctx.currentTime);
+    this.warmFilter.Q.setValueAtTime(0.7, this.ctx.currentTime);
+
     // Analyser Node for Reactive Pastel Waves (60fps)
     this.analyser = this.ctx.createAnalyser();
     this.analyser.fftSize = 64;
@@ -65,9 +99,10 @@ class AyaAudioEngine {
     this.ambienceGain.gain.setValueAtTime(0.0, this.ctx.currentTime);
 
     // Graph routing:
-    // voiceGain -> analyser -> masterGain -> destination
+    // voiceGain -> warmFilter -> analyser -> masterGain -> destination
     // ambienceGain -> masterGain -> destination
-    this.voiceGain.connect(this.analyser);
+    this.voiceGain.connect(this.warmFilter);
+    this.warmFilter.connect(this.analyser);
     this.analyser.connect(this.masterGain);
     this.ambienceGain.connect(this.masterGain);
     this.masterGain.connect(this.ctx.destination);
@@ -142,7 +177,9 @@ class AyaAudioEngine {
   }
 
   /**
-   * Ambience sound generator: none | 432hz | astral_rain
+   * Ambience sound generator: none | white_noise | astral_rain
+   * Uses 10-second circular crossfaded noise buffers with lowpass filtering
+   * to guarantee continuous, seamless, glitch-free background audio.
    */
   public setAmbience(type: AmbienceType) {
     if (this.currentAmbience === type) return;
@@ -158,34 +195,45 @@ class AyaAudioEngine {
       const now = ctx.currentTime;
       this.ambienceGain.gain.cancelScheduledValues(now);
       this.ambienceGain.gain.setValueAtTime(0, now);
-      this.ambienceGain.gain.linearRampToValueAtTime(0.15, now + 1.2);
+      this.ambienceGain.gain.linearRampToValueAtTime(0.12, now + 1.2);
 
-      if (type === '432hz') {
-        // Binaural healing frequency: 432Hz and 432.8Hz with warm lowpass filter
+      if (type === 'white_noise') {
+        // High quality soothing white/pink noise blanket (ideal for sleep/focus)
+        const bufferDuration = 10;
+        const bufferSize = ctx.sampleRate * bufferDuration;
+        const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = (Math.random() * 2 - 1) * 0.08;
+        }
+
+        // Circular boundary crossfade (2048 samples) to eliminate any loop seam click
+        const fadeLen = 2048;
+        for (let i = 0; i < fadeLen; i++) {
+          const t = i / fadeLen;
+          output[i] = output[i] * t + output[bufferSize - fadeLen + i] * (1 - t);
+        }
+
+        const source = ctx.createBufferSource();
+        source.buffer = noiseBuffer;
+        source.loop = true;
+
+        // Warm lowpass filter (850Hz) for deep hypnotic comfort
         const filter = ctx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(650, now);
+        filter.frequency.setValueAtTime(850, now);
+        filter.Q.setValueAtTime(0.5, now);
 
-        const osc1 = ctx.createOscillator();
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(432, now);
-
-        const osc2 = ctx.createOscillator();
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(432.8, now);
-
-        osc1.connect(filter);
-        osc2.connect(filter);
+        source.connect(filter);
         filter.connect(this.ambienceGain);
+        source.start();
 
-        osc1.start();
-        osc2.start();
-
-        this.ambienceOsc1 = osc1;
-        this.ambienceOsc2 = osc2;
+        this.ambienceSource = source;
       } else if (type === 'astral_rain') {
-        // Procedural gentle pink noise astral shower
-        const bufferSize = ctx.sampleRate * 3;
+        // Procedural gentle pink noise astral shower (10-second seamless loop)
+        const bufferDuration = 10;
+        const bufferSize = ctx.sampleRate * bufferDuration;
         const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
         const output = noiseBuffer.getChannelData(0);
         let b0 = 0,
@@ -204,8 +252,15 @@ class AyaAudioEngine {
           b3 = 0.8665 * b3 + white * 0.3104856;
           b4 = 0.55 * b4 + white * 0.5329522;
           b5 = -0.7616 * b5 - white * 0.016898;
-          output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.04;
+          output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.045;
           b6 = white * 0.115926;
+        }
+
+        // Circular boundary crossfade (2048 samples)
+        const fadeLen = 2048;
+        for (let i = 0; i < fadeLen; i++) {
+          const t = i / fadeLen;
+          output[i] = output[i] * t + output[bufferSize - fadeLen + i] * (1 - t);
         }
 
         const rainSource = ctx.createBufferSource();
@@ -214,8 +269,8 @@ class AyaAudioEngine {
 
         const filter = ctx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(900, now);
-        filter.Q.setValueAtTime(1.5, now);
+        filter.frequency.setValueAtTime(950, now);
+        filter.Q.setValueAtTime(1.2, now);
 
         rainSource.connect(filter);
         filter.connect(this.ambienceGain);
@@ -328,7 +383,106 @@ class AyaAudioEngine {
     }
   }
 
+  /**
+   * Zero-Failure Local Speech Synthesis Engine (iOS WebKit / macOS / Android safe)
+   * Pre-calibrated rate: 0.88 (pausado e hipnótico), custom pitch from vocal autocorrelation.
+   */
+  public speakVoice(
+    text: string,
+    options?: { pitch?: number; rate?: number },
+    onEnded?: () => void
+  ): boolean {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      if (onEnded) onEnded();
+      return false;
+    }
+
+    this.stopVoice();
+
+    try {
+      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+        window.speechSynthesis.cancel();
+      }
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      (window as any).__ayaCurrentUtterance = utterance;
+
+      utterance.lang = 'es-ES';
+      utterance.volume = 1.0;
+      utterance.rate = options?.rate ?? 0.88;
+      utterance.pitch = options?.pitch ?? 1.0;
+
+      // Select highest quality Spanish voice
+      const bestVoice = getBestSpanishVoice();
+      if (bestVoice) {
+        utterance.voice = bestVoice;
+      }
+
+      this.isVoicePlaying = true;
+      this.isSpeechSynthesisPlaying = true;
+
+      // Simulate reactive audio energy pulses for wave bars while speech synthesis is active
+      let speechTimer: any = null;
+      let step = 0;
+      speechTimer = setInterval(() => {
+        if (!this.isSpeechSynthesisPlaying) {
+          clearInterval(speechTimer);
+          return;
+        }
+        step++;
+        const pulse = 0.35 + 0.45 * Math.sin(step * 0.45) * Math.sin(step * 0.2);
+        this.currentEnergy = Math.max(0.1, Math.min(0.9, pulse));
+      }, 50);
+
+      const finishPlayback = () => {
+        if (speechTimer) clearInterval(speechTimer);
+        this.isSpeechSynthesisPlaying = false;
+        this.isVoicePlaying = false;
+        this.currentEnergy = 0;
+        if (onEnded) onEnded();
+      };
+
+      utterance.onend = () => {
+        finishPlayback();
+      };
+
+      utterance.onerror = (e) => {
+        console.warn('[audioEngine] SpeechSynthesis error:', e);
+        finishPlayback();
+      };
+
+      // iOS WebKit fix: keep synthesis alive if utterance takes a few seconds
+      const resumeInterval = setInterval(() => {
+        if (!this.isSpeechSynthesisPlaying) {
+          clearInterval(resumeInterval);
+          return;
+        }
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+      }, 1000);
+
+      window.speechSynthesis.speak(utterance);
+      return true;
+    } catch (err) {
+      console.warn('[audioEngine] Could not speak text:', err);
+      this.isVoicePlaying = false;
+      this.isSpeechSynthesisPlaying = false;
+      if (onEnded) onEnded();
+      return false;
+    }
+  }
+
   public stopVoice() {
+    this.isSpeechSynthesisPlaying = false;
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (_) {}
+    }
     if (this.voiceSource) {
       try {
         this.voiceSource.stop();

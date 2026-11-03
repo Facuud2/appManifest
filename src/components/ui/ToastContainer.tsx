@@ -32,12 +32,13 @@ export const ToastContainer: React.FC = () => {
           return (
             <motion.div
               key={toast.id}
-              initial={{ opacity: 0, y: -20, scale: 0.92 }}
+              layout
+              initial={{ opacity: 0, y: -24, scale: 0.88 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -14, scale: 0.94 }}
+              exit={{ opacity: 0, y: -16, scale: 0.92, filter: 'blur(4px)' }}
               transition={{ type: 'spring', stiffness: 450, damping: 28 }}
               onClick={() => removeToast(toast.id)}
-              className="pointer-events-auto cursor-pointer max-w-sm flex items-center gap-2.5 px-4 py-2 rounded-full glass-card border border-manifest-glassBorder shadow-lens text-xs sm:text-[13px] font-semibold text-manifest-ink backdrop-blur-xl bg-manifest-surfaceNav/95 hover:bg-manifest-glassControlHover active:scale-95 transition-all"
+              className="pointer-events-auto cursor-pointer max-w-sm flex items-center gap-2.5 px-4 py-2.5 rounded-full glass-card border border-white/40 shadow-liquid text-xs sm:text-[13px] font-semibold text-manifest-ink backdrop-blur-2xl bg-white/80 hover:bg-white/95 active:scale-95 transition-all"
               data-testid="liquid-toast-capsule"
             >
               <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 shadow-xs ${iconBg}`}>

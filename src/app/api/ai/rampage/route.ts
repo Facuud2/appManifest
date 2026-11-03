@@ -13,21 +13,18 @@ export async function POST(req: NextRequest) {
     const sandbox = isSandboxRequest(req);
     const body = await req.json().catch(() => ({}));
     const {
-      centralTheme,
+      centralTheme = '',
       specifications = '',
+      userAffirmations = [],
+      journalHighlights = [],
+      userScope = 'facu',
       detectedTone = 'calma, firme, íntima',
       previousAffirmations = [],
       batchSize = 3,
       batchIndex = 0,
     } = body;
 
-    const theme = (centralTheme || '').trim();
-    if (!theme) {
-      return NextResponse.json(
-        { error: 'El tema central es requerido para generar afirmaciones de Rampage.' },
-        { status: 400 }
-      );
-    }
+    const theme = (centralTheme || '').trim() || (specifications || '').trim() || (userAffirmations?.[0] || 'Manifestación');
 
     // 1. Sandbox / Mock Mode
     if (sandbox) {
@@ -45,15 +42,18 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 2. Gemini Live Call with AYA Method prosody prompt
+    // 2. Gemini Live Call with AYA Method prosody prompt and dynamic popurrí
     try {
-      const result = await generateRampageWithGemini(
-        theme,
+      const result = await generateRampageWithGemini({
+        centralTheme: theme,
         specifications,
+        userAffirmations,
+        journalHighlights,
+        userScope,
         detectedTone,
         previousAffirmations,
-        batchSize
-      );
+        batchSize,
+      });
 
       return NextResponse.json({
         affirmations: result.affirmations,

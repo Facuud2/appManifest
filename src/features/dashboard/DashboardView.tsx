@@ -209,18 +209,25 @@ export const DashboardView: React.FC = () => {
         {/* Dynamic Mode Switcher (Afirmaciones Robóticas vs Rampage Activo) */}
         <div
           data-testid="dashboard-mode-switcher"
-          className="inline-flex p-1 rounded-full bg-white/90 border border-purple-200/80 shadow-neu-sm backdrop-blur-md self-start sm:self-auto"
+          className="inline-flex p-1 rounded-full bg-white/90 border border-purple-200/80 shadow-neu-sm backdrop-blur-md self-start sm:self-auto relative"
         >
           <button
             type="button"
             onClick={() => handleSetFocusMode('robotic')}
             data-testid="dashboard-mode-robotic-btn"
-            className={`px-3 py-1.5 text-xs font-serif tracking-wide rounded-full transition-colors flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
+            className={`relative z-10 px-3 py-1.5 text-xs font-serif tracking-wide rounded-full transition-colors flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
               focusMode === 'robotic'
-                ? 'bg-white text-purple-950 font-bold shadow-xs border border-purple-300/80'
-                : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-100/50'
+                ? 'text-purple-950 font-bold'
+                : 'text-slate-600 font-medium hover:text-slate-900'
             }`}
           >
+            {focusMode === 'robotic' && (
+              <motion.div
+                layoutId="dashboardModePill"
+                className="absolute inset-0 rounded-full bg-white border border-purple-300/80 shadow-xs -z-10"
+                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+              />
+            )}
             <RotateCcw className="w-3.5 h-3.5 text-purple-600" />
             <span>Afirmaciones</span>
             <span className="text-[10px] font-sans font-normal opacity-70 hidden sm:inline">(Robóticas)</span>
@@ -230,12 +237,19 @@ export const DashboardView: React.FC = () => {
             type="button"
             onClick={() => handleSetFocusMode('rampage')}
             data-testid="dashboard-mode-rampage-btn"
-            className={`px-3 py-1.5 text-xs font-serif tracking-wide rounded-full transition-colors flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
+            className={`relative z-10 px-3 py-1.5 text-xs font-serif tracking-wide rounded-full transition-colors flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
               focusMode === 'rampage'
-                ? 'bg-white text-amber-950 font-bold shadow-xs border border-amber-300/80'
-                : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-100/50'
+                ? 'text-amber-950 font-bold'
+                : 'text-slate-600 font-medium hover:text-slate-900'
             }`}
           >
+            {focusMode === 'rampage' && (
+              <motion.div
+                layoutId="dashboardModePill"
+                className="absolute inset-0 rounded-full bg-white border border-amber-300/80 shadow-xs -z-10"
+                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+              />
+            )}
             <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
             <span>Rampage</span>
             <span className="text-[10px] font-sans font-normal opacity-70 hidden sm:inline">(Activo)</span>

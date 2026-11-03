@@ -113,9 +113,9 @@ export default function Home() {
               <div className="flex-1 pt-1.5 sm:pt-3 lg:pt-6 pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] lg:pb-8">
                 <motion.div
                   key={activeTab}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  initial={{ opacity: 0, y: 8, filter: 'blur(6px)', scale: 0.992 }}
+                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)', scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 360, damping: 28, mass: 0.7 }}
                 >
                   {activeTab === 'inicio' && <DashboardView />}
                   {activeTab === 'diario' && <JournalView />}
