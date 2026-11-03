@@ -123,13 +123,13 @@ export const DashboardView: React.FC = () => {
 
   return (
     <div className="w-full space-y-5 pt-1">
-      {/* Saludo iOS (Buenos días / tardes / noches {Facu / Maia / Chicos}) */}
+      {/* Saludo iOS (Desktop: en mobile está en MobileTopHeader) */}
       <motion.div
         key={`${greeting}-${displayName}`}
         initial={{ opacity: 0, y: -8, filter: 'blur(5px)' }}
         animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
         transition={{ type: 'spring', damping: 25, stiffness: 240, mass: 0.8 }}
-        className="px-1 pt-0.5 pb-0.5"
+        className="hidden lg:block px-1 pt-0.5 pb-0.5"
       >
         <h1 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 tracking-tight">
           {greeting},{' '}
@@ -171,35 +171,32 @@ export const DashboardView: React.FC = () => {
             transition={IOS_LAYOUT_SPRING}
             className="lg:col-span-8 space-y-6"
           >
-            {/* A. HERO SPOTLIGHT CARD (Pastel Pink/Purple Neumorphism + Quotes + SmoothSizeContainer) */}
+            {/* A. HERO SPOTLIGHT CARD con Estabilidad Dimensional (220-260px) y Tipografía Adaptativa */}
             {spotlightAffirmation && (
-              <SmoothSizeContainer
+              <motion.div
                 layout="position"
                 transition={IOS_LAYOUT_SPRING}
                 onClick={handleAdvanceSpotlight}
-                className="relative rounded-3xl bg-gradient-to-br from-[#FAF3F8] via-[#F6EEFA] to-[#F0E8F9] border border-purple-200/80 shadow-[6px_6px_18px_rgba(215,200,240,0.45),-6px_-6px_18px_rgba(255,255,255,0.95)] cursor-pointer select-none group"
-                innerClassName="p-5 sm:p-7"
-                outerChildren={
-                  <>
-                    {/* Corner decorative quotation marks */}
-                    <span className="absolute top-2 left-4 font-serif text-3xl sm:text-4xl text-purple-400/60 select-none pointer-events-none leading-none z-10">
-                      “
-                    </span>
-                    <span className="absolute bottom-2 right-4 font-serif text-3xl sm:text-4xl text-pink-400/60 select-none pointer-events-none leading-none z-10">
-                      ”
-                    </span>
-
-                    {/* Ambient pastel radial aura */}
-                    <div
-                      aria-hidden="true"
-                      className="absolute -top-16 -right-16 w-60 h-60 rounded-full bg-gradient-to-br from-pink-300/25 via-purple-300/20 to-transparent blur-3xl pointer-events-none"
-                    />
-                  </>
-                }
+                data-testid="home-spotlight-card"
+                className="relative rounded-3xl bg-gradient-to-br from-[#FAF3F8] via-[#F6EEFA] to-[#F0E8F9] border border-purple-200/80 shadow-[6px_6px_18px_rgba(215,200,240,0.45),-6px_-6px_18px_rgba(255,255,255,0.95)] cursor-pointer select-none group min-h-[220px] max-h-[260px] h-[240px] flex flex-col justify-between p-6 overflow-hidden"
               >
+                {/* Corner decorative quotation marks */}
+                <span className="absolute top-2 left-4 font-serif text-3xl sm:text-4xl text-purple-400/40 select-none pointer-events-none leading-none z-0">
+                  “
+                </span>
+                <span className="absolute bottom-2 right-4 font-serif text-3xl sm:text-4xl text-pink-400/40 select-none pointer-events-none leading-none z-0">
+                  ”
+                </span>
+
+                {/* Ambient pastel radial aura */}
+                <div
+                  aria-hidden="true"
+                  className="absolute -top-16 -right-16 w-60 h-60 rounded-full bg-gradient-to-br from-pink-300/25 via-purple-300/20 to-transparent blur-3xl pointer-events-none"
+                />
+
                 {/* Card Header: Pastel pill counter + Edit button */}
-                <div className="flex items-center justify-between gap-2 mb-3.5 relative z-10">
-                  <div className="flex items-center gap-1.5 pl-4">
+                <div className="flex items-center justify-between gap-2 relative z-10">
+                  <div className="flex items-center gap-1.5 pl-2">
                     {displayAffirmations.length > 1 && (
                       <span className="text-[11px] font-sans font-bold text-purple-900 bg-purple-100/90 px-3 py-1 rounded-full border border-purple-300/70 tabular-nums shadow-neu-sm">
                         {(spotlightIndex % displayAffirmations.length) + 1} / {displayAffirmations.length}
@@ -214,29 +211,44 @@ export const DashboardView: React.FC = () => {
                       openAffirmationEditor(spotlightAffirmation);
                     }}
                     title="Editar decreto"
-                    className="p-2.5 rounded-full bg-white/80 hover:bg-white text-purple-700 hover:text-purple-900 border border-purple-200/70 shadow-neu-sm transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+                    className="p-2 rounded-full bg-white/80 hover:bg-white text-purple-700 hover:text-purple-900 border border-purple-200/70 shadow-neu-sm transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
-                {/* Affirmation Text: Striking, elegant Lora font with parallel popLayout transition */}
-                <div className="my-3 sm:my-5 px-3 relative z-10 min-h-[3.5rem] flex items-center">
-                  <AnimatePresence mode="popLayout" initial={false} custom={direction}>
-                    <motion.p
+                {/* Affirmation Text: Tipografía Adaptativa y Transición Suave mode="wait" (x: 24 -> 0 -> -24) */}
+                <div className="relative z-10 flex-1 flex items-center justify-center my-auto px-2 overflow-hidden">
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
                       key={spotlightAffirmation.id}
-                      custom={direction}
-                      variants={spotlightTextVariants}
-                      initial="initial"
-                      animate="animate"
-                      exit="exit"
-                      className="w-full font-serif text-xl sm:text-2xl lg:text-[25px] text-slate-800 font-medium leading-relaxed tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,0.85)]"
+                      initial={{ opacity: 0, x: 24 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -24 }}
+                      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                      className="w-full flex items-center justify-center text-center"
                     >
-                      “{spotlightAffirmation.text}”
-                    </motion.p>
+                      <p
+                        className={`text-slate-800 font-medium tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,0.85)] ${
+                          spotlightAffirmation.text.length < 60
+                            ? 'text-2xl font-serif leading-snug text-center my-auto'
+                            : spotlightAffirmation.text.length <= 160
+                            ? 'text-lg leading-relaxed text-center my-auto'
+                            : 'text-[15px] leading-relaxed text-center my-auto overflow-y-auto no-scrollbar max-h-[140px]'
+                        }`}
+                      >
+                        “{spotlightAffirmation.text}”
+                      </p>
+                    </motion.div>
                   </AnimatePresence>
                 </div>
-              </SmoothSizeContainer>
+
+                {/* Subtle indicator footer */}
+                <div className="flex items-center justify-between text-[10px] text-purple-600/70 font-sans relative z-10 px-1">
+                  <span>Toca para avanzar ({((spotlightIndex % displayAffirmations.length) + 1)}/{displayAffirmations.length})</span>
+                  <span>✧</span>
+                </div>
+              </motion.div>
             )}
 
             {/* B. ÚLTIMAS AFIRMACIONES (Coordinated Spring Layout) */}
@@ -278,7 +290,7 @@ export const DashboardView: React.FC = () => {
                       onClick={() => openAffirmationEditor(aff)}
                       className="p-4 rounded-2xl glass-card border border-manifest-glassBorder hover:border-manifest-glassBorderFocus transition-all cursor-pointer shadow-neu-sm flex items-start justify-between gap-3 group"
                     >
-                      <p className="font-serif text-sm sm:text-base text-manifest-ink leading-relaxed group-hover:text-manifest-brass transition-colors flex-1 select-text">
+                      <p className="font-serif text-sm sm:text-base text-manifest-ink leading-relaxed group-hover:text-manifest-brass transition-colors flex-1 select-text line-clamp-2">
                         “{aff.text}”
                       </p>
                       <button
@@ -376,7 +388,7 @@ export const DashboardView: React.FC = () => {
                       transition={IOS_LAYOUT_SPRING}
                       onClick={() => setSelectedJournalEntryForView(entry)}
                       data-testid={`journal-card-${entry.id}`}
-                      className={`p-3.5 rounded-2xl tarot-card-border glass-card-interactive cursor-pointer space-y-2 select-none ${
+                      className={`p-4 rounded-2xl tarot-card-border glass-card-interactive cursor-pointer space-y-2 select-none ${
                         isProgress
                           ? 'border-l-[3.5px] border-l-emerald-500/70'
                           : isManifestation

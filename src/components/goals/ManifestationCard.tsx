@@ -46,6 +46,7 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowMenu(false);
+    // Apertura inmediata del Drawer con el menú cerrado
     if (onEdit) {
       onEdit(affirmation);
     } else {
@@ -268,11 +269,7 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
         </p>
       </div>
 
-      {/* Subtle Hint on Footer */}
-      <div className="pt-1.5 flex items-center justify-between text-[11px] text-slate-600 font-sans">
-        <span className="font-medium">Toca en cualquier parte para sumar repetición</span>
-        <span className="text-manifest-brass/50 group-hover:text-manifest-brass transition-colors">✦</span>
-      </div>
+
     </motion.div>
   );
 };

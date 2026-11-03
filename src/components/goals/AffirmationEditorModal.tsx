@@ -18,7 +18,11 @@ import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 
 const affirmationFormSchema = z.object({
-  text: z.string().min(1, 'Escribe tu manifestación o afirmación consciente'),
+  text: z
+    .string()
+    .refine((val) => val.trim().length >= 5, {
+      message: 'Escribe al menos 5 caracteres con sentido',
+    }),
   userId: UserScopeEnum,
 });
 
@@ -64,6 +68,12 @@ export const AffirmationEditorModal: React.FC = () => {
   const currentText = watch('text') || '';
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [sessionAddedCount, setSessionAddedCount] = useState(0);
+
+  const trimmedLength = currentText.trim().length;
+  const isTextValid = trimmedLength >= 5;
+  const isFinishingEmptySession = !editingAffirmation && sessionAddedCount > 0 && trimmedLength === 0;
+  const isSubmitDisabled = !isFinishingEmptySession && !isTextValid;
+
   const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
   const [validationRef] = useAutoAnimate<HTMLDivElement>({ duration: 180 });
 
@@ -117,6 +127,10 @@ export const AffirmationEditorModal: React.FC = () => {
         closeAffirmationEditor();
         return true;
       }
+      return false;
+    }
+
+    if (trimmed.length < 5) {
       return false;
     }
 
@@ -355,12 +369,12 @@ export const AffirmationEditorModal: React.FC = () => {
 
                       {/* Status Icon */}
                       <div className="absolute right-3.5 top-3.5 pointer-events-none">
-                        {currentText.trim().length > 0 && !errors.text && (
+                        {isTextValid && !errors.text && (
                           <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs">
                             <Check className="w-3 h-3 stroke-[3]" />
                           </div>
                         )}
-                        {errors.text && (
+                        {(errors.text || (trimmedLength > 0 && !isTextValid)) && (
                           <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center shadow-xs">
                             <AlertCircle className="w-3.5 h-3.5 stroke-[2.5]" />
                           </div>
@@ -384,13 +398,13 @@ export const AffirmationEditorModal: React.FC = () => {
 
                   {/* Inline Error with Spring Smooth Sizing */}
                   <SmoothSizeContainer>
-                    {errors.text && (
+                    {(errors.text || (trimmedLength > 0 && !isTextValid)) && (
                       <div
                         data-testid="affirmation-text-error"
                         className="flex items-center gap-1.5 text-[11px] text-rose-500 font-medium pt-1 pl-1"
                       >
                         <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                        <span>{errors.text.message}</span>
+                        <span>{errors.text?.message || 'Escribe al menos 5 caracteres con sentido'}</span>
                       </div>
                     )}
                   </SmoothSizeContainer>
@@ -430,15 +444,20 @@ export const AffirmationEditorModal: React.FC = () => {
                   </button>
                   <button
                     type="button"
+                    disabled={isSubmitDisabled}
                     data-testid="submit-affirmation-btn"
                     onClick={() => {
                       if (!currentText.trim() && sessionAddedCount > 0) {
                         closeAffirmationEditor();
-                      } else {
+                      } else if (isTextValid) {
                         handleSubmit(onSubmit)();
                       }
                     }}
-                    className="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-manifest-auraPurple via-purple-600 to-indigo-600 hover:opacity-95 shadow-[0_2px_8px_rgba(184,163,248,0.35)] active:scale-[0.98] transition-all cursor-pointer flex items-center gap-1.5"
+                    className={`px-5 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-manifest-auraPurple via-purple-600 to-indigo-600 shadow-[0_2px_8px_rgba(184,163,248,0.35)] transition-all flex items-center gap-1.5 ${
+                      isSubmitDisabled
+                        ? 'opacity-40 pointer-events-none cursor-not-allowed'
+                        : 'hover:opacity-95 active:scale-[0.98] cursor-pointer'
+                    }`}
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>
@@ -509,15 +528,20 @@ export const AffirmationEditorModal: React.FC = () => {
             <motion.button
               type="button"
               whileTap={IOS_TAP_SPRING}
+              disabled={isSubmitDisabled}
               data-testid="submit-affirmation-nav-btn"
               onClick={() => {
                 if (!currentText.trim() && sessionAddedCount > 0) {
                   closeAffirmationEditor();
-                } else {
+                } else if (isTextValid) {
                   handleSubmit(onSubmit)();
                 }
               }}
-              className="primary-gradient-btn text-white px-4 py-1.5 rounded-full font-semibold text-xs sm:text-sm shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer"
+              className={`primary-gradient-btn text-white px-4 py-1.5 rounded-full font-semibold text-xs sm:text-sm shadow-xs transition-all ${
+                isSubmitDisabled
+                  ? 'opacity-40 pointer-events-none cursor-not-allowed'
+                  : 'hover:opacity-95 active:scale-95 cursor-pointer'
+              }`}
             >
               {editingAffirmation
                 ? 'Guardar'
@@ -537,29 +561,35 @@ export const AffirmationEditorModal: React.FC = () => {
               <label className="text-xs font-semibold text-slate-800">
                 Espacio
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="relative p-1 rounded-2xl bg-purple-50/70 border border-purple-100 grid grid-cols-3 gap-1 shadow-inner">
                 {[
-                  { key: 'facu' as UserScope, label: 'Facu', icon: Moon },
-                  { key: 'maia' as UserScope, label: 'Maia', icon: Heart },
-                  { key: 'shared' as UserScope, label: 'Juntos', icon: Sparkles },
+                  { key: 'facu' as UserScope, label: 'Facu', icon: Moon, activeText: 'text-indigo-950', activeIcon: 'text-indigo-600' },
+                  { key: 'maia' as UserScope, label: 'Maia', icon: Heart, activeText: 'text-pink-950', activeIcon: 'text-pink-600' },
+                  { key: 'shared' as UserScope, label: 'Juntos', icon: Sparkles, activeText: 'text-purple-950', activeIcon: 'text-purple-600' },
                 ].map((sc) => {
                   const Icon = sc.icon;
                   const isSelected = selectedUserId === sc.key;
                   return (
-                    <motion.button
+                    <button
                       key={sc.key}
                       type="button"
-                      whileTap={IOS_TAP_SPRING}
                       onClick={() => setValue('userId', sc.key, { shouldDirty: true })}
-                      className={`py-2 px-2 rounded-xl text-xs font-semibold transition-colors border cursor-pointer flex items-center justify-center gap-1.5 ${
+                      className={`relative z-10 py-2 px-2 rounded-xl text-xs transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
                         isSelected
-                          ? 'bg-purple-100 text-purple-900 border-purple-300 font-bold shadow-xs'
-                          : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200/90 shadow-xs'
+                          ? `${sc.activeText} font-bold shadow-xs`
+                          : 'text-slate-600 hover:text-slate-900 font-medium'
                       }`}
                     >
-                      <Icon className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-purple-700' : 'text-slate-500'}`} />
+                      {isSelected && (
+                        <motion.div
+                          layoutId="affirmation-drawer-scope-pill"
+                          className="absolute inset-0 rounded-xl bg-white border border-purple-200/90 shadow-[0_2px_8px_rgba(99,102,241,0.12)] -z-10"
+                          transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                        />
+                      )}
+                      <Icon className={`w-3.5 h-3.5 shrink-0 transition-transform ${isSelected ? `scale-105 ${sc.activeIcon}` : 'text-slate-500'}`} />
                       <span>{sc.label}</span>
-                    </motion.button>
+                    </button>
                   );
                 })}
               </div>
@@ -630,12 +660,12 @@ export const AffirmationEditorModal: React.FC = () => {
 
                   {/* Inline Status Icon: Check or Alert */}
                   <div className="absolute right-3 top-3 pointer-events-none">
-                    {currentText.trim().length > 0 && !errors.text && (
+                    {isTextValid && !errors.text && (
                       <div className="w-5 h-5 rounded-full bg-emerald-100/80 text-emerald-700 border border-emerald-300/60 flex items-center justify-center shadow-neu-sm">
                         <Check className="w-3 h-3 stroke-[3]" />
                       </div>
                     )}
-                    {errors.text && (
+                    {(errors.text || (trimmedLength > 0 && !isTextValid)) && (
                       <div className="w-5 h-5 rounded-full bg-rose-100/80 text-rose-700 border border-rose-300/60 flex items-center justify-center shadow-neu-sm">
                         <AlertCircle className="w-3.5 h-3.5 stroke-[2.5]" />
                       </div>
@@ -658,52 +688,28 @@ export const AffirmationEditorModal: React.FC = () => {
 
               {/* Auto-animated Inline Error Message with SmoothSizeContainer */}
               <SmoothSizeContainer>
-                {errors.text && (
+                {(errors.text || (trimmedLength > 0 && !isTextValid)) && (
                   <div
                     data-testid="affirmation-text-error"
                     className="flex items-center gap-1.5 text-[11px] text-rose-500 font-medium pt-1 pl-1"
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                    <span>{errors.text.message}</span>
+                    <span>{errors.text?.message || 'Escribe al menos 5 caracteres con sentido'}</span>
                   </div>
                 )}
               </SmoothSizeContainer>
             </div>
 
-            {/* Flow Action Buttons with Coordinated Reactive Reflow */}
+            {/* Flow Action Buttons: sin botón duplicado abajo */}
             <motion.div
               layout="position"
               transition={IOS_LAYOUT_SPRING}
-              className="pt-3 pb-4 space-y-2"
+              className="pt-2 pb-4 space-y-2"
             >
               {!editingAffirmation && (
-                <>
-                  <motion.button
-                    type="button"
-                    layout="position"
-                    transition={IOS_LAYOUT_SPRING}
-                    whileTap={IOS_TAP_SPRING}
-                    data-testid="submit-affirmation-btn"
-                    onClick={() => {
-                      if (!currentText.trim() && sessionAddedCount > 0) {
-                        closeAffirmationEditor();
-                      } else {
-                        handleSubmit(onSubmit)();
-                      }
-                    }}
-                    className="w-full py-3 px-4 rounded-2xl primary-gradient-btn text-xs sm:text-sm font-semibold shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    <span>
-                      {sessionAddedCount > 0 && !currentText.trim()
-                        ? 'Finalizar Sesión'
-                        : 'Guardar Afirmación'}
-                    </span>
-                  </motion.button>
-                  <p className="text-[11px] text-manifest-inkLight text-center mt-2">
-                    Pulsa Enter para añadir varias seguidas
-                  </p>
-                </>
+                <p className="text-[11px] text-manifest-inkLight text-center py-1">
+                  Pulsa Enter para añadir varias afirmaciones seguidas
+                </p>
               )}
 
               {editingAffirmation && (

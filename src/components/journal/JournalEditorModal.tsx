@@ -19,7 +19,9 @@ import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { PremiumToggleSelector } from '@/components/ui/PremiumToggleSelector';
 
 const journalFormSchema = z.object({
-  content: z.string().min(1, 'Describe tu entrada antes de guardar'),
+  content: z.string().refine((val) => val.trim().length >= 5, {
+    message: 'Describe tu entrada con al menos 5 caracteres',
+  }),
   userId: UserScopeEnum,
   entryType: z.enum(['manifestation', 'progress', 'reflection']),
 });
@@ -67,6 +69,8 @@ export const JournalEditorModal: React.FC = () => {
   const selectedUserId = watch('userId');
   const selectedEntryType = watch('entryType');
   const currentContent = watch('content') || '';
+  const trimmedLength = currentContent.trim().length;
+  const isContentValid = trimmedLength >= 5;
 
   const [isVoiceActiveContent, setIsVoiceActiveContent] = useState(false);
   const [validationContainerRef] = useAutoAnimate<HTMLDivElement>({ duration: 180 });
@@ -401,12 +405,12 @@ export const JournalEditorModal: React.FC = () => {
 
                       {/* Status Icon */}
                       <div className="absolute right-3.5 top-3.5 pointer-events-none">
-                        {currentContent.trim().length > 0 && !errors.content && (
+                        {isContentValid && !errors.content && (
                           <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-xs">
                             <Check className="w-3 h-3 stroke-[3]" />
                           </div>
                         )}
-                        {errors.content && (
+                        {(errors.content || (trimmedLength > 0 && !isContentValid)) && (
                           <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center shadow-xs">
                             <AlertCircle className="w-3.5 h-3.5 stroke-[2.5]" />
                           </div>
@@ -470,9 +474,14 @@ export const JournalEditorModal: React.FC = () => {
                   </button>
                   <button
                     type="button"
+                    disabled={!isContentValid}
                     data-testid="submit-journal-btn"
                     onClick={handleSubmit(onSubmit)}
-                    className="px-5 py-2 rounded-xl text-xs font-semibold text-white primary-gradient-btn shadow-glass active:scale-[0.98] transition-all cursor-pointer flex items-center gap-1.5"
+                    className={`px-5 py-2 rounded-xl text-xs font-semibold text-white primary-gradient-btn shadow-glass transition-all flex items-center gap-1.5 ${
+                      !isContentValid
+                        ? 'opacity-40 pointer-events-none cursor-not-allowed'
+                        : 'active:scale-[0.98] cursor-pointer'
+                    }`}
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>
@@ -543,9 +552,14 @@ export const JournalEditorModal: React.FC = () => {
             <motion.button
               type="button"
               whileTap={IOS_TAP_SPRING}
+              disabled={!isContentValid}
               data-testid="submit-journal-nav-btn"
               onClick={handleSubmit(onSubmit)}
-              className="primary-gradient-btn text-white px-4 py-1.5 rounded-full font-semibold text-xs sm:text-sm shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer"
+              className={`primary-gradient-btn text-white px-4 py-1.5 rounded-full font-semibold text-xs sm:text-sm shadow-xs transition-all ${
+                !isContentValid
+                  ? 'opacity-40 pointer-events-none cursor-not-allowed'
+                  : 'hover:opacity-95 active:scale-95 cursor-pointer'
+              }`}
             >
               Guardar
             </motion.button>
@@ -556,23 +570,42 @@ export const JournalEditorModal: React.FC = () => {
             data-vaul-no-drag=""
             className="space-y-4 pt-3 overflow-y-auto overscroll-contain touch-pan-y flex-1 min-h-0 pr-0.5 pb-8"
           >
-            {/* Espacio / Perfil */}
+            {/* Espacio / Perfil: 3 píldoras horizontales en línea con pastilla deslizante */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-800">
                 Espacio
               </label>
-              <div>
-                <PremiumToggleSelector
-                  value={selectedUserId}
-                  onChange={(val) => setValue('userId', val as UserScope, { shouldDirty: true })}
-                  dropDirection="down"
-                  layoutIdPrefix="journal-modal-scope-mobile"
-                  options={[
-                    { key: 'facu', label: 'Facu', icon: Moon },
-                    { key: 'maia', label: 'Maia', icon: Heart },
-                    { key: 'shared', label: 'Juntos', icon: Sparkles },
-                  ]}
-                />
+              <div className="relative p-1 rounded-2xl bg-purple-50/70 border border-purple-100 grid grid-cols-3 gap-1 shadow-inner">
+                {[
+                  { key: 'facu' as UserScope, label: 'Facu', icon: Moon, activeText: 'text-indigo-950', activeIcon: 'text-indigo-600' },
+                  { key: 'maia' as UserScope, label: 'Maia', icon: Heart, activeText: 'text-pink-950', activeIcon: 'text-pink-600' },
+                  { key: 'shared' as UserScope, label: 'Juntos', icon: Sparkles, activeText: 'text-purple-950', activeIcon: 'text-purple-600' },
+                ].map((sc) => {
+                  const Icon = sc.icon;
+                  const isSelected = selectedUserId === sc.key;
+                  return (
+                    <button
+                      key={sc.key}
+                      type="button"
+                      onClick={() => setValue('userId', sc.key, { shouldDirty: true })}
+                      className={`relative z-10 py-2 px-2 rounded-xl text-xs transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
+                        isSelected
+                          ? `${sc.activeText} font-bold shadow-xs`
+                          : 'text-slate-600 hover:text-slate-900 font-medium'
+                      }`}
+                    >
+                      {isSelected && (
+                        <motion.div
+                          layoutId="journal-drawer-scope-pill"
+                          className="absolute inset-0 rounded-xl bg-white border border-purple-200/90 shadow-[0_2px_8px_rgba(99,102,241,0.12)] -z-10"
+                          transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                        />
+                      )}
+                      <Icon className={`w-3.5 h-3.5 shrink-0 transition-transform ${isSelected ? `scale-105 ${sc.activeIcon}` : 'text-slate-500'}`} />
+                      <span>{sc.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -681,12 +714,12 @@ export const JournalEditorModal: React.FC = () => {
 
                   {/* Inline Status Icon: Check or Alert */}
                   <div className="absolute right-3 top-3 pointer-events-none">
-                    {currentContent.trim().length > 0 && !errors.content && (
+                    {isContentValid && !errors.content && (
                       <div className="w-5 h-5 rounded-full bg-emerald-100/80 text-emerald-700 border border-emerald-300/60 flex items-center justify-center shadow-neu-sm">
                         <Check className="w-3 h-3 stroke-[3]" />
                       </div>
                     )}
-                    {errors.content && (
+                    {(errors.content || (trimmedLength > 0 && !isContentValid)) && (
                       <div className="w-5 h-5 rounded-full bg-rose-100/80 text-rose-700 border border-rose-300/60 flex items-center justify-center shadow-neu-sm">
                         <AlertCircle className="w-3.5 h-3.5 stroke-[2.5]" />
                       </div>
@@ -709,45 +742,24 @@ export const JournalEditorModal: React.FC = () => {
 
               {/* Auto-animated Inline Error Message with SmoothSizeContainer */}
               <SmoothSizeContainer>
-                {errors.content && (
+                {(errors.content || (trimmedLength > 0 && !isContentValid)) && (
                   <div
                     data-testid="journal-content-error"
                     className="flex items-center gap-1.5 text-[11px] text-rose-500 font-medium pt-1 pl-1"
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                    <span>{errors.content.message}</span>
+                    <span>{errors.content?.message || 'Describe tu entrada con al menos 5 caracteres'}</span>
                   </div>
                 )}
               </SmoothSizeContainer>
             </div>
 
-            {/* Flow Submit Button */}
-            {/* Flow Action Buttons with Coordinated Reactive Reflow */}
+            {/* Flow Action Buttons: sin botón violeta gigante duplicado abajo en móvil */}
             <motion.div
               layout="position"
               transition={IOS_LAYOUT_SPRING}
-              className="pt-3 pb-4 space-y-2"
+              className="pt-2 pb-4 space-y-2"
             >
-              {!editingJournalEntry && (
-                <motion.button
-                  type="submit"
-                  layout="position"
-                  transition={IOS_LAYOUT_SPRING}
-                  whileTap={IOS_TAP_SPRING}
-                  data-testid="submit-journal-btn"
-                  className="w-full py-3 px-4 rounded-2xl primary-gradient-btn text-xs sm:text-sm font-semibold shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>
-                    {selectedEntryType === 'manifestation'
-                      ? 'Guardar Manifestación'
-                      : selectedEntryType === 'progress'
-                      ? 'Guardar Avance'
-                      : 'Guardar Success Story'}
-                  </span>
-                </motion.button>
-              )}
-
               {editingJournalEntry && (
                 <motion.button
                   type="button"

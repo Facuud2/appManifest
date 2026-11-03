@@ -75,11 +75,11 @@ export const JournalView: React.FC = () => {
   return (
     <LayoutGroup id="journal-layout-group">
       <div className="max-w-2xl mx-auto space-y-4 pt-1">
-      {/* Header: Visible with title on Desktop; on mobile actions only to prevent duplicate Large Title */}
+      {/* Header: Grimorio & Diario a la izquierda, botón + Escribir a la derecha (sin huecos vacíos) */}
       <div className="flex items-center justify-between px-1">
-        <div className="hidden lg:flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <BookOpen className="w-5 h-5 text-manifest-auraPurple" />
-          <h2 className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink">
+          <h2 className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink tracking-tight">
             Grimorio & Diario
           </h2>
         </div>
@@ -87,9 +87,10 @@ export const JournalView: React.FC = () => {
         <motion.button
           whileTap={IOS_TAP_SPRING}
           onClick={() => handleOpenNew('manifestation')}
-          className="ml-auto flex items-center gap-1.5 px-3.5 py-2 rounded-xl primary-gradient-btn text-xs font-semibold shadow-sm cursor-pointer"
+          data-testid="journal-write-btn"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full primary-gradient-btn text-xs font-semibold shadow-sm cursor-pointer active:scale-95 transition-all"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4 stroke-[2.5]" />
           <span>Escribir</span>
         </motion.button>
       </div>

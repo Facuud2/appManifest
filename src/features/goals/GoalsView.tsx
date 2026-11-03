@@ -184,6 +184,12 @@ export const GoalsView: React.FC = () => {
         </div>
       </div>
 
+      {/* Nota sutil única debajo del encabezado de la lista */}
+      <div className="px-1.5 py-0.5 flex items-center gap-1.5 text-[11px] text-slate-500 font-sans">
+        <span className="text-manifest-auraPurple text-xs">✦</span>
+        <span>Toca en cualquier parte de una tarjeta para sumar repetición</span>
+      </div>
+
       {/* VIEW MODE 1: LISTA Y FIJADOS */}
       {viewMode === 'list' && (
         <div className="space-y-4">
