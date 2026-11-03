@@ -20,7 +20,7 @@ import { VoiceDictationButton } from '@/components/ui/VoiceDictationButton';
 type RitualStage = 'write' | 'reflect' | 'burning' | 'released';
 
 export const ReleaseRitual: React.FC = () => {
-  const { destroyRelease, showToast, openOracle, checkAndUnlockMilestones } = useAppStore();
+  const { destroyRelease, showToast, checkAndUnlockMilestones } = useAppStore();
 
   const [stage, setStage] = useState<RitualStage>('write');
   const [fearContent, setFearContent] = useState('');
@@ -302,16 +302,8 @@ export const ReleaseRitual: React.FC = () => {
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
               <button
                 type="button"
-                onClick={openOracle}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl primary-gradient-btn text-xs font-bold inline-flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer"
-              >
-                <Compass className="w-4 h-4" />
-                <span>Girar el Oráculo de Sincronías</span>
-              </button>
-              <button
-                type="button"
                 onClick={resetRitual}
-                className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-semibold text-manifest-inkLight hover:text-manifest-ink hover:bg-white/5 transition-colors inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl primary-gradient-btn text-xs font-bold text-manifest-ink shadow-sm active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Nuevo desahogo</span>

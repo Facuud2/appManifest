@@ -167,27 +167,8 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
 
               {/* Scrollable Entry Body */}
               <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-4 relative z-10">
-                {/* Author & Date metadata */}
-                <div className="flex items-center justify-between pb-2 border-b border-purple-900/30">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border border-purple-300/60 bg-purple-100/80 text-purple-900 shadow-neu-sm">
-                    {entry.userId === 'shared' ? (
-                      <>
-                        <Sparkles className="w-3 h-3 text-manifest-gold" />
-                        <span>✦ Juntos</span>
-                      </>
-                    ) : entry.userId === 'maia' ? (
-                      <>
-                        <Heart className="w-3 h-3 text-rose-400" />
-                        <span>✧ {entry.author || 'Maia'}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Moon className="w-3 h-3 text-manifest-auraPurple" />
-                        <span>☾ {entry.author || 'Facu'}</span>
-                      </>
-                    )}
-                  </span>
-
+                {/* Date metadata */}
+                <div className="flex items-center justify-between pb-2 border-b border-manifest-glassBorder">
                   <div className="flex items-center gap-3 text-xs text-manifest-inkMuted">
                     <span className="inline-flex items-center gap-1 font-medium">
                       <Calendar className="w-3.5 h-3.5 text-manifest-inkMuted/70" />
@@ -358,25 +339,6 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
                         <span>Success Story</span>
                       </span>
                     )}
-
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border border-manifest-glassBorder bg-manifest-glassControl text-manifest-ink shadow-xs">
-                      {entry.userId === 'shared' ? (
-                        <>
-                          <Sparkles className="w-3 h-3 text-amber-400" />
-                          <span>Juntos</span>
-                        </>
-                      ) : entry.userId === 'maia' ? (
-                        <>
-                          <Heart className="w-3 h-3 text-rose-400" />
-                          <span>{entry.author || 'Maia'}</span>
-                        </>
-                      ) : (
-                        <>
-                          <Moon className="w-3 h-3 text-manifest-auraPurple" />
-                          <span>{entry.author || 'Facu'}</span>
-                        </>
-                      )}
-                    </span>
                   </div>
 
                   <div className="flex items-center gap-3 text-[11px] text-manifest-inkMuted px-0.5">

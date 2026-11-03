@@ -6,7 +6,7 @@ import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAppStore } from '@/store';
-import { Sparkles, X, Plus, Trash2, Mic, Check, AlertCircle } from 'lucide-react';
+import { Sparkles, X, Plus, Trash2, Mic, Check, AlertCircle, Moon, Heart } from 'lucide-react';
 import { RampageSet, UserScope } from '@/types';
 import { UserScopeEnum } from '@/schemas';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -106,8 +106,47 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
 
   const [voiceActiveIdx, setVoiceActiveIdx] = useState<number | null>(null);
   const [focusIndex, setFocusIndex] = useState<number | null>(null);
+  const [autoFilledIndices, setAutoFilledIndices] = useState<number[]>([]);
+  const [isAutoFilling, setIsAutoFilling] = useState(false);
   const textareaRefs = React.useRef<{ [key: number]: HTMLTextAreaElement | null }>({});
   const titleInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleAutoFillAI = () => {
+    setIsAutoFilling(true);
+    setAutoFilledIndices([]);
+    const AI_PRESETS = [
+      'Mi mente descansa en una certeza absoluta y radiante.',
+      'Merezco recibir bendiciones y abundancia infinita.',
+      'Todo lo que anhelo ya está en camino manifestándose en perfecta sincronía.',
+      'Soy paz, soy poder creador y soy amor incondicional.',
+    ];
+
+    if (!watch('title')?.trim()) {
+      setValue('title', 'Sintonía Cósmica y Poder', { shouldValidate: true, shouldDirty: true });
+    }
+
+    const currentCount = fields.length;
+    for (let i = currentCount; i < AI_PRESETS.length; i++) {
+      append({
+        id: `aff-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        text: '',
+        repeatCount: 0,
+      });
+    }
+
+    AI_PRESETS.forEach((presetText, idx) => {
+      setTimeout(() => {
+        setValue(`affirmations.${idx}.text`, presetText, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        setAutoFilledIndices((prev) => [...prev, idx]);
+        if (idx === AI_PRESETS.length - 1) {
+          setIsAutoFilling(false);
+        }
+      }, idx * 110);
+    });
+  };
 
   const selectedUserId = watch('userId');
   const watchedAffirmations = watch('affirmations');
@@ -358,23 +397,28 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                   </label>
                   <div className="p-1 rounded-xl bg-manifest-glassControl border border-manifest-glassBorder grid grid-cols-3 gap-1 shadow-inner">
                     {[
-                      { key: 'facu' as UserScope, label: '☾ Facu' },
-                      { key: 'maia' as UserScope, label: '✧ Maia' },
-                      { key: 'shared' as UserScope, label: '✦ Juntos' },
-                    ].map((sc) => (
-                      <button
-                        key={sc.key}
-                        type="button"
-                        onClick={() => setValue('userId', sc.key, { shouldDirty: true })}
-                        className={`py-1 px-3 rounded-lg text-xs transition-all duration-150 cursor-pointer ${
-                          selectedUserId === sc.key
-                            ? 'bg-manifest-glassControlActive text-manifest-ink shadow-sm font-semibold border border-manifest-glassBorderFocus'
-                            : 'text-manifest-inkMuted hover:text-manifest-ink hover:bg-manifest-glassControlHover font-medium'
-                        }`}
-                      >
-                        {sc.label}
-                      </button>
-                    ))}
+                      { key: 'facu' as UserScope, label: 'Facu', icon: Moon },
+                      { key: 'maia' as UserScope, label: 'Maia', icon: Heart },
+                      { key: 'shared' as UserScope, label: 'Juntos', icon: Sparkles },
+                    ].map((sc) => {
+                      const Icon = sc.icon;
+                      const isSelected = selectedUserId === sc.key;
+                      return (
+                        <button
+                          key={sc.key}
+                          type="button"
+                          onClick={() => setValue('userId', sc.key, { shouldDirty: true })}
+                          className={`py-1 px-3 rounded-lg text-xs transition-all duration-150 cursor-pointer flex items-center justify-center gap-1.5 ${
+                            isSelected
+                              ? 'bg-manifest-glassControlActive text-manifest-ink shadow-sm font-semibold border border-manifest-glassBorderFocus'
+                              : 'text-manifest-inkMuted hover:text-manifest-ink hover:bg-manifest-glassControlHover font-medium'
+                          }`}
+                        >
+                          <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-purple-600' : 'text-manifest-inkLight'}`} />
+                          <span>{sc.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -417,9 +461,22 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                 {/* Secuencia de Afirmaciones: Header shrink-0 + Lista scrolleable min-h-0 flex-1 */}
                 <div className="flex-1 min-h-0 flex flex-col space-y-2 pt-0.5 overflow-hidden">
                   <div className="shrink-0 flex items-center justify-between px-0.5">
-                    <label className="text-xs font-semibold text-manifest-ink block tracking-tight">
-                      Secuencia de Afirmaciones ({fields.length})
-                    </label>
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs font-semibold text-manifest-ink block tracking-tight">
+                        Secuencia de Afirmaciones ({fields.length})
+                      </label>
+                      <motion.button
+                        type="button"
+                        data-testid="autofill-ai-btn"
+                        whileTap={{ scale: 0.94 }}
+                        onClick={handleAutoFillAI}
+                        disabled={isAutoFilling}
+                        className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white shadow-xs inline-flex items-center gap-1 cursor-pointer transition-all"
+                      >
+                        <Sparkles className="w-3 h-3 text-amber-200" />
+                        <span>Auto-completar con IA</span>
+                      </motion.button>
+                    </div>
                     <span className="text-[11px] text-manifest-inkMuted">
                       Pulsa Enter para crear la siguiente
                     </span>
@@ -433,16 +490,39 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                   >
                     {fields.map((field, idx) => {
                       const currentVal = watchedAffirmations?.[idx]?.text || '';
+                      const isAutoFilled = autoFilledIndices.includes(idx);
                       return (
-                        <div
+                        <motion.div
                           key={field.id}
                           data-rampage-card={idx}
-                          className="p-3 sm:p-3.5 rounded-2xl bg-manifest-surfaceElevated border border-manifest-glassBorder shadow-sm space-y-2 transition-all hover:border-manifest-glassBorderHover"
+                          data-testid={`rampage-card-${idx}`}
+                          animate={
+                            isAutoFilled
+                              ? { scale: [1, 1.04, 1] }
+                              : { scale: 1 }
+                          }
+                          transition={{ duration: 0.28, ease: 'easeOut' }}
+                          className={`p-3 sm:p-3.5 rounded-2xl transition-all space-y-2 ${
+                            isAutoFilled
+                              ? 'border-2 border-purple-500 bg-purple-50/40 shadow-[0_4px_20px_rgba(139,92,246,0.18)]'
+                              : 'bg-manifest-surfaceElevated border border-manifest-glassBorder shadow-sm hover:border-manifest-glassBorderHover'
+                          }`}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-bold text-manifest-ink bg-manifest-glassControl border border-manifest-glassBorder px-2 py-0.5 rounded-md">
-                              Afirmación #{idx + 1}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[11px] font-bold text-manifest-ink bg-manifest-glassControl border border-manifest-glassBorder px-2 py-0.5 rounded-md">
+                                Afirmación #{idx + 1}
+                              </span>
+                              {isAutoFilled && (
+                                <motion.span
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs"
+                                >
+                                  <Check className="w-2.5 h-2.5 stroke-[3]" />
+                                </motion.span>
+                              )}
+                            </div>
                             <div className="flex items-center gap-1.5">
                               <button
                                 type="button"
@@ -539,7 +619,7 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                               {errors.affirmations[idx]?.text?.message}
                             </p>
                           )}
-                        </div>
+                        </motion.div>
                       );
                     })}
 
@@ -560,7 +640,7 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
               {/* Mac Dialog Footer (shrink-0) */}
               <div className="shrink-0 flex items-center justify-between px-6 py-3.5 bg-manifest-surfaceElevated border-t border-manifest-glassBorder">
                 <div className="flex items-center gap-2 text-[11px] text-manifest-inkMuted">
-                  <span>💡 <strong>Enter</strong> para encadenar</span>
+                  <span><strong>Enter</strong> para encadenar</span>
                   <span>•</span>
                   <span><strong>⌘↵</strong> guardar</span>
                   <span>•</span>
@@ -672,24 +752,29 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { key: 'facu' as UserScope, label: '☾ Facu' },
-                    { key: 'maia' as UserScope, label: '✧ Maia' },
-                    { key: 'shared' as UserScope, label: '✦ Juntos' },
-                  ].map((sc) => (
-                    <motion.button
-                      key={sc.key}
-                      type="button"
-                      whileTap={IOS_TAP_SPRING}
-                      onClick={() => setValue('userId', sc.key, { shouldDirty: true })}
-                      className={`py-1.5 px-2 rounded-xl text-xs font-semibold transition-colors border cursor-pointer ${
-                        selectedUserId === sc.key
-                          ? 'bg-manifest-glassControlActive text-manifest-ink border-manifest-glassBorderFocus shadow-sm'
-                          : 'bg-manifest-glassControl hover:bg-manifest-glassControlHover text-manifest-inkMuted border-manifest-glassBorder'
-                      }`}
-                    >
-                      {sc.label}
-                    </motion.button>
-                  ))}
+                    { key: 'facu' as UserScope, label: 'Facu', icon: Moon },
+                    { key: 'maia' as UserScope, label: 'Maia', icon: Heart },
+                    { key: 'shared' as UserScope, label: 'Juntos', icon: Sparkles },
+                  ].map((sc) => {
+                    const Icon = sc.icon;
+                    const isSelected = selectedUserId === sc.key;
+                    return (
+                      <motion.button
+                        key={sc.key}
+                        type="button"
+                        whileTap={IOS_TAP_SPRING}
+                        onClick={() => setValue('userId', sc.key, { shouldDirty: true })}
+                        className={`py-2 px-2.5 rounded-xl text-xs font-semibold transition-colors border cursor-pointer flex items-center justify-center gap-1.5 ${
+                          isSelected
+                            ? 'bg-manifest-glassControlActive text-manifest-ink border-manifest-glassBorderFocus shadow-sm'
+                            : 'bg-manifest-glassControl hover:bg-manifest-glassControlHover text-manifest-inkMuted border-manifest-glassBorder'
+                        }`}
+                      >
+                        <Icon className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-purple-600' : 'text-manifest-inkLight'}`} />
+                        <span>{sc.label}</span>
+                      </motion.button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -727,9 +812,22 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
               {/* Secuencia de Afirmaciones */}
               <div className="space-y-2.5 pt-1">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-manifest-ink block">
-                    Secuencia de Afirmaciones
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-semibold text-manifest-ink block">
+                      Secuencia de Afirmaciones
+                    </label>
+                    <motion.button
+                      type="button"
+                      data-testid="autofill-ai-btn-mobile"
+                      whileTap={{ scale: 0.94 }}
+                      onClick={handleAutoFillAI}
+                      disabled={isAutoFilling}
+                      className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white shadow-xs inline-flex items-center gap-1 cursor-pointer transition-all"
+                    >
+                      <Sparkles className="w-3 h-3 text-amber-200" />
+                      <span>Auto-completar</span>
+                    </motion.button>
+                  </div>
                   <span className="text-[11px] text-manifest-inkMuted">
                     Mínimo 1 para activar
                   </span>
@@ -738,16 +836,39 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                 <div className="space-y-2.5">
                   {fields.map((field, idx) => {
                     const currentVal = watchedAffirmations?.[idx]?.text || '';
+                    const isAutoFilled = autoFilledIndices.includes(idx);
                     return (
-                      <div
+                      <motion.div
                         key={field.id}
                         data-rampage-card={idx}
-                        className="p-3 sm:p-3.5 rounded-2xl bg-manifest-surfaceElevated border border-manifest-glassBorder shadow-sm space-y-2"
+                        data-testid={`rampage-card-${idx}`}
+                        animate={
+                          isAutoFilled
+                            ? { scale: [1, 1.04, 1] }
+                            : { scale: 1 }
+                        }
+                        transition={{ duration: 0.28, ease: 'easeOut' }}
+                        className={`p-3 sm:p-3.5 rounded-2xl transition-all space-y-2 ${
+                          isAutoFilled
+                            ? 'border-2 border-purple-500 bg-purple-50/40 shadow-[0_4px_20px_rgba(139,92,246,0.18)]'
+                            : 'bg-manifest-surfaceElevated border border-manifest-glassBorder shadow-sm'
+                        }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-manifest-ink bg-manifest-glassControl border border-manifest-glassBorder px-2 py-0.5 rounded-md">
-                            #{idx + 1}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] font-bold text-manifest-ink bg-manifest-glassControl border border-manifest-glassBorder px-2 py-0.5 rounded-md">
+                              #{idx + 1}
+                            </span>
+                            {isAutoFilled && (
+                              <motion.span
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-xs"
+                              >
+                                <Check className="w-2.5 h-2.5 stroke-[3]" />
+                              </motion.span>
+                            )}
+                          </div>
                           {fields.length > 1 && (
                             <button
                               type="button"
@@ -833,7 +954,7 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                             )}
                           </div>
                         )}
-                      </div>
+                      </motion.div>
                     );
                   })}
                 </div>

@@ -12,7 +12,7 @@ import {
   MoreHorizontal,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { IOS_TAP_SPRING } from '@/lib/iosSprings';
+import { IOS_TAP_SPRING, IOS_LAYOUT_SPRING } from '@/lib/iosSprings';
 
 interface ManifestationCardProps {
   affirmation: Affirmation;
@@ -36,6 +36,7 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
     incrementAffirmationRepeat,
     togglePinAffirmation,
     deleteAffirmation,
+    setPendingDeleteAffirmation,
     openAffirmationEditor,
   } = useAppStore();
 
@@ -59,6 +60,12 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
     incrementAffirmationRepeat(affirmation.id);
   };
 
+  const handleMenuRepeat = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowMenu(false);
+    handleRepeat();
+  };
+
   const handlePin = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowMenu(false);
@@ -71,17 +78,20 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
     if (onDeleteRequest) {
       onDeleteRequest(affirmation);
     } else {
-      deleteAffirmation(affirmation.id);
+      setPendingDeleteAffirmation(affirmation);
     }
   };
 
   return (
     <motion.div
-      layout
+      layout="position"
+      transition={IOS_LAYOUT_SPRING}
       whileTap={{ scale: 0.992 }}
       onClick={() => handleRepeat()}
       data-testid={`manifestation-card-${affirmation.id}`}
-      className={`group relative w-full p-4 sm:p-5 rounded-2xl sm:rounded-3xl cursor-pointer select-none transition-all duration-200 overflow-hidden ${
+      className={`group relative w-full p-4 sm:p-5 rounded-2xl sm:rounded-3xl cursor-pointer select-none ${
+        showMenu ? 'z-30' : 'z-0'
+      } ${
         isDragging
           ? 'glass-card-interactive shadow-lens ring-2 ring-manifest-brass scale-[1.02]'
           : 'glass-card-interactive shadow-glass hover:shadow-glass-hover'
@@ -105,7 +115,7 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
       </AnimatePresence>
 
       {/* Card Header Bar */}
-      <div className="flex items-center justify-between gap-2 mb-2 relative z-10">
+      <div className={`flex items-center justify-between gap-2 mb-2 relative ${showMenu ? 'z-30' : 'z-10'}`}>
         <div className="flex items-center gap-2">
           {isPinnedMode && (
             <button
@@ -120,18 +130,6 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
             >
               <Equal className="w-3.5 h-3.5 stroke-[2]" />
             </button>
-          )}
-
-          {affirmation.userId === 'shared' ? (
-            <span className="vintage-label-tape-dark text-[10px] px-2 py-0.5 rounded flex items-center gap-1">
-              <span className="text-manifest-brass">✦</span>
-              <span>JUNTOS</span>
-            </span>
-          ) : (
-            <span className="vintage-label-tape-dark text-[10px] px-2 py-0.5 rounded flex items-center gap-1">
-              <span className="text-manifest-brass">{affirmation.userId === 'facu' ? '☾' : '✧'}</span>
-              <span>{(affirmation.author || (affirmation.userId === 'facu' ? 'Facu' : 'Maia')).toUpperCase()}</span>
-            </span>
           )}
 
           {affirmation.pinned && (
@@ -158,7 +156,7 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
           >
             <Flame
               className={`w-3.5 h-3.5 transition-colors ${
-                affirmation.repeatCount > 0 ? 'text-amber-400 fill-amber-400' : 'text-manifest-inkMuted'
+                affirmation.repeatCount > 0 ? 'text-amber-500 fill-amber-500' : 'text-slate-500'
               }`}
             />
             <span className="text-xs font-bold font-sans tabular-nums text-manifest-ink">
@@ -166,56 +164,97 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
             </span>
           </motion.button>
 
-          {/* Quick Action Toggle Button (•••) */}
+          {/* Quick Action Toggle Button (•••) - Premium Split Button / Popover */}
           <div className="relative">
-            <button
+            <motion.button
               type="button"
+              data-testid={`affirmation-menu-btn-${affirmation.id}`}
+              whileTap={{ scale: 0.93 }}
               onClick={(e) => {
                 e.stopPropagation();
                 setShowMenu((prev) => !prev);
               }}
-              className="w-7 h-7 rounded-full flex items-center justify-center text-manifest-inkMuted hover:text-manifest-ink hover:bg-manifest-glassControlHover transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+              className="w-7 h-7 rounded-full flex items-center justify-center text-manifest-inkMuted hover:text-manifest-ink bg-white/80 hover:bg-white border border-purple-200/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.7)] backdrop-blur-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
               title="Opciones del decreto"
             >
-              <MoreHorizontal className="w-4 h-4" />
-            </button>
+              <motion.div
+                animate={{ rotate: showMenu ? 90 : 0, scale: showMenu ? 1.08 : 1 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 22 }}
+              >
+                <MoreHorizontal className="w-4 h-4 stroke-[2.2]" />
+              </motion.div>
+            </motion.button>
 
-            {/* Dropdown Menu */}
+            {/* Dropdown Menu - Fully Opaque with Native Icons (No emojis, no text bleed) */}
             <AnimatePresence>
               {showMenu && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9, y: 4 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, y: 4 }}
-                  className="absolute right-0 top-8 z-30 min-w-[140px] p-1.5 rounded-2xl glass-card border border-manifest-glassBorder shadow-lens space-y-0.5"
-                >
-                  <button
-                    type="button"
-                    onClick={handlePin}
-                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs text-manifest-ink hover:bg-manifest-glassControlHover transition-colors text-left cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowMenu(false);
+                    }}
+                  />
+                  <motion.div
+                    data-testid={`affirmation-dropdown-${affirmation.id}`}
+                    initial={{ opacity: 0, y: -6, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.95 }}
+                    transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute right-0 top-9 z-50 min-w-[200px] p-1.5 rounded-2xl bg-white border border-slate-200/90 shadow-[0_14px_36px_rgba(30,20,50,0.22),0_4px_12px_rgba(0,0,0,0.08)] space-y-0.5 before:content-[''] before:absolute before:-top-1.5 before:right-2.5 before:w-3 before:h-3 before:bg-white before:border-t before:border-l before:border-slate-200/90 before:rotate-45"
                   >
-                    <Pin className="w-3.5 h-3.5 text-manifest-brass" />
-                    <span>{affirmation.pinned ? 'Desfijar' : 'Fijar en Altar'}</span>
-                  </button>
+                    <button
+                      type="button"
+                      data-testid={`edit-affirmation-action-${affirmation.id}`}
+                      onClick={handleEdit}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-800 hover:bg-slate-100 active:bg-slate-200/70 transition-all text-left cursor-pointer group"
+                    >
+                      <span className="w-6 h-6 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </span>
+                      <span>Editar afirmación</span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={handleEdit}
-                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs text-manifest-ink hover:bg-manifest-glassControlHover transition-colors text-left cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
-                  >
-                    <Edit3 className="w-3.5 h-3.5 text-manifest-auraPurple" />
-                    <span>Editar</span>
-                  </button>
+                    <button
+                      type="button"
+                      data-testid={`pin-affirmation-action-${affirmation.id}`}
+                      onClick={handlePin}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-800 hover:bg-slate-100 active:bg-slate-200/70 transition-all text-left cursor-pointer group"
+                    >
+                      <span className="w-6 h-6 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <Pin className="w-3.5 h-3.5" />
+                      </span>
+                      <span>{affirmation.pinned ? 'Desfijar del altar' : 'Fijar en el altar'}</span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs text-rose-600 hover:bg-rose-100/80 transition-colors text-left cursor-pointer focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:outline-none"
-                  >
-                    <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                    <span>Eliminar</span>
-                  </button>
-                </motion.div>
+                    <button
+                      type="button"
+                      data-testid={`repeat-affirmation-action-${affirmation.id}`}
+                      onClick={handleMenuRepeat}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-800 hover:bg-slate-100 active:bg-slate-200/70 transition-all text-left cursor-pointer group"
+                    >
+                      <span className="w-6 h-6 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <Flame className="w-3.5 h-3.5" />
+                      </span>
+                      <span>Sumar repetición</span>
+                    </button>
+
+                    <div className="h-px bg-slate-100 my-1 mx-1.5" />
+
+                    <button
+                      type="button"
+                      data-testid={`delete-affirmation-action-${affirmation.id}`}
+                      onClick={handleDelete}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-rose-600 hover:bg-rose-50 active:bg-rose-100/60 transition-all text-left cursor-pointer group"
+                    >
+                      <span className="w-6 h-6 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </span>
+                      <span>Eliminar</span>
+                    </button>
+                  </motion.div>
+                </>
               )}
             </AnimatePresence>
           </div>
@@ -223,14 +262,14 @@ export const ManifestationCard: React.FC<ManifestationCardProps> = ({
       </div>
 
       {/* Sacred Affirmation Text: Highly Legible Lora Regular */}
-      <div className="relative z-10 py-1">
+      <div className="relative z-0 py-1">
         <p className="font-serif text-[16px] sm:text-[18px] text-manifest-ink leading-relaxed font-normal tracking-normal selection:bg-manifest-auraPurple/30">
           “{affirmation.text}”
         </p>
       </div>
 
       {/* Subtle Hint on Footer */}
-      <div className="pt-1.5 flex items-center justify-between text-[11px] text-manifest-inkMuted font-sans">
+      <div className="pt-1.5 flex items-center justify-between text-[11px] text-slate-600 font-sans">
         <span className="font-medium">Toca en cualquier parte para sumar repetición</span>
         <span className="text-manifest-brass/50 group-hover:text-manifest-brass transition-colors">✦</span>
       </div>

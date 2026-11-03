@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Plus, ArrowUp, Loader2 } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { logAiTelemetry } from '@/lib/gemini';
+import { WaveBars } from '@/components/ui/WaveBars';
 
 export interface VoiceAudioVisualizerProps {
   initialText?: string;
@@ -478,38 +479,47 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
 
   return (
     <div
-      className={`w-full flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-200 ${className}`}
+      className={`w-full flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-200 rounded-2xl p-1 border border-purple-400/80 shadow-[0_10px_30px_rgba(139,92,246,0.15)] ring-2 ring-purple-300/30 bg-purple-50/20 backdrop-blur-md ${className}`}
       data-testid="gemini-voice-visualizer"
     >
       {/* Real-time transcribed text preview banner or transcribing spinner */}
       {isTranscribing ? (
-        <div className="flex items-center justify-between px-3.5 py-1 text-[11px] text-manifest-auraPurple min-h-[20px] transition-all">
+        <div className="flex items-center justify-between px-3.5 py-1 text-[11px] text-purple-700 min-h-[20px] transition-all">
           <div className="flex items-center gap-1.5 truncate">
-            <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0 text-manifest-auraPurple" />
+            <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0 text-purple-600" />
             <span className="font-semibold">Puntuando y limpiando con Gemini...</span>
           </div>
-          <span className="text-[10px] text-manifest-inkLight shrink-0 ml-2">
+          <span className="text-[10px] text-purple-500 font-medium shrink-0 ml-2">
             Gemini Flash
           </span>
         </div>
       ) : transcribedText ? (
-        <div className="flex items-center justify-between px-3.5 py-1 text-[11px] text-manifest-inkMuted min-h-[20px] transition-all">
+        <div className="flex items-center justify-between px-3.5 py-1 text-[11px] text-slate-700 min-h-[20px] transition-all">
           <div className="flex items-center gap-1.5 truncate">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse shrink-0" />
             <span className="truncate font-medium">{transcribedText}</span>
           </div>
-          <span className="text-[10px] text-manifest-inkLight shrink-0 ml-2">
-            Escuchando...
-          </span>
+          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+            <span className="text-[10px] font-semibold text-purple-600">
+              Escuchando...
+            </span>
+            <WaveBars count={12} active={true} minHeight={4} maxHeight={16} className="h-4" />
+          </div>
         </div>
       ) : (
-        <div className="flex items-center px-3.5 py-1 text-[11px] text-manifest-inkLight min-h-[20px]">
+        <div className="flex items-center justify-between px-3.5 py-1 text-[11px] text-slate-500 min-h-[20px]">
           <span>{placeholder}</span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[10px] font-semibold text-purple-600">
+              Escuchando...
+            </span>
+            <WaveBars count={12} active={true} minHeight={4} maxHeight={16} className="h-4" />
+          </div>
         </div>
       )}
 
       {/* Gemini Voice Pill Container */}
-      <div className="w-full h-14 rounded-full bg-white border border-black/5 shadow-[0_4px_20px_rgba(0,0,0,0.06)] px-3.5 sm:px-4 flex items-center justify-between gap-3 select-none">
+      <div className="w-full h-14 rounded-full bg-white/95 backdrop-blur-xl border border-purple-100 shadow-[0_4px_20px_rgba(139,92,246,0.1)] px-3.5 sm:px-4 flex items-center justify-between gap-3 select-none">
         {/* Left: Plus (+) Button to Cancel */}
         <button
           type="button"
@@ -517,12 +527,12 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
           disabled={isTranscribing}
           title="Cancelar dictado"
           aria-label="Cancelar dictado"
-          className="w-10 h-10 rounded-full flex items-center justify-center text-neutral-800 hover:text-black hover:bg-neutral-100 active:scale-95 transition-all cursor-pointer shrink-0 disabled:opacity-50"
+          className="w-10 h-10 rounded-full flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-purple-50 active:scale-95 transition-all cursor-pointer shrink-0 disabled:opacity-50"
         >
           <Plus className="w-5 h-5 stroke-[2.2]" />
         </button>
 
-        {/* Center: CAVA Audio Waves (13 vertical bars growing symmetrically from the middle) */}
+        {/* Center: Audio Wave Bars (13-16 vertical bars with gradient from purple-500 to cyan-400) */}
         <div
           className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 h-10 overflow-hidden px-1"
           aria-hidden="true"
@@ -534,14 +544,14 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
                 barRefs.current[i] = el;
               }}
               style={{ height: `${MIN_HEIGHT}px` }}
-              className="w-[3px] sm:w-[3.5px] rounded-full bg-[#111111] transition-[height] duration-75 block shrink-0"
+              className="w-[3px] sm:w-[3.5px] rounded-full bg-gradient-to-t from-purple-500 to-cyan-400 transition-[height] duration-75 block shrink-0"
             />
           ))}
         </div>
 
         {/* Right Action Buttons: Stop (⏹) and Send (↑) */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* Stop / Pause Button (⏹): Detiene, transcribe y guarda en el campo */}
+          {/* Stop / Pause Button: pulsating halo and gradient */}
           <button
             type="button"
             onClick={handleStop}
@@ -549,16 +559,16 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
             title="Detener y conservar lo dicho"
             aria-label="Detener y conservar lo dicho"
             data-testid="voice-stop-btn"
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#E8EAED] hover:bg-[#DCE0E5] active:scale-95 flex items-center justify-center transition-all cursor-pointer text-neutral-900 shadow-sm disabled:opacity-50"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-tr from-purple-500 via-indigo-500 to-cyan-400 text-white animate-pulseGlow active:scale-95 flex items-center justify-center transition-all cursor-pointer shadow-md disabled:opacity-50"
           >
             {isTranscribing ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <span className="w-3.5 h-3.5 rounded-[3px] border-[2px] border-neutral-900 bg-transparent block" />
+              <span className="w-3.5 h-3.5 rounded-[3px] border-[2px] border-white bg-transparent block" />
             )}
           </button>
 
-          {/* Send / Commit Button (↑): Detiene, transcribe y confirma */}
+          {/* Send / Commit Button (↑) */}
           <button
             type="button"
             onClick={handleSend}
@@ -566,7 +576,7 @@ export const VoiceAudioVisualizer: React.FC<VoiceAudioVisualizerProps> = ({
             title="Aceptar y enviar"
             aria-label="Aceptar y enviar"
             data-testid="voice-send-btn"
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#A8D4FE] hover:bg-[#92c6fd] active:scale-95 flex items-center justify-center transition-all cursor-pointer text-neutral-900 shadow-sm disabled:opacity-50"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-95 flex items-center justify-center transition-all cursor-pointer text-white shadow-md disabled:opacity-50"
           >
             {isTranscribing ? (
               <Loader2 className="w-4 h-4 animate-spin" />

@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Mic } from 'lucide-react';
 import { useAppStore } from '@/store';
+import { WaveBars } from '@/components/ui/WaveBars';
 
 interface VoiceDictationButtonProps {
   onTranscript: (fullText: string) => void;
@@ -181,26 +182,32 @@ export const VoiceDictationButton: React.FC<VoiceDictationButtonProps> = ({
   const isSmall = size === 'sm';
 
   return (
-    <div className={`relative inline-flex items-center ${className}`}>
+    <div className={`relative inline-flex items-center gap-2 ${className}`}>
       {isListening && (
-        <span className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-manifest-amethyst via-manifest-auraPurple to-manifest-gold opacity-75 blur-sm animate-pulse pointer-events-none" />
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-md border border-purple-300/80 shadow-[0_4px_16px_rgba(139,92,246,0.18)] animate-in fade-in zoom-in-95">
+          <span className="text-[11px] font-semibold text-purple-700 select-none">
+            Escuchando...
+          </span>
+          <WaveBars count={12} active={true} minHeight={4} maxHeight={16} className="h-4" />
+        </div>
       )}
       <button
         type="button"
+        data-testid="voice-dictation-btn"
         onClick={toggleListening}
         title={isListening ? 'Detener dictado' : title}
-        className={`relative z-10 flex items-center justify-center transition-all ${
-          isSmall ? 'w-7 h-7 rounded-xl text-xs' : 'w-8 h-8 rounded-xl text-sm'
+        className={`relative z-10 flex items-center justify-center transition-all cursor-pointer ${
+          isSmall ? 'w-7 h-7 rounded-full text-xs' : 'w-8 h-8 rounded-full text-sm'
         } ${
           isListening
-            ? 'bg-rose-500 text-white shadow-lg ring-2 ring-rose-400/80 scale-105'
-            : 'glass-pill text-purple-700 border border-purple-300/50 hover:bg-purple-100/70 shadow-neu-sm'
+            ? 'bg-gradient-to-tr from-purple-500 via-indigo-500 to-cyan-400 text-white shadow-lg animate-pulseGlow scale-105'
+            : 'rounded-full bg-white/80 hover:bg-white text-purple-700 border border-purple-200/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.7),0_2px_8px_rgba(139,92,246,0.08)] hover:border-purple-300'
         }`}
       >
         {isListening ? (
           <span className="relative flex items-center justify-center">
-            <Mic className={`${isSmall ? 'w-3.5 h-3.5' : 'w-4 h-4'} animate-pulse`} />
-            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-200 animate-ping" />
+            <Mic className={`${isSmall ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
+            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-cyan-200 animate-ping" />
           </span>
         ) : (
           <Mic className={isSmall ? 'w-3.5 h-3.5' : 'w-4 h-4'} />

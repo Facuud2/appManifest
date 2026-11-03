@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { LayoutGroup } from 'framer-motion';
 import { Segmented, SegmentedButton } from 'konsta/react';
 import { TrackingView } from '@/features/tracking/TrackingView';
 import { SignsView } from '@/features/signs/SignsView';
@@ -17,7 +18,8 @@ export const MySpaceView: React.FC = () => {
   const { manifestationSigns } = useAppStore();
 
   return (
-    <div className="space-y-6 pt-1">
+    <LayoutGroup id="space-layout-group">
+      <div className="space-y-6 pt-1">
       {/* Top Header - Hidden on Mobile because Konsta Navbar shows Large Title 'Mi Espacio' */}
       <div className="hidden lg:block px-1">
         <h2 className="text-xl font-serif font-bold text-manifest-ink flex items-center gap-2">
@@ -36,7 +38,7 @@ export const MySpaceView: React.FC = () => {
         colors={{
           strongBgIos: `${LIQUID_GLASS_SPECULAR}`,
         }}
-        className="w-full p-1 bg-manifest-surfaceNav/90 border border-manifest-glassBorder"
+        className="w-full p-1 bg-white/80 border border-purple-200/70 shadow-sm"
       >
         <SegmentedButton
           strong
@@ -44,7 +46,7 @@ export const MySpaceView: React.FC = () => {
           active={subTab === 'tracking'}
           onClick={() => setSubTab('tracking')}
           className={`text-xs font-semibold py-2 px-2 !normal-case cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
-            subTab === 'tracking' ? 'text-manifest-ink bg-manifest-glassControlActive border border-manifest-glassBorderFocus shadow-xs' : 'text-manifest-inkMuted hover:text-manifest-ink'
+            subTab === 'tracking' ? 'text-purple-950 font-bold bg-white border border-purple-200/90 shadow-sm' : 'text-slate-600 font-medium hover:text-slate-900'
           }`}
         >
           <span className="flex items-center justify-center gap-1 whitespace-nowrap">
@@ -59,7 +61,7 @@ export const MySpaceView: React.FC = () => {
           active={subTab === 'signs'}
           onClick={() => setSubTab('signs')}
           className={`text-xs font-semibold py-2 px-2 !normal-case cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
-            subTab === 'signs' ? 'text-manifest-ink bg-manifest-glassControlActive border border-manifest-glassBorderFocus shadow-xs' : 'text-manifest-inkMuted hover:text-manifest-ink'
+            subTab === 'signs' ? 'text-purple-950 font-bold bg-white border border-purple-200/90 shadow-sm' : 'text-slate-600 font-medium hover:text-slate-900'
           }`}
         >
           <span className="flex items-center justify-center gap-1 whitespace-nowrap">
@@ -74,7 +76,7 @@ export const MySpaceView: React.FC = () => {
           active={subTab === 'release'}
           onClick={() => setSubTab('release')}
           className={`text-xs font-semibold py-2 px-2 !normal-case cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
-            subTab === 'release' ? 'text-manifest-ink bg-manifest-glassControlActive border border-manifest-glassBorderFocus shadow-xs' : 'text-manifest-inkMuted hover:text-manifest-ink'
+            subTab === 'release' ? 'text-purple-950 font-bold bg-white border border-purple-200/90 shadow-sm' : 'text-slate-600 font-medium hover:text-slate-900'
           }`}
         >
           <span className="flex items-center justify-center gap-1 whitespace-nowrap">
@@ -90,7 +92,7 @@ export const MySpaceView: React.FC = () => {
           onClick={() => setSubTab('settings')}
           data-testid="subtab-settings"
           className={`text-xs font-semibold py-2 px-2 !normal-case cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
-            subTab === 'settings' ? 'text-manifest-ink bg-manifest-glassControlActive border border-manifest-glassBorderFocus shadow-xs' : 'text-manifest-inkMuted hover:text-manifest-ink'
+            subTab === 'settings' ? 'text-purple-950 font-bold bg-white border border-purple-200/90 shadow-sm' : 'text-slate-600 font-medium hover:text-slate-900'
           }`}
         >
           <span className="flex items-center justify-center gap-1 whitespace-nowrap">
@@ -108,5 +110,6 @@ export const MySpaceView: React.FC = () => {
         {subTab === 'settings' && <SettingsView />}
       </div>
     </div>
-  );
+  </LayoutGroup>
+);
 };

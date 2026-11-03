@@ -32,8 +32,6 @@ export const TrackingView: React.FC = () => {
     dailyReflections,
     saveDailyReflection,
     getAvailableMilestones,
-    openOracle,
-    etherFragments,
   } = useAppStore();
 
   const [isReflectionModalOpen, setIsReflectionModalOpen] = useState(false);
@@ -73,51 +71,8 @@ export const TrackingView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Cosmic Oracle Banner & Ether Balance */}
-      <div className="p-4 sm:p-5 rounded-2xl tarot-card-border glass-card border border-purple-400/20 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3.5 relative overflow-hidden">
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="w-10 h-10 rounded-xl bg-manifest-glassControl border border-manifest-glassBorder flex items-center justify-center shrink-0 shadow-xs">
-            <Compass className="w-5 h-5 text-manifest-auraPurple" />
-          </div>
-          <div className="space-y-0.5 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="font-serif text-sm sm:text-base font-bold text-manifest-ink">
-                Oráculo de Sincronías Cósmicas
-              </h3>
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-100/80 text-purple-800 border border-purple-300/60 shadow-neu-sm">
-                ✧ {etherFragments} Éter
-              </span>
-            </div>
-            <p className="text-xs text-manifest-inkLight">
-              Gira la ruleta de recompensas místicas para anclar sincronías y dones del camino.
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={openOracle}
-          data-testid="open-oracle-from-tracking"
-          className="w-full sm:w-auto px-5 py-2.5 rounded-xl primary-gradient-btn text-xs font-bold shadow-sm hover:shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
-        >
-          <Sparkles className="w-4 h-4" />
-          <span>Girar Oráculo</span>
-        </button>
-      </div>
-
       {/* Overview Metric Cards (Bento Style, Anti-Slop, Witchy Refined) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="p-3.5 sm:p-4 rounded-2xl tarot-card-border glass-card border border-purple-400/15 shadow-sm space-y-1">
-          <div className="w-7 h-7 rounded-lg bg-amber-100/80 border border-amber-300/60 flex items-center justify-center shadow-neu-sm">
-            <Flame className="w-3.5 h-3.5 text-amber-600" />
-          </div>
-          <span className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink block pt-1">
-            {settings.dailyStreak} {settings.dailyStreak === 1 ? 'Día' : 'Días'}
-          </span>
-          <p className="text-[11px] text-manifest-inkLight">
-            Racha de presencia serena
-          </p>
-        </div>
-
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="p-3.5 sm:p-4 rounded-2xl tarot-card-border glass-card border border-purple-400/15 shadow-sm space-y-1">
           <div className="w-7 h-7 rounded-lg bg-purple-100/80 border border-purple-300/60 flex items-center justify-center shadow-neu-sm">
             <CheckCircle2 className="w-3.5 h-3.5 text-purple-700" />
@@ -125,7 +80,7 @@ export const TrackingView: React.FC = () => {
           <span className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink block pt-1">
             {affirmationsCount}
           </span>
-          <p className="text-[11px] text-manifest-inkLight">
+          <p className="text-[11px] text-slate-600 font-medium">
             Decretos consagrados
           </p>
         </div>
@@ -137,7 +92,7 @@ export const TrackingView: React.FC = () => {
           <span className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink block pt-1">
             {journalEntries.length}
           </span>
-          <p className="text-[11px] text-manifest-inkLight">
+          <p className="text-[11px] text-slate-600 font-medium">
             Entradas en el grimorio
           </p>
         </div>
@@ -149,7 +104,7 @@ export const TrackingView: React.FC = () => {
           <span className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink block pt-1">
             {settings.totalReleases}
           </span>
-          <p className="text-[11px] text-manifest-inkMuted">
+          <p className="text-[11px] text-slate-600 font-medium">
             Cargas transmutadas
           </p>
         </div>
@@ -216,7 +171,7 @@ export const TrackingView: React.FC = () => {
                     +{milestone.rewardFragments} Éter
                   </span>
                 </div>
-                <p className="text-[11px] text-manifest-inkLight mt-0.5 leading-relaxed font-normal">
+                <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed font-normal">
                   {milestone.description}
                 </p>
               </div>

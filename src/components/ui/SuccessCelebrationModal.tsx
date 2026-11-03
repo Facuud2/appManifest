@@ -6,7 +6,7 @@ import { Sparkles, Check, ArrowRight, Compass, X } from 'lucide-react';
 import { useAppStore } from '@/store';
 
 export const SuccessCelebrationModal: React.FC = () => {
-  const { celebrationData, closeCelebration, openOracle } = useAppStore();
+  const { celebrationData, closeCelebration } = useAppStore();
 
   if (!celebrationData) return null;
 
@@ -15,9 +15,6 @@ export const SuccessCelebrationModal: React.FC = () => {
     closeCelebration();
     if (callback) {
       callback();
-    } else {
-      // Default primary next step: open the Oracle roulette!
-      openOracle();
     }
   };
 

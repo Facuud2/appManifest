@@ -7,14 +7,16 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAppStore } from '@/store';
-import { X, Target, Sparkles, Trophy, Mic, Check, AlertCircle } from 'lucide-react';
+import { X, Target, Sparkles, Trophy, Mic, Check, AlertCircle, Trash2, Moon, Heart } from 'lucide-react';
 import { EntryType, JournalEntry, UserScope } from '@/types';
 import { UserScopeEnum } from '@/schemas';
 import { motion, AnimatePresence } from 'framer-motion';
-import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
+import { IOS_TAP_SPRING, IOS_LAYOUT_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
+import { SmoothSizeContainer } from '@/components/ui/SmoothSizeContainer';
 import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { PremiumToggleSelector } from '@/components/ui/PremiumToggleSelector';
 
 const journalFormSchema = z.object({
   content: z.string().min(1, 'Describe tu entrada antes de guardar'),
@@ -33,9 +35,17 @@ export const JournalEditorModal: React.FC = () => {
     activeScope,
     saveJournalEntry,
     closeJournalEditor,
+    setPendingDeleteJournalEntry,
     showToast,
     checkAndUnlockMilestones,
   } = useAppStore();
+
+  const handleDeleteJournalEntry = () => {
+    if (!editingJournalEntry) return;
+    const toDelete = editingJournalEntry;
+    closeJournalEditor();
+    setPendingDeleteJournalEntry(toDelete);
+  };
 
   const {
     handleSubmit,
@@ -259,30 +269,23 @@ export const JournalEditorModal: React.FC = () => {
                 onSubmit={handleSubmit(onSubmit)}
                 className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4"
               >
-                {/* Espacio Selector (Mac-style Segmented Control) */}
+                {/* Espacio Selector (Premium Toggle Selector) */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-manifest-ink block tracking-tight">
                     Espacio
                   </label>
-                  <div className="p-1 rounded-xl bg-manifest-ink/[0.05] border border-manifest-ink/[0.06] grid grid-cols-3 gap-1 shadow-inner">
-                    {[
-                      { key: 'facu' as UserScope, label: 'Facu' },
-                      { key: 'maia' as UserScope, label: 'Maia' },
-                      { key: 'shared' as UserScope, label: '✨ Juntos' },
-                    ].map((sc) => (
-                      <button
-                        key={sc.key}
-                        type="button"
-                        onClick={() => setValue('userId', sc.key, { shouldDirty: true })}
-                        className={`py-1.5 px-3 rounded-lg text-xs transition-all duration-150 cursor-pointer ${
-                          selectedUserId === sc.key
-                            ? 'bg-white text-manifest-ink shadow-sm font-semibold border border-white/80'
-                            : 'text-manifest-inkMuted hover:text-manifest-ink hover:bg-white/40 font-medium'
-                        }`}
-                      >
-                        {sc.label}
-                      </button>
-                    ))}
+                  <div>
+                    <PremiumToggleSelector
+                      value={selectedUserId}
+                      onChange={(val) => setValue('userId', val as UserScope, { shouldDirty: true })}
+                      dropDirection="down"
+                      layoutIdPrefix="journal-modal-scope-desktop"
+                      options={[
+                        { key: 'facu', label: 'Facu', icon: Moon },
+                        { key: 'maia', label: 'Maia', icon: Heart },
+                        { key: 'shared', label: 'Juntos', icon: Sparkles },
+                      ]}
+                    />
                   </div>
                 </div>
 
@@ -425,27 +428,39 @@ export const JournalEditorModal: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Inline Error */}
-                  {errors.content && (
-                    <div
-                      data-testid="journal-content-error"
-                      className="flex items-center gap-1.5 text-[11px] text-rose-500 font-medium pt-1 pl-1"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                      <span>{errors.content.message}</span>
-                    </div>
-                  )}
+                  {/* Inline Error with SmoothSizeContainer */}
+                  <SmoothSizeContainer>
+                    {errors.content && (
+                      <div
+                        data-testid="journal-content-error"
+                        className="flex items-center gap-1.5 text-[11px] text-rose-500 font-medium pt-1 pl-1"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                        <span>{errors.content.message}</span>
+                      </div>
+                    )}
+                  </SmoothSizeContainer>
                 </div>
               </form>
 
               {/* Mac Dialog Footer */}
               <div className="shrink-0 flex items-center justify-between px-6 py-4 bg-manifest-ink/[0.02] border-t border-manifest-ink/[0.07]">
                 <div className="flex items-center gap-2 text-[11px] text-manifest-inkLight">
-                  <span>💡 <strong>⌘↵</strong> o <strong>Ctrl+Enter</strong> para guardar</span>
+                  <span><strong>⌘↵</strong> o <strong>Ctrl+Enter</strong> para guardar</span>
                   <span>•</span>
                   <span><strong>Esc</strong> para salir</span>
                 </div>
                 <div className="flex items-center gap-2.5">
+                  {editingJournalEntry && (
+                    <button
+                      type="button"
+                      onClick={handleDeleteJournalEntry}
+                      className="px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-700 bg-rose-100/80 hover:bg-rose-100 border border-rose-300/60 shadow-neu-sm transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Eliminar</span>
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={closeJournalEditor}
@@ -496,12 +511,12 @@ export const JournalEditorModal: React.FC = () => {
         <Drawer.Overlay className="fixed inset-0 z-50 bg-slate-900/35 backdrop-blur-sm" />
         <Drawer.Content
           data-testid="journal-vaul-drawer"
-          className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2rem] border-t border-manifest-glassBorder bg-manifest-surfaceNav/98 backdrop-blur-2xl p-5 sm:p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-liquid outline-none flex flex-col max-h-[92dvh]`}
+          className="fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2rem] border-t border-purple-200/80 bg-white/98 backdrop-blur-2xl p-5 sm:p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_-12px_40px_rgba(30,20,50,0.14)] outline-none flex flex-col max-h-[92dvh]"
         >
           {/* iOS Native Grabber Handle */}
           <Drawer.Handle
             data-testid="ios-sheet-grabber"
-            className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-manifest-auraPurple/30 mb-2 cursor-grab active:cursor-grabbing"
+            className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-slate-300 mb-2 cursor-grab active:cursor-grabbing"
           />
 
           <Drawer.Title className="sr-only">{getModalTitle()}</Drawer.Title>
@@ -510,17 +525,17 @@ export const JournalEditorModal: React.FC = () => {
           </Drawer.Description>
 
           {/* iOS Compact Navigation Bar (h-14 px-4) */}
-          <div className="shrink-0 h-14 -mx-5 sm:-mx-6 -mt-2 px-4 sm:px-6 flex items-center justify-between border-b border-manifest-glassBorder bg-manifest-surfaceNav z-10">
+          <div className="shrink-0 h-14 -mx-5 sm:-mx-6 -mt-2 px-4 sm:px-6 flex items-center justify-between border-b border-purple-100/80 bg-white/90 backdrop-blur-md z-10">
             <button
               type="button"
               onClick={closeJournalEditor}
-              className="text-manifest-inkLight hover:text-manifest-ink font-medium text-sm transition-colors cursor-pointer px-1 py-1"
+              className="text-slate-600 hover:text-slate-900 font-semibold text-sm transition-colors cursor-pointer px-1 py-1"
             >
               Cancelar
             </button>
 
             <div className="text-center truncate px-2">
-              <h3 className="font-serif text-sm sm:text-base font-bold text-manifest-ink truncate">
+              <h3 className="font-serif text-sm sm:text-base font-bold text-slate-900 truncate">
                 {getModalTitle()}
               </h3>
             </div>
@@ -530,7 +545,7 @@ export const JournalEditorModal: React.FC = () => {
               whileTap={IOS_TAP_SPRING}
               data-testid="submit-journal-nav-btn"
               onClick={handleSubmit(onSubmit)}
-              className="primary-gradient-btn text-manifest-ink px-4 py-1.5 rounded-full font-semibold text-xs sm:text-sm shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer"
+              className="primary-gradient-btn text-white px-4 py-1.5 rounded-full font-semibold text-xs sm:text-sm shadow-xs hover:opacity-95 active:scale-95 transition-all cursor-pointer"
             >
               Guardar
             </motion.button>
@@ -543,35 +558,27 @@ export const JournalEditorModal: React.FC = () => {
           >
             {/* Espacio / Perfil */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-manifest-ink">
+              <label className="text-xs font-semibold text-slate-800">
                 Espacio
               </label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { key: 'facu' as UserScope, label: '☾ Facu' },
-                  { key: 'maia' as UserScope, label: '✧ Maia' },
-                  { key: 'shared' as UserScope, label: '✦ Juntos' },
-                ].map((sc) => (
-                  <motion.button
-                    key={sc.key}
-                    type="button"
-                    whileTap={IOS_TAP_SPRING}
-                    onClick={() => setValue('userId', sc.key, { shouldDirty: true })}
-                    className={`py-1.5 px-2 rounded-xl text-xs font-semibold transition-colors border cursor-pointer ${
-                      selectedUserId === sc.key
-                        ? 'bg-purple-100/90 text-purple-900 border-purple-300/70 shadow-neu-sm'
-                        : 'bg-manifest-glassControl hover:bg-manifest-glassControlHover text-manifest-inkMuted border-manifest-glassBorder'
-                    }`}
-                  >
-                    {sc.label}
-                  </motion.button>
-                ))}
+              <div>
+                <PremiumToggleSelector
+                  value={selectedUserId}
+                  onChange={(val) => setValue('userId', val as UserScope, { shouldDirty: true })}
+                  dropDirection="down"
+                  layoutIdPrefix="journal-modal-scope-mobile"
+                  options={[
+                    { key: 'facu', label: 'Facu', icon: Moon },
+                    { key: 'maia', label: 'Maia', icon: Heart },
+                    { key: 'shared', label: 'Juntos', icon: Sparkles },
+                  ]}
+                />
               </div>
             </div>
 
             {/* Tipo de entrada */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-manifest-ink">
+              <label className="text-xs font-semibold text-slate-800">
                 Tipo de Entrada
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -602,11 +609,11 @@ export const JournalEditorModal: React.FC = () => {
                       onClick={() => setValue('entryType', t.key, { shouldDirty: true })}
                       className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-semibold transition-colors border cursor-pointer ${
                         isSelected
-                          ? 'bg-purple-100/90 text-purple-900 border-purple-300/70 shadow-neu-sm'
-                          : 'bg-manifest-glassControl hover:bg-manifest-glassControlHover text-manifest-inkMuted border-manifest-glassBorder'
+                          ? 'bg-purple-100 text-purple-900 border-purple-300 font-bold shadow-xs'
+                          : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200/90 shadow-xs'
                       }`}
                     >
-                      <Icon className="w-3.5 h-3.5 shrink-0" />
+                      <Icon className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-purple-700' : 'text-slate-500'}`} />
                       <span className="truncate">{t.label}</span>
                     </motion.button>
                   );
@@ -616,7 +623,7 @@ export const JournalEditorModal: React.FC = () => {
 
             {/* Contenido con AutoResizeTextarea y Micrófono */}
             <div ref={validationContainerRef} className="space-y-1.5">
-              <label className="text-xs font-semibold text-manifest-ink block">
+              <label className="text-xs font-semibold text-slate-800 block">
                 Contenido de tu entrada
               </label>
               {isVoiceActiveContent ? (
@@ -661,7 +668,7 @@ export const JournalEditorModal: React.FC = () => {
                             ? 'Describe qué avance viste, qué sincronía percibiste o qué paso diste...'
                             : 'Describe con gratitud el hecho consumado, cómo se materializó tu manifestación...'
                         }
-                        className={`w-full p-3.5 pr-12 rounded-2xl glass-input text-base sm:text-xs placeholder:text-manifest-inkMuted/40 leading-relaxed transition-colors ${
+                        className={`w-full p-3.5 pr-12 rounded-2xl bg-white border border-purple-200/90 text-slate-900 text-base sm:text-xs placeholder:text-slate-400 leading-relaxed transition-all shadow-xs focus:border-purple-500 focus:ring-2 focus:ring-purple-400/25 outline-none ${
                           errors.content
                             ? 'border-rose-400 ring-1 ring-rose-400/50'
                             : currentContent.trim().length > 0
@@ -700,35 +707,61 @@ export const JournalEditorModal: React.FC = () => {
                 </div>
               )}
 
-              {/* Auto-animated Inline Error Message */}
-              {errors.content && (
-                <div
-                  data-testid="journal-content-error"
-                  className="flex items-center gap-1.5 text-[11px] text-rose-500 font-medium pt-1 pl-1"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                  <span>{errors.content.message}</span>
-                </div>
-              )}
+              {/* Auto-animated Inline Error Message with SmoothSizeContainer */}
+              <SmoothSizeContainer>
+                {errors.content && (
+                  <div
+                    data-testid="journal-content-error"
+                    className="flex items-center gap-1.5 text-[11px] text-rose-500 font-medium pt-1 pl-1"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                    <span>{errors.content.message}</span>
+                  </div>
+                )}
+              </SmoothSizeContainer>
             </div>
 
             {/* Flow Submit Button */}
-            <div className="pt-3 pb-4">
-              <motion.button
-                type="submit"
-                whileTap={IOS_TAP_SPRING}
-                data-testid="submit-journal-btn"
-                className="w-full py-3 px-4 rounded-2xl primary-gradient-btn text-xs sm:text-sm font-semibold shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                {editingJournalEntry
-                  ? 'Guardar Cambios'
-                  : selectedEntryType === 'manifestation'
-                  ? 'Guardar Manifestación'
-                  : selectedEntryType === 'progress'
-                  ? 'Guardar Avance'
-                  : 'Guardar Success Story'}
-              </motion.button>
-            </div>
+            {/* Flow Action Buttons with Coordinated Reactive Reflow */}
+            <motion.div
+              layout="position"
+              transition={IOS_LAYOUT_SPRING}
+              className="pt-3 pb-4 space-y-2"
+            >
+              {!editingJournalEntry && (
+                <motion.button
+                  type="submit"
+                  layout="position"
+                  transition={IOS_LAYOUT_SPRING}
+                  whileTap={IOS_TAP_SPRING}
+                  data-testid="submit-journal-btn"
+                  className="w-full py-3 px-4 rounded-2xl primary-gradient-btn text-xs sm:text-sm font-semibold shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>
+                    {selectedEntryType === 'manifestation'
+                      ? 'Guardar Manifestación'
+                      : selectedEntryType === 'progress'
+                      ? 'Guardar Avance'
+                      : 'Guardar Success Story'}
+                  </span>
+                </motion.button>
+              )}
+
+              {editingJournalEntry && (
+                <motion.button
+                  type="button"
+                  layout="position"
+                  transition={IOS_LAYOUT_SPRING}
+                  whileTap={IOS_TAP_SPRING}
+                  onClick={handleDeleteJournalEntry}
+                  className="w-full py-2.5 px-4 rounded-2xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200/90 font-semibold text-xs sm:text-sm shadow-xs cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Eliminar Entrada</span>
+                </motion.button>
+              )}
+            </motion.div>
           </form>
         </Drawer.Content>
       </Drawer.Portal>

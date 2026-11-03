@@ -7,7 +7,6 @@ import {
   BookOpen,
   Target,
   Compass,
-  Flame,
   Shield,
   Download,
   PenLine,
@@ -41,8 +40,6 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ onOpenInstallGui
     setActiveTab,
     openJournalEditor,
     openAffirmationEditor,
-    openOracle,
-    etherFragments,
     settings,
     activeScope,
     isSyncing,
@@ -111,27 +108,18 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ onOpenInstallGui
           <UserScopeSwitcher idPrefix="desktop-sidebar" className="w-full justify-between" />
         </div>
 
-        {/* User Profile & Connection Streak Card */}
-        <div className="p-3 rounded-2xl glass-card shadow-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-full bg-manifest-glassControl border border-manifest-glassBorder flex items-center justify-center text-xs font-bold text-manifest-ink shadow-xs shrink-0">
-                {getUserInitial()}
-              </div>
-              <span className="font-semibold text-xs text-manifest-ink truncate">
-                {activeScope === 'shared' ? 'Facu & Maia' : settings.userName}
-              </span>
+        {/* User Profile Card */}
+        <div className="p-3 rounded-2xl glass-card shadow-sm space-y-1.5">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded-full bg-manifest-glassControl border border-manifest-glassBorder flex items-center justify-center text-xs font-bold text-manifest-ink shadow-xs shrink-0">
+              {getUserInitial()}
             </div>
-            <div
-              className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100/70 text-amber-900 text-[10px] font-bold border border-amber-300/60 shadow-neu-sm shrink-0"
-              title="Días consecutivos de conexión activa"
-            >
-              <Flame className="w-3 h-3 text-amber-600 fill-amber-500" />
-              <span>{settings.dailyStreak} {settings.dailyStreak === 1 ? 'día' : 'días'}</span>
-            </div>
+            <span className="font-semibold text-xs text-manifest-ink truncate">
+              {activeScope === 'shared' ? 'Facu & Maia' : settings.userName}
+            </span>
           </div>
           <p className="text-[11px] text-manifest-inkLight leading-tight font-medium pl-0.5">
-            {activeScope === 'shared' ? 'Co-creación y sincronía mística' : 'Presencia y verdad consciente'}
+            {activeScope === 'shared' ? 'Co-creación y sincronía' : 'Presencia consciente'}
           </p>
         </div>
 
@@ -208,31 +196,6 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ onOpenInstallGui
               );
             })}
           </nav>
-        </div>
-
-        {/* Cosmic Oracle Card / Ethereal Feature Widget */}
-        <div className="pt-2">
-          <div className="p-3.5 rounded-2xl glass-card border border-manifest-glassBorder shadow-sm space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-manifest-ink">
-                <Sparkles className="w-3.5 h-3.5 text-manifest-auraPurple fill-manifest-auraPurple/30" />
-                <span>Oráculo Cósmico</span>
-              </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-manifest-glassControl text-manifest-auraPurple font-bold border border-manifest-glassBorder">
-                {etherFragments} ✧
-              </span>
-            </div>
-            <p className="text-[10px] text-manifest-inkLight leading-tight">
-              Sintoniza una revelación mística y sincronía para tu día.
-            </p>
-            <button
-              onClick={() => openOracle()}
-              className="w-full py-1.5 px-2.5 rounded-xl glass-pill hover:bg-manifest-glassControlHover text-[11px] font-semibold text-manifest-ink flex items-center justify-center gap-1.5 border border-manifest-glassBorder shadow-2xs transition-all hover:scale-[1.01] active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
-            >
-              <span>Girar Oráculo</span>
-              <Sparkles className="w-3 h-3 text-manifest-auraPurple" />
-            </button>
-          </div>
         </div>
 
         {/* Footer Info & PWA / Turso Cloud Trigger */}

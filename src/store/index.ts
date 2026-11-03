@@ -120,6 +120,12 @@ interface AppState {
   openRampageSetEditor: (setToEdit?: RampageSet | null) => void;
   closeRampageSetEditor: () => void;
 
+  // Global Deletion Confirmation Popups
+  pendingDeleteAffirmation: Affirmation | null;
+  setPendingDeleteAffirmation: (aff: Affirmation | null) => void;
+  pendingDeleteJournalEntry: JournalEntry | null;
+  setPendingDeleteJournalEntry: (entry: JournalEntry | null) => void;
+
   // Lite Mode (Modo Ligero)
   isLiteMode: boolean;
   toggleLiteMode: () => void;
@@ -275,6 +281,15 @@ export const useAppStore = create<AppState>((set, get) => {
     },
     closeRampageSetEditor: () => {
       set({ isRampageSetEditorOpen: false, editingRampageSet: null });
+    },
+
+    pendingDeleteAffirmation: null,
+    setPendingDeleteAffirmation: (aff = null) => {
+      set({ pendingDeleteAffirmation: aff });
+    },
+    pendingDeleteJournalEntry: null,
+    setPendingDeleteJournalEntry: (entry = null) => {
+      set({ pendingDeleteJournalEntry: entry });
     },
 
     // Lite Mode

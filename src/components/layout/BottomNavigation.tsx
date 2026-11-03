@@ -43,7 +43,7 @@ export const BottomNavigation: React.FC = () => {
         <nav
           role="navigation"
           aria-label="Navegación principal"
-          className="relative max-w-md mx-auto pointer-events-auto h-13 rounded-2xl bg-manifest-surfaceNav/95 backdrop-blur-2xl border border-manifest-glassBorder shadow-liquid px-2 py-1 flex items-center justify-between overflow-hidden"
+          className="relative max-w-md mx-auto pointer-events-auto h-13 rounded-2xl bg-white/95 backdrop-blur-2xl border border-purple-200/80 shadow-[0_8px_32px_rgba(30,20,50,0.14)] px-2 py-1 flex items-center justify-between overflow-hidden"
         >
           {NAV_ITEMS.map((item) => {
             const isActive = activeTab === item.key;
@@ -64,7 +64,7 @@ export const BottomNavigation: React.FC = () => {
                   {isActive && (
                     <motion.div
                       layoutId="mobile-tabbar-active-pill"
-                      className="absolute inset-0 rounded-xl bg-manifest-glassControlActive border border-manifest-glassBorderFocus shadow-[0_0_12px_var(--color-brass-glow)] backdrop-blur-md"
+                      className="absolute inset-0 rounded-xl bg-purple-100 border border-purple-300/80 shadow-xs backdrop-blur-md"
                       transition={TAB_SPRING_TRANSITION}
                     />
                   )}
@@ -81,7 +81,7 @@ export const BottomNavigation: React.FC = () => {
                   >
                     <Icon
                       className={`w-[17px] h-[17px] transition-colors duration-200 ${
-                        isActive ? 'text-manifest-ink stroke-[2.3]' : 'text-manifest-inkMuted opacity-80 group-hover:opacity-100 group-hover:text-manifest-ink'
+                        isActive ? 'text-purple-900 stroke-[2.4]' : 'text-slate-500 group-hover:text-slate-800'
                       }`}
                     />
                   </motion.div>
@@ -90,7 +90,7 @@ export const BottomNavigation: React.FC = () => {
                 {/* Etiqueta de texto debajo del ícono, siempre legible */}
                 <span
                   className={`text-[10px] tracking-tight block mt-0.5 select-none transition-colors duration-200 leading-tight ${
-                    isActive ? 'font-serif font-semibold text-manifest-ink' : 'font-serif font-medium text-manifest-inkMuted'
+                    isActive ? 'font-serif font-bold text-purple-950' : 'font-serif font-medium text-slate-600 group-hover:text-slate-900'
                   }`}
                 >
                   {item.label}

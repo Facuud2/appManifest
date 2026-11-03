@@ -35,6 +35,7 @@ export const AutoResizeTextarea = forwardRef<
     ref
   ) => {
     const innerRef = useRef<HTMLTextAreaElement | null>(null);
+    const isMountedRef = useRef(false);
 
     useImperativeHandle(ref, () => innerRef.current as HTMLTextAreaElement);
 
@@ -44,19 +45,42 @@ export const AutoResizeTextarea = forwardRef<
 
       const scrollParent = el.closest('.overflow-y-auto') as HTMLElement | null;
       const prevScrollTop = scrollParent ? scrollParent.scrollTop : null;
-
-      el.style.height = 'auto';
-      const rawScrollHeight = el.scrollHeight;
       const effectiveMaxHeight = maxHeight ?? 240;
 
-      if (rawScrollHeight > effectiveMaxHeight) {
-        el.style.height = `${effectiveMaxHeight}px`;
-        el.style.overflowY = 'auto';
-      } else {
-        const nextHeight = Math.max(rawScrollHeight + 2, minRows * 24);
+      if (!isMountedRef.current) {
+        el.style.transition = 'none';
+        el.style.height = '0px';
+        const rawScrollHeight = el.scrollHeight;
+        const nextHeight = Math.min(
+          Math.max(rawScrollHeight + 2, minRows * 24),
+          effectiveMaxHeight
+        );
         el.style.height = `${nextHeight}px`;
-        el.style.overflowY = 'hidden';
+        el.style.overflowY = rawScrollHeight > effectiveMaxHeight ? 'auto' : 'hidden';
+        isMountedRef.current = true;
+        return;
       }
+
+      const prevHeight = el.style.height;
+
+      // Accurately measure content height without snapping
+      el.style.transition = 'none';
+      el.style.height = '0px';
+      const rawScrollHeight = el.scrollHeight;
+
+      if (prevHeight && prevHeight !== '0px') {
+        el.style.height = prevHeight;
+        void el.offsetHeight; // Force reflow to establish starting height for transition
+      }
+
+      const nextHeight = Math.min(
+        Math.max(rawScrollHeight + 2, minRows * 24),
+        effectiveMaxHeight
+      );
+
+      el.style.transition = 'height 160ms cubic-bezier(0.22, 1, 0.36, 1)';
+      el.style.height = `${nextHeight}px`;
+      el.style.overflowY = rawScrollHeight > effectiveMaxHeight ? 'auto' : 'hidden';
 
       if (scrollParent && prevScrollTop !== null) {
         scrollParent.scrollTop = prevScrollTop;

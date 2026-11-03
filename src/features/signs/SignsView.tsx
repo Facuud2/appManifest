@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { ManifestationSign, SignType, UserScope } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SynchronicityOtpInput } from '@/components/ui/SynchronicityOtpInput';
 
 const SIGN_TYPES: {
   key: SignType;
@@ -202,15 +203,6 @@ export const SignsView: React.FC = () => {
                       <Calendar className="w-3 h-3" />
                       {sign.date}
                     </span>
-                    {sign.userId === 'shared' ? (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100/80 text-amber-800 border border-amber-300/60 shadow-neu-sm">
-                        ✦ Juntos
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-manifest-glassControl text-manifest-inkMuted border border-manifest-glassBorder">
-                        {sign.author || (sign.userId === 'facu' ? '☾ Facu' : '✧ Maia')}
-                      </span>
-                    )}
                   </div>
 
                   <button
@@ -291,6 +283,21 @@ export const SignsView: React.FC = () => {
                     ))}
                   </select>
                 </div>
+
+                {signType === 'angel_number' && (
+                  <SynchronicityOtpInput
+                    value={title.includes('Secuencia ') ? title.replace('Secuencia ', '').split(' ')[0] : ''}
+                    onChange={(val) => {
+                      setTitle(`Secuencia ${val} - Sincronía angelical`);
+                      if (!description) {
+                        setDescription(`Alineación profunda observada con la secuencia numérica sagrada ${val}. Confirmación de camino despejado.`);
+                      }
+                      if (!feeling) {
+                        setFeeling('Certeza absoluta y gratitud');
+                      }
+                    }}
+                  />
+                )}
 
                 <div>
                   <label className="font-semibold text-manifest-inkMuted block mb-1">

@@ -10,13 +10,13 @@ import { DesktopSidebar } from '@/components/layout/DesktopSidebar';
 import { ToastContainer } from '@/components/ui/ToastContainer';
 import { OfflineBanner } from '@/components/ui/OfflineBanner';
 import { SlowNetworkBanner } from '@/components/ui/SlowNetworkBanner';
-import { CosmicOracleWheel } from '@/components/ui/CosmicOracleWheel';
 import { SuccessCelebrationModal } from '@/components/ui/SuccessCelebrationModal';
 import { ActionableErrorBoundary } from '@/components/ui/ActionableErrorBoundary';
 import { DashboardSkeleton } from '@/components/ui/LiquidSkeleton';
 import { JournalEditorModal } from '@/components/journal/JournalEditorModal';
 import { AffirmationEditorModal } from '@/components/goals/AffirmationEditorModal';
 import { RampageSetEditorModal } from '@/components/goals/RampageSetEditorModal';
+import { GlobalDeleteConfirmationModal } from '@/components/ui/GlobalDeleteConfirmationModal';
 import { PwaInstallGuide } from '@/components/pwa/PwaInstallGuide';
 import { InteractiveTour } from '@/components/onboarding/InteractiveTour';
 import { DashboardView } from '@/features/dashboard/DashboardView';
@@ -75,9 +75,6 @@ export default function Home() {
       {/* Slow Network / Lite Mode Controller */}
       <SlowNetworkBanner />
 
-      {/* Cosmic Oracle Wheel (Gacha / Gambling místico a 60fps) */}
-      <CosmicOracleWheel />
-
       {/* Success Celebration & Micro-particles Modal */}
       <SuccessCelebrationModal />
 
@@ -89,6 +86,9 @@ export default function Home() {
 
       {/* Global Rampage Set Editor iOS Sheet (Vaul) */}
       <RampageSetEditorModal />
+
+      {/* Global Deletion Confirmation Popups */}
+      <GlobalDeleteConfirmationModal />
 
       {/* Vaul Background Scaling Wrapper */}
       <div

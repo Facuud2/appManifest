@@ -19,19 +19,19 @@ const SCOPES: ScopeOption[] = [
     key: 'facu',
     label: 'Facu',
     icon: Moon,
-    accentColor: 'from-manifest-celeste/40 via-manifest-lavender/40 to-manifest-celeste/30 border-manifest-celeste/50',
+    accentColor: 'text-indigo-950',
   },
   {
     key: 'maia',
     label: 'Maia',
     icon: Heart,
-    accentColor: 'from-manifest-pink/40 via-manifest-peach/40 to-manifest-pink/30 border-manifest-pink/50',
+    accentColor: 'text-pink-950',
   },
   {
     key: 'shared',
     label: 'Juntos',
     icon: Sparkles,
-    accentColor: 'from-manifest-butter/40 via-manifest-mint/40 to-manifest-lavender/30 border-manifest-butter/50',
+    accentColor: 'text-purple-950',
     badgeLabel: '✧',
   },
 ];
@@ -55,7 +55,7 @@ export const UserScopeSwitcher: React.FC<UserScopeSwitcherProps> = ({
     <div className={`w-full flex items-center justify-center ${className}`}>
       {/* Switcher Pill */}
       <div
-        className={`w-full relative rounded-full backdrop-blur-xl bg-manifest-surfaceNav/90 border border-manifest-glassBorder shadow-glass flex items-center justify-between ${
+        className={`w-full relative rounded-full backdrop-blur-xl bg-white/85 border border-purple-200/80 shadow-[0_2px_12px_rgba(139,92,246,0.06)] flex items-center justify-between ${
           compact ? 'p-0.5' : 'p-1'
         }`}
         role="tablist"
@@ -65,35 +65,42 @@ export const UserScopeSwitcher: React.FC<UserScopeSwitcherProps> = ({
           const isActive = activeScope === scope.key;
           const Icon = scope.icon;
 
+          const activeIconColor =
+            scope.key === 'facu'
+              ? 'text-indigo-600'
+              : scope.key === 'maia'
+              ? 'text-pink-600'
+              : 'text-purple-600';
+
           return (
             <button
               key={scope.key}
               role="tab"
               aria-selected={isActive}
               onClick={() => setActiveScope(scope.key)}
-              className={`relative z-10 flex-1 flex items-center justify-center gap-1 rounded-full font-sans transition-all duration-200 select-none cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
-                compact ? 'py-1 px-1.5 text-[11px] font-medium' : 'py-1.5 px-2.5 text-xs font-medium'
+              className={`relative z-10 flex-1 flex items-center justify-center gap-1.5 rounded-full font-sans transition-all duration-200 select-none cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
+                compact ? 'py-1 px-1.5 text-[11px]' : 'py-1.5 px-2.5 text-xs'
               } ${
                 isActive
-                  ? 'text-manifest-ink font-bold shadow-xs'
-                  : 'text-manifest-inkMuted hover:text-manifest-ink hover:bg-manifest-glassControlHover'
+                  ? `${scope.accentColor} font-bold shadow-xs`
+                  : 'text-slate-600 hover:text-slate-900 font-medium hover:bg-slate-100/50'
               }`}
             >
               {isActive && (
                 <motion.div
                   layoutId={`${idPrefix}-activeUserScopeIndicator`}
-                  className={`absolute inset-0 rounded-full bg-gradient-to-r ${scope.accentColor} border shadow-xs -z-10`}
+                  className="absolute inset-0 rounded-full bg-white border border-purple-200/90 shadow-[0_2px_8px_rgba(99,102,241,0.12)] -z-10"
                   transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                 />
               )}
               <Icon
                 className={`transition-transform shrink-0 ${
                   compact ? 'w-3 h-3' : 'w-3.5 h-3.5'
-                } ${isActive ? 'scale-110 text-manifest-brass' : 'opacity-60'}`}
+                } ${isActive ? `scale-110 ${activeIconColor}` : 'text-slate-500'}`}
               />
               <span className="tracking-tight whitespace-nowrap">{scope.label}</span>
               {scope.badgeLabel && !isActive && (
-                <span className="text-[9px] leading-none opacity-80">{scope.badgeLabel}</span>
+                <span className="text-[9px] leading-none text-purple-600 font-bold">{scope.badgeLabel}</span>
               )}
             </button>
           );

@@ -10,16 +10,19 @@ import {
   Flame,
   Send,
   Mic,
+  Moon,
+  Heart,
 } from 'lucide-react';
 import { UserScope, Affirmation } from '@/types';
-import { motion } from 'framer-motion';
-import { IOS_TAP_SPRING } from '@/lib/iosSprings';
+import { motion, LayoutGroup } from 'framer-motion';
+import { IOS_TAP_SPRING, IOS_LAYOUT_SPRING } from '@/lib/iosSprings';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
 import { ManifestationCard } from '@/components/goals/ManifestationCard';
 import { PinnedAffirmationsList } from '@/components/goals/PinnedAffirmationsList';
 import { RampageSetView } from '@/components/goals/RampageSetView';
 import { LiquidEmptyState } from '@/components/ui/LiquidEmptyState';
+import { PremiumToggleSelector } from '@/components/ui/PremiumToggleSelector';
 
 export const GoalsView: React.FC = () => {
   const {
@@ -115,7 +118,8 @@ export const GoalsView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4 pt-1">
+    <LayoutGroup id="goals-layout-group">
+      <div className="max-w-2xl mx-auto space-y-4 pt-1">
       {/* Header with iOS Segmented Control */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
         <div className="hidden lg:block">
@@ -127,17 +131,17 @@ export const GoalsView: React.FC = () => {
 
         {/* Liquid Glass pill switcher + Action */}
         <div className="flex items-center gap-2 self-start sm:self-auto w-full sm:w-auto justify-between sm:justify-end">
-          <div className="inline-flex p-0.5 rounded-full bg-manifest-glassControl border border-manifest-glassBorder backdrop-blur-md">
+          <div className="inline-flex p-1 rounded-full bg-white/85 border border-purple-200/80 shadow-sm backdrop-blur-md">
             <button
               type="button"
               onClick={() => setViewMode('list')}
               className={`px-3 py-1.5 text-xs font-serif tracking-wide rounded-full transition-all flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
                 viewMode === 'list'
-                  ? 'bg-manifest-glassControlActive text-manifest-ink shadow-xs border border-manifest-glassBorderFocus'
-                  : 'text-manifest-inkMuted hover:text-manifest-ink'
+                  ? 'bg-white text-purple-950 font-bold shadow-xs border border-purple-300/80'
+                  : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-100/50'
               }`}
             >
-              <Pin className="w-3 h-3 text-manifest-brass" />
+              <Pin className="w-3 h-3 text-purple-600" />
               <span>Mis Fijadas ({pinnedAffirmations.length})</span>
             </button>
             <button
@@ -145,11 +149,11 @@ export const GoalsView: React.FC = () => {
               onClick={() => setViewMode('rampage')}
               className={`px-3 py-1.5 text-xs font-serif tracking-wide rounded-full transition-all flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
                 viewMode === 'rampage'
-                  ? 'bg-manifest-glassControlActive text-manifest-ink shadow-xs border border-manifest-glassBorderFocus'
-                  : 'text-manifest-inkMuted hover:text-manifest-ink'
+                  ? 'bg-white text-purple-950 font-bold shadow-xs border border-purple-300/80'
+                  : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-100/50'
               }`}
             >
-              <Flame className="w-3 h-3 text-amber-400 fill-amber-400" />
+              <Flame className="w-3 h-3 text-amber-500 fill-amber-500" />
               <span>Rampage</span>
             </button>
           </div>
@@ -244,26 +248,17 @@ export const GoalsView: React.FC = () => {
                   <Sparkles className="w-3.5 h-3.5 text-manifest-auraPurple" />
                   <span>Consagrar Nuevo Decreto</span>
                 </label>
-                <div className="flex items-center gap-1">
-                  {[
-                    { key: 'facu' as UserScope, label: '☾ Facu' },
-                    { key: 'maia' as UserScope, label: '✧ Maia' },
-                    { key: 'shared' as UserScope, label: '✦ Juntos' },
-                  ].map((sc) => (
-                    <button
-                      key={sc.key}
-                      type="button"
-                      onClick={() => setScope(sc.key)}
-                      className={`py-1 px-2.5 rounded-lg text-[10px] font-semibold transition-all border cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
-                        scope === sc.key
-                          ? 'bg-manifest-glassControlActive text-manifest-ink border-manifest-glassBorderFocus shadow-xs'
-                          : 'bg-manifest-glassControl hover:bg-manifest-glassControlHover text-manifest-inkMuted border-manifest-glassBorder'
-                      }`}
-                    >
-                      {sc.label}
-                    </button>
-                  ))}
-                </div>
+                <PremiumToggleSelector
+                  value={scope}
+                  onChange={(val) => setScope(val as UserScope)}
+                  dropDirection="down"
+                  layoutIdPrefix="goals-writer-scope"
+                  options={[
+                    { key: 'facu', label: 'Facu', icon: Moon },
+                    { key: 'maia', label: 'Maia', icon: Heart },
+                    { key: 'shared', label: 'Juntos', icon: Sparkles },
+                  ]}
+                />
               </div>
 
               {isDictating ? (
@@ -290,16 +285,17 @@ export const GoalsView: React.FC = () => {
                     onKeyDown={handleKeyDown}
                     enterKeyHint="send"
                     placeholder="Escribe en tiempo presente tu deseo o afirmación... (Pulsa Enviar para consagrar)"
-                    className="w-full p-3 pr-10 rounded-xl glass-input text-xs placeholder:text-manifest-inkLight"
+                    className="w-full p-3 pr-10 rounded-xl bg-white border border-purple-200/80 shadow-xs text-xs text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-400/20 outline-none"
                     required
                   />
                   <div className="absolute right-2 bottom-2">
                     <button
                       type="button"
+                      data-testid="goals-mic-btn"
                       onClick={() => setIsDictating(true)}
                       title="Dictar afirmación con micrófono"
                       aria-label="Dictar afirmación con micrófono"
-                      className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-manifest-inkLight hover:text-manifest-ink border border-white/5 flex items-center justify-center transition-all cursor-pointer"
+                      className="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-500/20 to-cyan-400/20 hover:from-purple-500 hover:to-cyan-400 text-purple-700 hover:text-white border border-purple-300/40 shadow-xs flex items-center justify-center transition-all cursor-pointer active:scale-95"
                     >
                       <Mic className="w-3.5 h-3.5" />
                     </button>
@@ -325,5 +321,6 @@ export const GoalsView: React.FC = () => {
       {/* VIEW MODE 2: SETS DE RAMPAGE */}
       {viewMode === 'rampage' && <RampageSetView />}
     </div>
-  );
+  </LayoutGroup>
+);
 };

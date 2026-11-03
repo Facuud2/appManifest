@@ -18,7 +18,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDrag } from '@use-gesture/react';
-import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
+import { IOS_TAP_SPRING, IOS_LAYOUT_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
+import { SmoothSizeContainer } from '@/components/ui/SmoothSizeContainer';
 import { RampageAffirmation, RampageSet } from '@/types';
 import { RampageConfigDrawer } from './RampageConfigDrawer';
 import { RampageDecisionModal } from './RampageDecisionModal';
@@ -605,13 +606,13 @@ export const RampageSetView: React.FC = () => {
       x: dragOffsetX,
       opacity: 1,
       scale: 1,
-      transition: { type: 'spring', stiffness: 380, damping: 32 },
+      transition: IOS_LAYOUT_SPRING,
     },
     exit: (dir: number) => ({
       x: dir > 0 ? -110 : 110,
       opacity: 0,
       scale: 0.94,
-      transition: { type: 'spring', stiffness: 380, damping: 32 },
+      transition: { duration: 0.2, ease: [0.32, 0.72, 0, 1] as const },
     }),
   };
 
@@ -1044,92 +1045,94 @@ export const RampageSetView: React.FC = () => {
         </div>
       </div>
 
-      {/* Protagonist Affirmation Card */}
-      <div className="relative overflow-hidden contain-layout w-full min-h-[220px] sm:min-h-[250px] flex items-center justify-center">
-        <AnimatePresence mode="popLayout" custom={direction}>
-          {currentAffirmation && (
-            <motion.div
-              key={`${currentSet.id}-${currentAffirmation.id}-${safeAffirmationIndex}`}
-              custom={direction}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              whileTap={IOS_TAP_SPRING}
-              {...(bindCardGesture() as any)}
-              data-testid="rampage-next-btn"
-              className="w-full relative p-6 sm:p-9 rounded-3xl sm:rounded-[2rem] liquid-glass-surface shadow-liquid cursor-pointer select-none flex flex-col justify-between min-h-[220px] sm:min-h-[250px] touch-pan-y"
-            >
-              {/* Corner Decorative Quotation Marks (4 corners) */}
-              <span
-                aria-hidden="true"
-                className="absolute top-3.5 left-4 font-serif text-3xl sm:text-4xl text-manifest-ink/20 select-none pointer-events-none leading-none"
+      {/* Protagonist Affirmation Card with SmoothSizeContainer */}
+      <SmoothSizeContainer className="w-full">
+        <div className="relative overflow-hidden contain-layout w-full min-h-[220px] sm:min-h-[250px] flex items-center justify-center">
+          <AnimatePresence mode="popLayout" custom={direction}>
+            {currentAffirmation && (
+              <motion.div
+                key={`${currentSet.id}-${currentAffirmation.id}-${safeAffirmationIndex}`}
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                whileTap={IOS_TAP_SPRING}
+                {...(bindCardGesture() as any)}
+                data-testid="rampage-next-btn"
+                className="w-full relative p-6 sm:p-9 rounded-3xl sm:rounded-[2rem] liquid-glass-surface shadow-liquid cursor-pointer select-none flex flex-col justify-between min-h-[220px] sm:min-h-[250px] touch-pan-y"
               >
-                “
-              </span>
-              <span
-                aria-hidden="true"
-                className="absolute top-3.5 right-4 font-serif text-3xl sm:text-4xl text-manifest-ink/20 select-none pointer-events-none leading-none rotate-180"
-              >
-                “
-              </span>
-              <span
-                aria-hidden="true"
-                className="absolute bottom-3.5 left-4 font-serif text-3xl sm:text-4xl text-manifest-ink/20 select-none pointer-events-none leading-none rotate-180"
-              >
-                ”
-              </span>
-              <span
-                aria-hidden="true"
-                className="absolute bottom-3.5 right-4 font-serif text-3xl sm:text-4xl text-manifest-ink/20 select-none pointer-events-none leading-none"
-              >
-                ”
-              </span>
-
-              {/* Sub-header inside card */}
-              <div className="relative z-10 flex items-center justify-between pb-2">
-                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-manifest-lavender/50 text-manifest-auraPurple border border-white">
-                  AFIRMACIÓN #{safeAffirmationIndex + 1}
+                {/* Corner Decorative Quotation Marks (4 corners) */}
+                <span
+                  aria-hidden="true"
+                  className="absolute top-3.5 left-4 font-serif text-3xl sm:text-4xl text-manifest-ink/20 select-none pointer-events-none leading-none"
+                >
+                  “
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="absolute top-3.5 right-4 font-serif text-3xl sm:text-4xl text-manifest-ink/20 select-none pointer-events-none leading-none rotate-180"
+                >
+                  “
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="absolute bottom-3.5 left-4 font-serif text-3xl sm:text-4xl text-manifest-ink/20 select-none pointer-events-none leading-none rotate-180"
+                >
+                  ”
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="absolute bottom-3.5 right-4 font-serif text-3xl sm:text-4xl text-manifest-ink/20 select-none pointer-events-none leading-none"
+                >
+                  ”
                 </span>
 
-                <div
-                  title="Contador independiente de esta afirmación"
-                  className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/85 border border-white shadow-sm"
-                >
-                  <Flame
-                    className={`w-3.5 h-3.5 ${
-                      (currentAffirmation.repeatCount || 0) > 0
-                        ? 'text-amber-500 fill-amber-400'
-                        : 'text-manifest-inkMuted'
-                    }`}
-                  />
-                  <span
-                    data-testid="rampage-repeat-counter"
-                    className="text-xs font-bold text-manifest-ink"
+                {/* Sub-header inside card */}
+                <div className="relative z-10 flex items-center justify-between pb-2">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-manifest-lavender/50 text-manifest-auraPurple border border-white">
+                    AFIRMACIÓN #{safeAffirmationIndex + 1}
+                  </span>
+
+                  <div
+                    title="Contador independiente de esta afirmación"
+                    className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/85 border border-white shadow-sm"
                   >
-                    {currentAffirmation.repeatCount || 0}
+                    <Flame
+                      className={`w-3.5 h-3.5 ${
+                        (currentAffirmation.repeatCount || 0) > 0
+                          ? 'text-amber-500 fill-amber-400'
+                          : 'text-manifest-inkMuted'
+                      }`}
+                    />
+                    <span
+                      data-testid="rampage-repeat-counter"
+                      className="text-xs font-bold text-manifest-ink"
+                    >
+                      {currentAffirmation.repeatCount || 0}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Affirmation Text Protagonist */}
+                <div className="relative z-10 my-auto py-5 text-center px-4 sm:px-6">
+                  <p className="text-base sm:text-xl md:text-2xl font-serif font-bold text-manifest-ink leading-relaxed tracking-tight">
+                    {currentAffirmation.text}
+                  </p>
+                </div>
+
+                {/* Bottom Tactile Affordance Hint */}
+                <div className="relative z-10 flex items-center justify-center pt-2">
+                  <span className="text-[10px] font-medium text-manifest-inkMuted/70 flex items-center gap-1">
+                    <span>Toca la tarjeta o desliza para avanzar</span>
+                    <span>→</span>
                   </span>
                 </div>
-              </div>
-
-              {/* Affirmation Text Protagonist */}
-              <div className="relative z-10 my-auto py-5 text-center px-4 sm:px-6">
-                <p className="text-base sm:text-xl md:text-2xl font-serif font-bold text-manifest-ink leading-relaxed tracking-tight">
-                  {currentAffirmation.text}
-                </p>
-              </div>
-
-              {/* Bottom Tactile Affordance Hint */}
-              <div className="relative z-10 flex items-center justify-center pt-2">
-                <span className="text-[10px] font-medium text-manifest-inkMuted/70 flex items-center gap-1">
-                  <span>Toca la tarjeta o desliza para avanzar</span>
-                  <span>→</span>
-                </span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </SmoothSizeContainer>
 
       {/* Rampage Config Drawer */}
       <RampageConfigDrawer

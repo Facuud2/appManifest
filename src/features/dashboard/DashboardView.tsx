@@ -8,58 +8,46 @@ import {
   ArrowRight,
   BookOpen,
   Plus,
-  Flame,
-  Pin,
   Edit3,
   Trash2,
   RotateCcw,
   X,
   Target,
   Trophy,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Moon,
-  Zap,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Affirmation, JournalEntry } from '@/types';
-import { motion, AnimatePresence } from 'framer-motion';
-import { IOS_TAP_SPRING } from '@/lib/iosSprings';
-import { PinnedAffirmationsList } from '@/components/goals/PinnedAffirmationsList';
-import { RampageSetView } from '@/components/goals/RampageSetView';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
+import { IOS_TAP_SPRING, IOS_LAYOUT_SPRING } from '@/lib/iosSprings';
 import { JournalEntryDetailModal } from '@/components/journal/JournalEntryDetailModal';
 import { LiquidEmptyState } from '@/components/ui/LiquidEmptyState';
+import { SmoothSizeContainer } from '@/components/ui/SmoothSizeContainer';
 
 export const DashboardView: React.FC = () => {
   const {
     activeScope,
     setActiveTab,
-    navigateToGoals,
     openJournalEditor,
     openAffirmationEditor,
-    openRampageConfig,
     journalEntries,
     deleteJournalEntry,
     affirmations,
-    reorderAffirmations,
     deleteAffirmation,
     saveAffirmation,
-    incrementAffirmationRepeat,
-    settings,
-    etherFragments,
-    openOracle,
   } = useAppStore();
 
-  const [viewMode, setViewMode] = useState<'list' | 'rampage'>('list');
-  const [showAllPinnedInDashboard, setShowAllPinnedInDashboard] = useState(false);
   const [selectedJournalEntryForView, setSelectedJournalEntryForView] = useState<JournalEntry | null>(null);
   const [journalEntryToDelete, setJournalEntryToDelete] = useState<JournalEntry | null>(null);
   const [affirmationToDelete, setAffirmationToDelete] = useState<Affirmation | null>(null);
   const [recentlyDeletedAffirmation, setRecentlyDeletedAffirmation] = useState<Affirmation | null>(null);
   const [spotlightIndex, setSpotlightIndex] = useState(0);
-  const [spotlightPulse, setSpotlightPulse] = useState(false);
+  const [direction, setDirection] = useState(1);
+
+  // Time-based greeting with iOS spring animation
+  const currentHour = new Date().getHours();
+  const greeting = currentHour < 12 ? 'Buenos días' : currentHour < 20 ? 'Buenas tardes' : 'Buenas noches';
+  const displayName = activeScope === 'facu' ? 'Facu' : activeScope === 'maia' ? 'Maia' : 'Chicos';
 
   // Auto-clear recently deleted undo after 7 seconds
   useEffect(() => {
@@ -91,317 +79,178 @@ export const DashboardView: React.FC = () => {
   };
 
   const pinnedAffirmations = affirmations.filter((a) => a.pinned);
-  const unpinnedAffirmations = affirmations
-    .filter((a) => !a.pinned)
-    .sort((a, b) => {
-      const timeA = getAffirmationTime(a);
-      const timeB = getAffirmationTime(b);
-      if (timeA !== timeB) {
-        return timeB - timeA;
-      }
-      return (b.id || '').localeCompare(a.id || '');
-    });
+  const displayAffirmations = affirmations.length > 0 ? (pinnedAffirmations.length > 0 ? pinnedAffirmations : affirmations) : [];
+  const spotlightAffirmation = displayAffirmations.length > 0 ? displayAffirmations[spotlightIndex % displayAffirmations.length] : null;
 
-  const recentEntries = journalEntries.slice(0, 3);
+  const latestTwoAffirmations = [...affirmations]
+    .sort((a, b) => getAffirmationTime(b) - getAffirmationTime(a))
+    .slice(0, 2);
 
-  const rawDate = format(new Date(), "EEEE, d 'de' MMMM", { locale: es });
-  const formattedDate = rawDate.charAt(0).toUpperCase() + rawDate.slice(1);
-  const hour = new Date().getHours();
+  const recentEntries = journalEntries.slice(0, 4);
 
-  const handleReorderPinned = (reordered: Affirmation[]) => {
-    reorderAffirmations([...reordered, ...unpinnedAffirmations]);
-  };
-
-  const getScopeGreetingName = () => {
-    switch (activeScope) {
-      case 'facu':
-        return 'Facu';
-      case 'maia':
-        return 'Maia';
-      case 'shared':
-        return 'Facu & Maia';
-      default:
-        return '';
+  const handleAdvanceSpotlight = () => {
+    if (displayAffirmations.length > 1) {
+      setDirection(1);
+      setSpotlightIndex((prev) => (prev + 1) % displayAffirmations.length);
     }
   };
 
-  // Bento Spotlight Affirmation (Hero Focus)
-  const spotlightAffirmation =
-    pinnedAffirmations.length > 0
-      ? pinnedAffirmations[spotlightIndex % pinnedAffirmations.length]
-      : affirmations[0] || null;
-
-  const totalRepeats = affirmations.reduce((sum, a) => sum + (a.repeatCount || 0), 0);
-  const dailyStreak = settings.dailyStreak || 1;
-
-  const handleRepeatSpotlight = (affId: string) => {
-    setSpotlightPulse(true);
-    setTimeout(() => setSpotlightPulse(false), 500);
-    incrementAffirmationRepeat(affId);
-  };
-
-  const handleNextSpotlight = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (pinnedAffirmations.length > 1) {
-      setSpotlightIndex((prev) => (prev + 1) % pinnedAffirmations.length);
-    }
-  };
-
-  const handlePrevSpotlight = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (pinnedAffirmations.length > 1) {
-      setSpotlightIndex((prev) => (prev - 1 + pinnedAffirmations.length) % pinnedAffirmations.length);
-    }
+  const spotlightTextVariants = {
+    initial: (dir: number) => ({
+      opacity: 0,
+      x: dir > 0 ? 40 : -40,
+      scale: 0.96,
+      filter: 'blur(4px)',
+    }),
+    animate: {
+      opacity: 1,
+      x: 0,
+      scale: 1,
+      filter: 'blur(0px)',
+      transition: IOS_LAYOUT_SPRING,
+    },
+    exit: (dir: number) => ({
+      opacity: 0,
+      x: dir > 0 ? -40 : 40,
+      scale: 0.96,
+      filter: 'blur(4px)',
+      transition: {
+        duration: 0.2,
+        ease: [0.32, 0.72, 0, 1] as const,
+      },
+    }),
   };
 
   return (
-    <div className="w-full space-y-6 pt-1">
-      {/* 1. Header: Saludo Sagrado & Fecha */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-serif font-bold text-manifest-ink flex items-center gap-2">
-            <span className="text-manifest-brass text-base">✦</span>
-            <span>
-              {hour < 12 ? 'Alba consciente' : hour < 20 ? 'Tarde sagrada' : 'Noche mística'},{' '}
-              {getScopeGreetingName()}
-            </span>
-          </h2>
-          <p className="text-xs font-serif italic text-manifest-brass/80 mt-0.5 flex items-center gap-1.5">
-            <span>✧</span>
-            <span>{formattedDate}</span>
-          </p>
-        </div>
+    <div className="w-full space-y-5 pt-1">
+      {/* Saludo iOS (Buenos días / tardes / noches {Facu / Maia / Chicos}) */}
+      <motion.div
+        key={`${greeting}-${displayName}`}
+        initial={{ opacity: 0, y: -8, filter: 'blur(5px)' }}
+        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+        transition={{ type: 'spring', damping: 25, stiffness: 240, mass: 0.8 }}
+        className="px-1 pt-0.5 pb-0.5"
+      >
+        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 tracking-tight">
+          {greeting},{' '}
+          <span className="bg-gradient-to-r from-purple-700 via-pink-600 to-amber-600 bg-clip-text text-transparent">
+            {displayName}
+          </span>
+        </h1>
+      </motion.div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+      {/* Undo Banner if recently deleted */}
+      {recentlyDeletedAffirmation && (
+        <div className="p-3 rounded-2xl bg-manifest-surfaceElevated border border-manifest-glassBorder flex items-center justify-between gap-3 shadow-neu-sm">
+          <p className="text-xs text-manifest-ink">
+            Afirmación retirada:{' '}
+            <span className="font-semibold italic">“{recentlyDeletedAffirmation.text}”</span>
+          </p>
           <button
-            onClick={() => navigateToGoals(viewMode)}
-            className="text-xs font-serif italic text-manifest-inkMuted hover:text-manifest-brass transition-colors flex items-center gap-1 cursor-pointer py-1 px-2.5 rounded-full hover:bg-manifest-glassControlHover focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+            type="button"
+            onClick={() => {
+              saveAffirmation(recentlyDeletedAffirmation);
+              setRecentlyDeletedAffirmation(null);
+            }}
+            className="px-3 py-1 rounded-xl text-xs font-semibold primary-gradient-btn text-manifest-ink flex items-center gap-1 cursor-pointer"
           >
-            <span>{viewMode === 'rampage' ? 'Explorar sets' : 'Todas las afirmaciones'}</span>
-            <ArrowRight className="w-3 h-3" />
+            <RotateCcw className="w-3 h-3" />
+            <span>Deshacer</span>
           </button>
         </div>
-      </div>
+      )}
 
-      {/* 2. Responsive Bento Grid Container */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* ============================================================== */}
-        {/* COLUMNA PRINCIPAL (8 columnas en desktop, orden central) */}
-        {/* ============================================================== */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* A. HERO SPOTLIGHT CARD (Inspirado en Hero de Harry Potter / Bento wireframe) */}
-          {spotlightAffirmation && (
-            <motion.div
-              layout
-              className="relative overflow-hidden rounded-3xl glass-card border border-manifest-glassBorder p-5 sm:p-7 shadow-liquid"
-            >
-              {/* Corner tarot stars */}
-              <span className="absolute top-3.5 left-4 text-manifest-brass/45 text-xs select-none">✦</span>
-              <span className="absolute top-3.5 right-4 text-manifest-brass/45 text-xs select-none">✦</span>
-              <span className="absolute bottom-3.5 left-4 text-manifest-brass/45 text-xs select-none">✦</span>
-              <span className="absolute bottom-3.5 right-4 text-manifest-brass/45 text-xs select-none">✦</span>
-
-              {/* Ambient radial glow */}
-              <div
-                aria-hidden="true"
-                className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-gradient-to-br from-manifest-brass/15 via-manifest-auraPurple/15 to-transparent blur-3xl pointer-events-none"
-              />
-
-              {/* Card Header: Badge + Pagination */}
-              <div className="flex items-center justify-between gap-2 mb-3.5 relative z-10">
-                <div className="flex items-center gap-2">
-                  <span className="vintage-label-tape-dark text-[10px] px-2.5 py-1 rounded flex items-center gap-1.5">
-                    <Sparkles className="w-3 h-3 text-manifest-brass" />
-                    <span>ENFOQUE SAGRADO</span>
-                  </span>
-                  <span className="vintage-label-tape text-[10px] px-2 py-0.5 rounded-sm uppercase tracking-wider">
-                    {spotlightAffirmation.userId === 'shared'
-                      ? '✦ JUNTOS'
-                      : (spotlightAffirmation.author || (spotlightAffirmation.userId === 'facu' ? '☾ FACU' : '✧ MAIA')).toUpperCase()}
-                  </span>
-                </div>
-
-                {pinnedAffirmations.length > 1 && (
-                  <div className="flex items-center gap-1 bg-manifest-glassControl px-2 py-0.5 rounded-full border border-manifest-glassBorder">
-                    <button
-                      onClick={handlePrevSpotlight}
-                      title="Decreto anterior"
-                      className="p-1 text-manifest-inkMuted hover:text-manifest-ink transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
-                    >
-                      <ChevronLeft className="w-3.5 h-3.5" />
-                    </button>
-                    <span className="text-[11px] font-sans font-bold text-manifest-brass px-1 tabular-nums">
-                      {(spotlightIndex % pinnedAffirmations.length) + 1} / {pinnedAffirmations.length}
+      {/* Main Grid Container with Coordinated iOS Reactive Reflow */}
+      <LayoutGroup id="dashboard-layout-group">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* ============================================================== */}
+          {/* COLUMNA PRINCIPAL (8 columnas en desktop, orden central) */}
+          {/* ============================================================== */}
+          <motion.div
+            layout="position"
+            transition={IOS_LAYOUT_SPRING}
+            className="lg:col-span-8 space-y-6"
+          >
+            {/* A. HERO SPOTLIGHT CARD (Pastel Pink/Purple Neumorphism + Quotes + SmoothSizeContainer) */}
+            {spotlightAffirmation && (
+              <SmoothSizeContainer
+                layout="position"
+                transition={IOS_LAYOUT_SPRING}
+                onClick={handleAdvanceSpotlight}
+                className="relative rounded-3xl bg-gradient-to-br from-[#FAF3F8] via-[#F6EEFA] to-[#F0E8F9] border border-purple-200/80 shadow-[6px_6px_18px_rgba(215,200,240,0.45),-6px_-6px_18px_rgba(255,255,255,0.95)] cursor-pointer select-none group"
+                innerClassName="p-5 sm:p-7"
+                outerChildren={
+                  <>
+                    {/* Corner decorative quotation marks */}
+                    <span className="absolute top-2 left-4 font-serif text-3xl sm:text-4xl text-purple-400/60 select-none pointer-events-none leading-none z-10">
+                      “
                     </span>
-                    <button
-                      onClick={handleNextSpotlight}
-                      title="Decreto siguiente"
-                      className="p-1 text-manifest-inkMuted hover:text-manifest-ink transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
-                    >
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
-              </div>
+                    <span className="absolute bottom-2 right-4 font-serif text-3xl sm:text-4xl text-pink-400/60 select-none pointer-events-none leading-none z-10">
+                      ”
+                    </span>
 
-              {/* Affirmation Text: Crystal-clear Lora font */}
-              <div className="my-3 sm:my-4 relative z-10">
-                <p className="font-serif text-lg sm:text-xl lg:text-[22px] text-manifest-ink font-normal leading-relaxed select-text">
-                  “{spotlightAffirmation.text}”
-                </p>
-              </div>
-
-              {/* Action Bar: High impact repeat CTA + Repeat counter */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-manifest-glassBorder relative z-10">
-                <div className="flex items-center gap-2 text-xs font-sans text-manifest-inkMuted">
-                  <span className="flex items-center gap-1.5 text-amber-900 font-bold bg-amber-100/80 px-2.5 py-1 rounded-full border border-amber-300/60 shadow-neu-sm">
-                    <Flame className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
-                    <span className="tabular-nums">{spotlightAffirmation.repeatCount} consagradas</span>
-                  </span>
-                  <span className="hidden sm:inline text-[11px] text-manifest-inkMuted">
-                    Toca para elevar su vibración
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <motion.button
-                    whileTap={IOS_TAP_SPRING}
-                    onClick={() => handleRepeatSpotlight(spotlightAffirmation.id)}
-                    className="relative px-5 py-2.5 rounded-full primary-gradient-btn text-manifest-ink font-sans font-bold text-xs tracking-wider uppercase shadow-md flex items-center gap-1.5 cursor-pointer hover:brightness-110 active:scale-95 transition-all overflow-hidden focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
-                  >
-                    {spotlightPulse && (
-                      <motion.span
-                        initial={{ scale: 0.5, opacity: 0.8 }}
-                        animate={{ scale: 2.2, opacity: 0 }}
-                        transition={{ duration: 0.45 }}
-                        className="absolute inset-0 bg-white rounded-full pointer-events-none"
-                      />
+                    {/* Ambient pastel radial aura */}
+                    <div
+                      aria-hidden="true"
+                      className="absolute -top-16 -right-16 w-60 h-60 rounded-full bg-gradient-to-br from-pink-300/25 via-purple-300/20 to-transparent blur-3xl pointer-events-none"
+                    />
+                  </>
+                }
+              >
+                {/* Card Header: Pastel pill counter + Edit button */}
+                <div className="flex items-center justify-between gap-2 mb-3.5 relative z-10">
+                  <div className="flex items-center gap-1.5 pl-4">
+                    {displayAffirmations.length > 1 && (
+                      <span className="text-[11px] font-sans font-bold text-purple-900 bg-purple-100/90 px-3 py-1 rounded-full border border-purple-300/70 tabular-nums shadow-neu-sm">
+                        {(spotlightIndex % displayAffirmations.length) + 1} / {displayAffirmations.length}
+                      </span>
                     )}
-                    <Flame className="w-4 h-4 fill-current" />
-                    <span>Repetir (+1)</span>
-                  </motion.button>
+                  </div>
+
                   <button
-                    onClick={() => openAffirmationEditor(spotlightAffirmation)}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openAffirmationEditor(spotlightAffirmation);
+                    }}
                     title="Editar decreto"
-                    className="p-2.5 rounded-full bg-manifest-glassControl hover:bg-manifest-glassControlHover text-manifest-inkMuted hover:text-manifest-ink border border-manifest-glassBorder transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+                    className="p-2.5 rounded-full bg-white/80 hover:bg-white text-purple-700 hover:text-purple-900 border border-purple-200/70 shadow-neu-sm transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
                   </button>
                 </div>
-              </div>
-            </motion.div>
-          )}
 
-          {/* B. BENTO STATS GRID (Esoteric Rainbow Pastel Neumorphism) */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {/* Box 1: Racha Sagrada (Soft Peach #FDE4D0 & Solar Butter #FDF2C7) */}
-            <div className="p-3.5 sm:p-4 rounded-2xl glass-card border border-manifest-peach/40 hover:border-manifest-peach/70 transition-all space-y-1 relative overflow-hidden group">
-              <div className="flex items-center justify-between text-amber-700">
-                <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-amber-700">
-                  Racha
-                </span>
-                <Flame className="w-4 h-4 fill-current text-amber-600" />
-              </div>
-              <div className="text-2xl sm:text-3xl font-sans font-bold tabular-nums text-manifest-ink leading-none pt-1">
-                {dailyStreak}d
-              </div>
-              <p className="text-[11px] font-sans text-manifest-inkMuted truncate">
-                Conexión viva
-              </p>
-            </div>
+                {/* Affirmation Text: Striking, elegant Lora font with parallel popLayout transition */}
+                <div className="my-3 sm:my-5 px-3 relative z-10 min-h-[3.5rem] flex items-center">
+                  <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+                    <motion.p
+                      key={spotlightAffirmation.id}
+                      custom={direction}
+                      variants={spotlightTextVariants}
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      className="w-full font-serif text-xl sm:text-2xl lg:text-[25px] text-slate-800 font-medium leading-relaxed tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,0.85)]"
+                    >
+                      “{spotlightAffirmation.text}”
+                    </motion.p>
+                  </AnimatePresence>
+                </div>
+              </SmoothSizeContainer>
+            )}
 
-            {/* Box 2: Decretos Activos (Soft Lavender #E3DBF8 & Amethyst) */}
-            <div className="p-3.5 sm:p-4 rounded-2xl glass-card border border-manifest-lavender/50 hover:border-manifest-lavender/80 transition-all space-y-1 relative overflow-hidden group">
-              <div className="flex items-center justify-between text-purple-700">
-                <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-purple-700">
-                  Decretos
-                </span>
-                <Sparkles className="w-4 h-4 text-purple-700" />
-              </div>
-              <div className="text-2xl sm:text-3xl font-sans font-bold tabular-nums text-manifest-ink leading-none pt-1">
-                {affirmations.length}
-              </div>
-              <p className="text-[11px] font-sans text-manifest-inkMuted truncate">
-                {pinnedAffirmations.length} en el altar
-              </p>
-            </div>
-
-            {/* Box 3: Fragmentos de Éter (Soft Blue #C8E0F4 & Celestial Moon) */}
-            <div
-              onClick={() => openOracle()}
-              className="p-3.5 sm:p-4 rounded-2xl glass-card border border-manifest-celeste/50 hover:border-manifest-celeste/80 transition-all space-y-1 relative overflow-hidden group cursor-pointer"
+            {/* B. ÚLTIMAS AFIRMACIONES (Coordinated Spring Layout) */}
+            <motion.section
+              layout="position"
+              transition={IOS_LAYOUT_SPRING}
+              className="space-y-3 pt-1"
             >
-              <div className="flex items-center justify-between text-sky-700">
-                <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-sky-700">
-                  Éter
-                </span>
-                <Moon className="w-4 h-4 text-sky-700" />
-              </div>
-              <div className="text-2xl sm:text-3xl font-sans font-bold tabular-nums text-manifest-ink leading-none pt-1 flex items-baseline gap-1">
-                <span>{etherFragments}</span>
-                <span className="text-xs font-sans text-sky-600 font-bold">✧</span>
-              </div>
-              <p className="text-[11px] font-sans font-medium text-sky-700 truncate group-hover:underline">
-                Girar Oráculo →
-              </p>
-            </div>
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-manifest-brass" />
+                  <span>Últimas Afirmaciones</span>
+                </h3>
 
-            {/* Box 4: Vibración / Repeticiones (Soft Mint #D2F4E2 & Healing Jade) */}
-            <div className="p-3.5 sm:p-4 rounded-2xl glass-card border border-manifest-mint/50 hover:border-manifest-mint/80 transition-all space-y-1 relative overflow-hidden group">
-              <div className="flex items-center justify-between text-emerald-700">
-                <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-emerald-700">
-                  Energía
-                </span>
-                <Zap className="w-4 h-4 text-emerald-700" />
-              </div>
-              <div className="text-2xl sm:text-3xl font-sans font-bold tabular-nums text-manifest-ink leading-none pt-1">
-                {totalRepeats}
-              </div>
-              <p className="text-[11px] font-sans text-manifest-inkMuted truncate">
-                Repeticiones totales
-              </p>
-            </div>
-          </div>
-
-          {/* C. DECRETOS & AFIRMACIONES DECK */}
-          <section className="space-y-3 pt-2">
-            <div className="flex items-center justify-between gap-2 px-0.5">
-              <div className="inline-flex p-0.5 rounded-full bg-manifest-glassControl border border-manifest-glassBorder backdrop-blur-md">
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`px-3 py-1.5 text-xs font-serif tracking-wide rounded-full transition-all flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
-                    viewMode === 'list'
-                      ? 'bg-manifest-glassControlActive text-manifest-ink shadow-xs border border-manifest-glassBorderFocus'
-                      : 'text-manifest-inkMuted hover:text-manifest-ink'
-                  }`}
-                >
-                  <Sparkles className="w-3 h-3 text-manifest-brass" />
-                  <span>Fijadas ({pinnedAffirmations.length})</span>
-                </button>
-
-                <button
-                  onClick={() => setViewMode('rampage')}
-                  className={`px-3 py-1.5 text-xs font-serif tracking-wide rounded-full transition-all flex items-center gap-1.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none ${
-                    viewMode === 'rampage'
-                      ? 'bg-manifest-glassControlActive text-manifest-ink shadow-xs border border-manifest-glassBorderFocus'
-                      : 'text-manifest-inkMuted hover:text-manifest-ink'
-                  }`}
-                >
-                  <Flame className="w-3 h-3 text-amber-400 fill-amber-400" />
-                  <span>Rampage</span>
-                </button>
-              </div>
-
-              {viewMode === 'rampage' ? (
-                <motion.button
-                  whileTap={IOS_TAP_SPRING}
-                  onClick={() => openRampageConfig()}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-full primary-gradient-btn text-xs font-serif tracking-wide shadow-sm shrink-0 cursor-pointer focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Nuevo Set</span>
-                </motion.button>
-              ) : (
                 <motion.button
                   whileTap={IOS_TAP_SPRING}
                   onClick={() => openAffirmationEditor(null)}
@@ -410,86 +259,68 @@ export const DashboardView: React.FC = () => {
                   <Plus className="w-3.5 h-3.5" />
                   <span>Nuevo Decreto</span>
                 </motion.button>
-              )}
-            </div>
+              </div>
 
-            {viewMode === 'rampage' ? (
-              <RampageSetView />
-            ) : pinnedAffirmations.length === 0 ? (
-              <LiquidEmptyState
-                title="Sin decretos fijados"
-                description="Consagra y fija tus afirmaciones prioritarias con el icono de chincheta para tenerlas presentes en tu santuario diario."
-                actionLabel="Explorar mis afirmaciones"
-                onAction={() => navigateToGoals('list')}
-              />
-            ) : (
-              <div className="space-y-2.5">
-                <PinnedAffirmationsList
-                  pinnedAffirmations={
-                    showAllPinnedInDashboard
-                      ? pinnedAffirmations
-                      : pinnedAffirmations.slice(0, 4)
-                  }
-                  onReorder={handleReorderPinned}
-                  onDeleteRequest={(targetAff) => setAffirmationToDelete(targetAff)}
+              {latestTwoAffirmations.length === 0 ? (
+                <LiquidEmptyState
+                  title="Sin afirmaciones consagradas"
+                  description="Crea tu primer decreto para sintonizar tu realidad y habitar tu manifestación."
+                  actionLabel="Crear mi primer decreto"
+                  onAction={() => openAffirmationEditor(null)}
                 />
+              ) : (
+                <div className="space-y-2.5">
+                  {latestTwoAffirmations.map((aff) => (
+                    <motion.div
+                      key={aff.id}
+                      layout="position"
+                      transition={IOS_LAYOUT_SPRING}
+                      onClick={() => openAffirmationEditor(aff)}
+                      className="p-4 rounded-2xl glass-card border border-manifest-glassBorder hover:border-manifest-glassBorderFocus transition-all cursor-pointer shadow-neu-sm flex items-start justify-between gap-3 group"
+                    >
+                      <p className="font-serif text-sm sm:text-base text-manifest-ink leading-relaxed group-hover:text-manifest-brass transition-colors flex-1 select-text">
+                        “{aff.text}”
+                      </p>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openAffirmationEditor(aff);
+                        }}
+                        title="Editar afirmación"
+                        className="p-2 rounded-xl bg-white hover:bg-slate-100 text-slate-500 hover:text-slate-800 border border-slate-200/90 shadow-xs shrink-0 transition-colors"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+                    </motion.div>
+                  ))}
 
-                {pinnedAffirmations.length > 4 && (
                   <motion.button
                     type="button"
+                    layout="position"
+                    transition={IOS_LAYOUT_SPRING}
                     whileTap={IOS_TAP_SPRING}
-                    onClick={() => setShowAllPinnedInDashboard((prev) => !prev)}
-                    className="w-full py-2 px-3 rounded-full glass-pill text-xs font-serif text-manifest-brass flex items-center justify-center gap-1.5 transition-colors cursor-pointer hover:bg-manifest-glassControlHover focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
+                    onClick={() => setActiveTab('objetivos')}
+                    className="w-full py-3 px-4 rounded-2xl glass-card border border-manifest-glassBorder text-xs sm:text-sm font-serif text-manifest-ink flex items-center justify-center gap-2 hover:bg-manifest-glassControlHover active:scale-98 transition-all cursor-pointer shadow-neu-sm"
                   >
-                    <span>
-                      {showAllPinnedInDashboard
-                        ? 'Mostrar menos decretos'
-                        : `Ver las ${pinnedAffirmations.length} afirmaciones fijadas`}
-                    </span>
-                    <ChevronDown
-                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                        showAllPinnedInDashboard ? 'rotate-180' : ''
-                      }`}
-                    />
+                    <span>Ver todas las afirmaciones</span>
+                    <ArrowRight className="w-4 h-4 text-manifest-brass" />
                   </motion.button>
-                )}
-              </div>
-            )}
-          </section>
-        </div>
+                </div>
+              )}
+            </motion.section>
+          </motion.div>
 
         {/* ============================================================== */}
         {/* COLUMNA DERECHA / PANEL MÍSTICO (4 columnas en desktop) */}
         {/* ============================================================== */}
         <div className="lg:col-span-4 space-y-6">
-          {/* 1. Bento Card: Oráculo Cósmico (Liquid Glass Capsule) */}
-          <div className="p-5 rounded-3xl glass-card border border-manifest-glassBorder space-y-3.5 shadow-liquid relative overflow-hidden">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-manifest-brass flex items-center gap-1.5">
-                <Moon className="w-3.5 h-3.5 text-manifest-brass" />
-                <span>Oráculo Cósmico</span>
-              </span>
-              <span className="text-[11px] font-sans font-bold px-2.5 py-0.5 rounded-full bg-manifest-glassControl text-manifest-brass border border-manifest-glassBorder tabular-nums">
-                {etherFragments} ✧
-              </span>
-            </div>
-
-            <p className="text-xs font-serif text-manifest-ink leading-relaxed">
-              Sintoniza tu revelación mística y sincronicidades alineadas para hoy.
-            </p>
-
-            <motion.button
-              whileTap={IOS_TAP_SPRING}
-              onClick={() => openOracle()}
-              className="w-full py-2.5 px-4 rounded-full primary-gradient-btn text-manifest-ink font-sans font-bold text-xs tracking-wide shadow-md flex items-center justify-center gap-2 cursor-pointer hover:brightness-105 active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-manifest-auraPurple focus-visible:outline-none"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-manifest-brass" />
-              <span>Girar Oráculo</span>
-            </motion.button>
-          </div>
-
-          {/* 2. Bento Card: Grimorio & Diario Reciente (Inspirado en Activity Feed de la inspo) */}
-          <section className="space-y-3">
+          {/* Grimorio & Diario Reciente (Inspirado en Activity Feed) */}
+          <motion.section
+            layout="position"
+            transition={IOS_LAYOUT_SPRING}
+            className="space-y-3"
+          >
             <div className="flex items-center justify-between px-1">
               <h3 className="text-xs font-sans font-bold uppercase tracking-wider text-manifest-ink flex items-center gap-1.5">
                 <BookOpen className="w-3.5 h-3.5 text-manifest-brass" />
@@ -539,8 +370,10 @@ export const DashboardView: React.FC = () => {
                     !entry.content.startsWith(entry.title.replace(/\.\.\.$/, ''));
 
                   return (
-                    <div
+                    <motion.div
                       key={entry.id}
+                      layout="position"
+                      transition={IOS_LAYOUT_SPRING}
                       onClick={() => setSelectedJournalEntryForView(entry)}
                       data-testid={`journal-card-${entry.id}`}
                       className={`p-3.5 rounded-2xl tarot-card-border glass-card-interactive cursor-pointer space-y-2 select-none ${
@@ -628,25 +461,15 @@ export const DashboardView: React.FC = () => {
                           </p>
                         )}
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>
             )}
-          </section>
-
-          {/* 3. Bento Card: Sabiduría Mística / Ley de Asunción */}
-          <div className="p-4 rounded-2xl glass-card border border-manifest-glassBorder space-y-1.5 shadow-sm">
-            <div className="flex items-center gap-1.5 text-manifest-brass text-[11px] font-sans font-bold uppercase tracking-wider">
-              <span>✦</span>
-              <span>Sabiduría Diaria</span>
-            </div>
-            <p className="font-serif text-xs text-manifest-ink leading-relaxed">
-              “El mundo físico no es más que el eco tardío de tu estado interior consagrado. Habita hoy en el agradecimiento de lo ya cumplido.”
-            </p>
-          </div>
+          </motion.section>
         </div>
       </div>
+    </LayoutGroup>
 
       {/* Pop-up de Confirmación de Eliminación de Afirmación */}
       <AnimatePresence>
