@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
+import { saveAffirmationVoiceAudio } from '@/lib/voiceStorage';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 
 const rampageFormSchema = z
@@ -550,11 +551,17 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                             <VoiceAudioVisualizer
                               initialText={currentVal}
                               placeholder={`Habla ahora para la afirmación #${idx + 1}...`}
-                              onCommit={(fullText) => {
+                              onCommit={(fullText, extra) => {
                                 setValue(`affirmations.${idx}.text`, fullText, {
                                   shouldValidate: true,
                                   shouldDirty: true,
                                 });
+                                if (extra?.audioBlob) {
+                                  const affId = watchedAffirmations?.[idx]?.id || fields[idx]?.id;
+                                  if (affId) {
+                                    saveAffirmationVoiceAudio(affId, extra.audioBlob);
+                                  }
+                                }
                                 setVoiceActiveIdx(null);
                               }}
                               onSend={(fullText) => {
@@ -885,11 +892,17 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                           <VoiceAudioVisualizer
                             initialText={currentVal}
                             placeholder="Habla tu afirmación..."
-                            onCommit={(fullText) => {
+                            onCommit={(fullText, extra) => {
                               setValue(`affirmations.${idx}.text`, fullText, {
                                 shouldValidate: true,
                                 shouldDirty: true,
                               });
+                              if (extra?.audioBlob) {
+                                const affId = watchedAffirmations?.[idx]?.id || fields[idx]?.id;
+                                if (affId) {
+                                  saveAffirmationVoiceAudio(affId, extra.audioBlob);
+                                }
+                              }
                               setVoiceActiveIdx(null);
                             }}
                             onSend={(fullText) => {

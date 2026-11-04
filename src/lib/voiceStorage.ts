@@ -288,3 +288,86 @@ export async function deleteMasterVoiceProfile(): Promise<void> {
     console.warn('[voiceStorage] Error deleting sample from IndexedDB:', err);
   }
 }
+
+/**
+ * Save user voice recording for a specific affirmation
+ */
+export async function saveAffirmationVoiceAudio(
+  affirmationId: string,
+  blob: Blob
+): Promise<void> {
+  if (!isBrowser() || !affirmationId || blob.size < 200) return;
+  try {
+    const db = await openDatabase();
+    if (!db) return;
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.put(blob, `aff_voice_${affirmationId}`);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+    db.close();
+  } catch (err) {
+    console.warn('[voiceStorage] Error saving affirmation voice audio:', err);
+  }
+}
+
+/**
+ * Retrieve user voice recording for a specific affirmation
+ */
+export async function getAffirmationVoiceAudio(
+  affirmationId: string
+): Promise<Blob | null> {
+  if (!isBrowser() || !affirmationId) return null;
+  try {
+    const db = await openDatabase();
+    if (!db) return null;
+    const blob = await new Promise<Blob | null>((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.get(`aff_voice_${affirmationId}`);
+      req.onsuccess = () => resolve((req.result as Blob) || null);
+      req.onerror = () => resolve(null);
+    });
+    db.close();
+    return blob;
+  } catch (err) {
+    console.warn('[voiceStorage] Error getting affirmation voice audio:', err);
+    return null;
+  }
+}
+
+/**
+ * Check if a user voice recording exists for a specific affirmation
+ */
+export async function hasAffirmationVoiceAudio(
+  affirmationId: string
+): Promise<boolean> {
+  const blob = await getAffirmationVoiceAudio(affirmationId);
+  return Boolean(blob && blob.size > 200);
+}
+
+/**
+ * Delete voice recording for a specific affirmation
+ */
+export async function deleteAffirmationVoiceAudio(
+  affirmationId: string
+): Promise<void> {
+  if (!isBrowser() || !affirmationId) return;
+  try {
+    const db = await openDatabase();
+    if (!db) return;
+    await new Promise<void>((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.delete(`aff_voice_${affirmationId}`);
+      req.onsuccess = () => resolve();
+      req.onerror = () => resolve();
+    });
+    db.close();
+  } catch (err) {
+    console.warn('[voiceStorage] Error deleting affirmation voice audio:', err);
+  }
+}
+

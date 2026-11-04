@@ -16,6 +16,9 @@ import {
   Volume2,
   VolumeX,
   Headphones,
+  Mic,
+  Square,
+  Trash2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDrag } from '@use-gesture/react';
@@ -27,6 +30,12 @@ import { RampageDecisionModal } from './RampageDecisionModal';
 import { logAiTelemetry } from '@/lib/gemini';
 import { audioEngine, AmbienceType } from '@/lib/audioEngine';
 import { useVoiceProfile } from '@/hooks/useVoiceProfile';
+import {
+  saveAffirmationVoiceAudio,
+  getAffirmationVoiceAudio,
+  hasAffirmationVoiceAudio,
+  deleteAffirmationVoiceAudio,
+} from '@/lib/voiceStorage';
 import { WaveBars } from '@/components/ui/WaveBars';
 import { RampageCardSkeleton } from '@/components/ui/LiquidSkeleton';
 
@@ -45,7 +54,16 @@ export const RampageSetView: React.FC = () => {
     closeRampageConfig,
   } = useAppStore();
 
-  const { profile, hasVoice } = useVoiceProfile();
+  const { profile, hasVoice, saveSample } = useVoiceProfile();
+
+  // User Affirmation Voice Recording State
+  const [recordingAffId, setRecordingAffId] = useState<string | null>(null);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingStreamRef = useRef<MediaStream | null>(null);
+  const [hasRecordedVoiceMap, setHasRecordedVoiceMap] = useState<Record<string, boolean>>({});
 
   // Manual Set State
   const [activeSetIndex, setActiveSetIndex] = useState(0);
@@ -136,6 +154,12 @@ export const RampageSetView: React.FC = () => {
         } catch (_) {}
       });
       currentAudioCache.clear();
+      if (recordingStreamRef.current) {
+        recordingStreamRef.current.getTracks().forEach((t) => t.stop());
+      }
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
       audioEngine.stopVoice();
       audioEngine.stopAmbience();
     };
@@ -218,7 +242,21 @@ export const RampageSetView: React.FC = () => {
         autoAdvanceTimerRef.current = null;
       }
 
-      const audioUrl = audioCacheRef.current.get(aff.id) || (await synthesizeAffirmationAudio(aff));
+      // 1. Check if user recorded their own voice for this affirmation!
+      let audioUrl: string | null | undefined = audioCacheRef.current.get(aff.id);
+      if (!audioUrl) {
+        const recordedBlob = await getAffirmationVoiceAudio(aff.id);
+        if (recordedBlob && recordedBlob.size > 200) {
+          audioUrl = URL.createObjectURL(recordedBlob);
+          audioCacheRef.current.set(aff.id, audioUrl);
+          setHasRecordedVoiceMap((prev) => ({ ...prev, [aff.id]: true }));
+        }
+      }
+
+      // 2. If not recorded individually, check synthesis
+      if (!audioUrl) {
+        audioUrl = await synthesizeAffirmationAudio(aff);
+      }
 
       if (audioUrl) {
         await audioEngine.playVoice(audioUrl, onEndedCallback);
@@ -240,6 +278,160 @@ export const RampageSetView: React.FC = () => {
     },
     [autoPlayVoice, profile?.detectedPitch, synthesizeAffirmationAudio]
   );
+
+  /**
+   * Start recording user voice repeating this affirmation
+   */
+  const startRecordingCurrentAffirmation = async (aff: RampageAffirmation) => {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showToast('El micrófono no está disponible en este dispositivo', 'info');
+        return;
+      }
+      audioEngine.stopVoice();
+      setIsVoicePlaying(false);
+      await audioEngine.unlock();
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+      recordingStreamRef.current = stream;
+      audioChunksRef.current = [];
+
+      const mime = MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : MediaRecorder.isTypeSupported('audio/mp4')
+        ? 'audio/mp4'
+        : '';
+      const recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      recorder.onstop = async () => {
+        if (recordingStreamRef.current) {
+          recordingStreamRef.current.getTracks().forEach((t) => t.stop());
+          recordingStreamRef.current = null;
+        }
+        if (recordingTimerRef.current) {
+          clearInterval(recordingTimerRef.current);
+          recordingTimerRef.current = null;
+        }
+
+        const blob = new Blob(audioChunksRef.current, { type: mime || 'audio/webm' });
+        if (blob.size < 500) {
+          showToast('Grabación muy corta, no se guardó', 'info');
+          setRecordingAffId(null);
+          setRecordingSeconds(0);
+          return;
+        }
+
+        // 1. Save affirmation audio to IndexedDB
+        await saveAffirmationVoiceAudio(aff.id, blob);
+
+        // 2. Cache object URL
+        const objectUrl = URL.createObjectURL(blob);
+        audioCacheRef.current.set(aff.id, objectUrl);
+
+        // 3. If master sample doesn't exist, calibrate profile with this sample!
+        if (!hasVoice) {
+          try {
+            await saveSample(blob, {
+              durationSeconds: recordingSeconds || 5,
+              detectedTone: 'calma, firme, íntima',
+            });
+          } catch (_) {}
+        }
+
+        // 4. Increment repetition counter
+        if (isAiSession) {
+          setAiAffirmations((prev) => {
+            const copy = [...prev];
+            const curIdx = aiIndexRef.current;
+            if (copy[curIdx] && copy[curIdx].id === aff.id) {
+              copy[curIdx] = {
+                ...copy[curIdx],
+                repeatCount: (copy[curIdx].repeatCount || 0) + 1,
+              };
+            }
+            return copy;
+          });
+        } else if (currentSet) {
+          incrementRampageAffirmationRepeat(currentSet.id, aff.id);
+        }
+
+        setHasRecordedVoiceMap((prev) => ({ ...prev, [aff.id]: true }));
+        setRecordingAffId(null);
+        setRecordingSeconds(0);
+        showToast('✨ Tu voz ha sido guardada para esta afirmación', 'success');
+
+        // Play brief preview so user hears their voice immediately!
+        await audioEngine.playVoice(objectUrl);
+      };
+
+      recorder.start(250);
+      mediaRecorderRef.current = recorder;
+      setRecordingAffId(aff.id);
+      setRecordingSeconds(0);
+
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingSeconds((prev) => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.warn('[RampageSetView] Mic error:', err);
+      showToast('Permiso de micrófono requerido para grabar tu voz', 'info');
+      setRecordingAffId(null);
+    }
+  };
+
+  const stopRecordingCurrentAffirmation = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (_) {}
+    }
+  };
+
+  const cancelRecordingCurrentAffirmation = () => {
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+    if (recordingStreamRef.current) {
+      recordingStreamRef.current.getTracks().forEach((t) => t.stop());
+      recordingStreamRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (_) {}
+    }
+    audioChunksRef.current = [];
+    setRecordingAffId(null);
+    setRecordingSeconds(0);
+  };
+
+  const deleteRecordingCurrentAffirmation = async (affId: string) => {
+    await deleteAffirmationVoiceAudio(affId);
+    if (audioCacheRef.current.has(affId)) {
+      const url = audioCacheRef.current.get(affId);
+      if (url) {
+        try {
+          URL.revokeObjectURL(url);
+        } catch (_) {}
+      }
+      audioCacheRef.current.delete(affId);
+    }
+    setHasRecordedVoiceMap((prev) => ({ ...prev, [affId]: false }));
+    showToast('Grabación de voz eliminada para esta afirmación', 'gentle');
+  };
 
   /**
    * Request next batch of 3 affirmations in background and pre-synthesize their audios
@@ -371,6 +563,16 @@ export const RampageSetView: React.FC = () => {
         totalAffirmationsInSet
       : 0;
   const currentAffirmation = currentSet?.affirmations?.[safeAffirmationIndex];
+
+  // Check if current affirmation has recorded voice
+  useEffect(() => {
+    const activeAff = isAiSession ? aiAffirmations[aiIndex] : currentAffirmation;
+    if (activeAff?.id && hasRecordedVoiceMap[activeAff.id] === undefined) {
+      hasAffirmationVoiceAudio(activeAff.id).then((hasAudio) => {
+        setHasRecordedVoiceMap((prev) => ({ ...prev, [activeAff.id]: hasAudio }));
+      });
+    }
+  }, [isAiSession, aiAffirmations, aiIndex, currentAffirmation, hasRecordedVoiceMap]);
 
   const advanceManualAffirmation = useCallback(
     (dir = 1) => {
@@ -963,16 +1165,49 @@ export const RampageSetView: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Protagonist Affirmation Text */}
-                    <div className="relative z-10 my-auto py-5 text-center px-4 sm:px-6">
-                      <p className="text-base sm:text-xl md:text-2xl font-serif font-bold text-manifest-ink leading-relaxed tracking-tight">
-                        {currentAiAff.text}
-                      </p>
-                    </div>
+                    {/* Protagonist Affirmation Text OR Active Voice Recording State */}
+                    {recordingAffId === currentAiAff.id ? (
+                      <div className="relative z-10 my-auto py-4 text-center px-4 space-y-2 animate-in fade-in" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-center gap-2 text-rose-500 font-semibold text-xs">
+                          <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+                          <span>Grabando tu voz ({recordingSeconds}s)...</span>
+                        </div>
+                        <WaveBars count={16} active={true} minHeight={4} maxHeight={22} className="h-6" />
+                        <p className="text-xs text-manifest-inkMuted text-center">
+                          Repite en voz alta con naturalidad:
+                        </p>
+                        <p className="text-sm sm:text-base font-serif font-bold text-manifest-ink italic">
+                          &ldquo;{currentAiAff.text}&rdquo;
+                        </p>
+                        <div className="flex items-center justify-center gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={stopRecordingCurrentAffirmation}
+                            className="px-3.5 py-1.5 rounded-full bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer"
+                          >
+                            <Square className="w-3 h-3 fill-white" />
+                            <span>Detener y guardar</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelRecordingCurrentAffirmation}
+                            className="px-3 py-1.5 rounded-full text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink cursor-pointer"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="relative z-10 my-auto py-5 text-center px-4 sm:px-6">
+                        <p className="text-base sm:text-xl md:text-2xl font-serif font-bold text-manifest-ink leading-relaxed tracking-tight">
+                          {currentAiAff.text}
+                        </p>
+                      </div>
+                    )}
 
                     {/* Compact iOS Audio Controls & Tactile Hint */}
                     <div className="relative z-10 flex items-center justify-between pt-2 border-t border-black/[0.04]">
-                      {/* Play / Pause / Replay Buttons */}
+                      {/* Play / Pause / Replay / Record Buttons */}
                       <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                         <motion.button
                           type="button"
@@ -1023,11 +1258,47 @@ export const RampageSetView: React.FC = () => {
                         >
                           <RotateCcw className="w-3 h-3" />
                         </button>
+
+                        <motion.button
+                          type="button"
+                          whileTap={IOS_TAP_SPRING}
+                          onClick={() => {
+                            if (recordingAffId === currentAiAff.id) {
+                              stopRecordingCurrentAffirmation();
+                            } else {
+                              startRecordingCurrentAffirmation(currentAiAff);
+                            }
+                          }}
+                          data-testid="audio-record-btn"
+                          className={`w-7 h-7 rounded-full flex items-center justify-center shadow-xs transition-colors cursor-pointer border ${
+                            recordingAffId === currentAiAff.id
+                              ? 'bg-rose-500 text-white border-rose-600 animate-pulse'
+                              : hasRecordedVoiceMap[currentAiAff.id]
+                              ? 'bg-purple-100 text-manifest-auraPurple border-purple-300 hover:bg-purple-200'
+                              : 'glass-pill text-manifest-inkMuted hover:text-manifest-ink border-manifest-glassBorder hover:bg-manifest-glassControlHover'
+                          }`}
+                          title={
+                            hasRecordedVoiceMap[currentAiAff.id]
+                              ? 'Volver a grabar tu voz para esta afirmación'
+                              : 'Grabar tu propia voz repitiendo esta afirmación'
+                          }
+                        >
+                          <Mic className="w-3.5 h-3.5" />
+                        </motion.button>
+
+                        {hasRecordedVoiceMap[currentAiAff.id] && (
+                          <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50/80 px-2 py-0.5 rounded-full border border-emerald-200/60 shadow-xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span>Tu Voz Grabada</span>
+                          </div>
+                        )}
                       </div>
 
                       {isVoicePlaying ? (
                         <div className="flex items-center gap-1.5 text-manifest-auraPurple">
-                          <span className="text-[10px] font-semibold">Tu Voz AYA</span>
+                          <span className="text-[10px] font-semibold">
+                            {hasRecordedVoiceMap[currentAiAff.id] ? 'Tu Voz Real' : 'Voz AYA'}
+                          </span>
                           <WaveBars count={10} active={true} minHeight={3} maxHeight={12} className="h-3.5" />
                         </div>
                       ) : (
@@ -1289,12 +1560,45 @@ export const RampageSetView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Affirmation Text Protagonist */}
-                <div className="relative z-10 my-auto py-6 text-center px-4 sm:px-6">
-                  <p className="text-lg sm:text-2xl md:text-3xl font-serif font-bold text-manifest-ink leading-relaxed tracking-tight">
-                    {currentAffirmation.text}
-                  </p>
-                </div>
+                {/* Affirmation Text Protagonist OR Active Voice Recording State */}
+                {recordingAffId === currentAffirmation.id ? (
+                  <div className="relative z-10 my-auto py-4 text-center px-4 space-y-2 animate-in fade-in" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-center gap-2 text-rose-500 font-semibold text-xs">
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+                      <span>Grabando tu voz ({recordingSeconds}s)...</span>
+                    </div>
+                    <WaveBars count={16} active={true} minHeight={4} maxHeight={22} className="h-6" />
+                    <p className="text-xs text-manifest-inkMuted text-center">
+                      Repite en voz alta con naturalidad:
+                    </p>
+                    <p className="text-sm sm:text-base font-serif font-bold text-manifest-ink italic">
+                      &ldquo;{currentAffirmation.text}&rdquo;
+                    </p>
+                    <div className="flex items-center justify-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={stopRecordingCurrentAffirmation}
+                        className="px-3.5 py-1.5 rounded-full bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer"
+                      >
+                        <Square className="w-3 h-3 fill-white" />
+                        <span>Detener y guardar</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelRecordingCurrentAffirmation}
+                        className="px-3 py-1.5 rounded-full text-xs font-medium text-manifest-inkMuted hover:text-manifest-ink cursor-pointer"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative z-10 my-auto py-6 text-center px-4 sm:px-6">
+                    <p className="text-lg sm:text-2xl md:text-3xl font-serif font-bold text-manifest-ink leading-relaxed tracking-tight">
+                      {currentAffirmation.text}
+                    </p>
+                  </div>
+                )}
 
                 {/* Bottom Bar: Audio controls & wave indicator */}
                 <div className="relative z-10 flex items-center justify-between pt-2 border-t border-black/[0.04]">
@@ -1348,11 +1652,47 @@ export const RampageSetView: React.FC = () => {
                     >
                       <RotateCcw className="w-3 h-3" />
                     </button>
+
+                    <motion.button
+                      type="button"
+                      whileTap={IOS_TAP_SPRING}
+                      onClick={() => {
+                        if (recordingAffId === currentAffirmation.id) {
+                          stopRecordingCurrentAffirmation();
+                        } else {
+                          startRecordingCurrentAffirmation(currentAffirmation);
+                        }
+                      }}
+                      data-testid="audio-record-btn"
+                      className={`w-7 h-7 rounded-full flex items-center justify-center shadow-xs transition-colors cursor-pointer border ${
+                        recordingAffId === currentAffirmation.id
+                          ? 'bg-rose-500 text-white border-rose-600 animate-pulse'
+                          : hasRecordedVoiceMap[currentAffirmation.id]
+                          ? 'bg-purple-100 text-manifest-auraPurple border-purple-300 hover:bg-purple-200'
+                          : 'glass-pill text-manifest-inkMuted hover:text-manifest-ink border-manifest-glassBorder hover:bg-manifest-glassControlHover'
+                      }`}
+                      title={
+                        hasRecordedVoiceMap[currentAffirmation.id]
+                          ? 'Volver a grabar tu voz para esta afirmación'
+                          : 'Grabar tu propia voz repitiendo esta afirmación'
+                      }
+                    >
+                      <Mic className="w-3.5 h-3.5" />
+                    </motion.button>
+
+                    {hasRecordedVoiceMap[currentAffirmation.id] && (
+                      <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50/80 px-2 py-0.5 rounded-full border border-emerald-200/60 shadow-xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span>Tu Voz Grabada</span>
+                      </div>
+                    )}
                   </div>
 
                   {isVoicePlaying ? (
                     <div className="flex items-center gap-1.5 text-manifest-auraPurple">
-                      <span className="text-[10px] font-semibold">Tu Voz AYA</span>
+                      <span className="text-[10px] font-semibold">
+                        {hasRecordedVoiceMap[currentAffirmation.id] ? 'Tu Voz Real' : 'Voz AYA'}
+                      </span>
                       <WaveBars count={10} active={true} minHeight={3} maxHeight={12} className="h-3.5" />
                     </div>
                   ) : isSubliminalSavedSession ? (

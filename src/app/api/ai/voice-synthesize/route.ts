@@ -31,36 +31,8 @@ export async function POST(req: NextRequest) {
       process.env.CARTESIA_API_KEY ||
       '';
 
-    // 1. If no paid voice cloning API key is configured, synthesize high quality natural Spanish audio
+    // 1. If no paid voice cloning API key is configured, tell client to use calibrated local engine or user recorded voice
     if (!voiceApiKey) {
-      try {
-        const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=es&client=tw-ob&q=${encodeURIComponent(spokenText)}`;
-        const ttsRes = await fetch(ttsUrl, {
-          headers: {
-            'User-Agent':
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          },
-        });
-
-        if (ttsRes.ok) {
-          const audioBuffer = await ttsRes.arrayBuffer();
-          if (audioBuffer.byteLength > 200) {
-            return new NextResponse(audioBuffer, {
-              status: 200,
-              headers: {
-                'Content-Type': 'audio/mpeg',
-                'Content-Length': audioBuffer.byteLength.toString(),
-                'Cache-Control': 'public, max-age=86400',
-                'x-aya-source': 'GOOGLE_NATURAL_TTS',
-              },
-            });
-          }
-        }
-      } catch (ttsErr) {
-        console.warn('[voice-synthesize] TTS network fetch failed:', ttsErr);
-      }
-
-      // Graceful fallback to client Web Speech API if offline
       return NextResponse.json({
         useLocalSynthesis: true,
         text: spokenText,

@@ -6,11 +6,15 @@ export interface AiTelemetryResponse {
 }
 
 export function getGeminiApiKey(): string {
-  return (
+  let key = (
     process.env.RAMPAGE_GEMINI_KEY ||
     process.env.GEMINI_API_KEY ||
     ''
   ).trim();
+  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
+    key = key.slice(1, -1).trim();
+  }
+  return key;
 }
 
 export function isSandboxRequest(req: Request): boolean {
@@ -216,7 +220,7 @@ Responde ÚNICAMENTE con el objeto JSON válido: { "text": "...", "detectedTone"
 Elimina muletillas. Devuelve ÚNICAMENTE un JSON: { "text": "...", "detectedTone": "calma, reflexiva, serena" }`;
 
       const textRes = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-lite',
+        model: 'gemini-3.5-flash-lite',
         contents: textPrompt,
         config: {
           responseMimeType: 'application/json',

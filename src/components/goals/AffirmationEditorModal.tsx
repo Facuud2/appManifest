@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Drawer } from 'vaul';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { useForm, Controller } from 'react-hook-form';
@@ -15,6 +15,7 @@ import { IOS_TAP_SPRING, IOS_LAYOUT_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 import { SmoothSizeContainer } from '@/components/ui/SmoothSizeContainer';
 import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
+import { saveAffirmationVoiceAudio } from '@/lib/voiceStorage';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 
 const affirmationFormSchema = z.object({
@@ -68,6 +69,7 @@ export const AffirmationEditorModal: React.FC = () => {
   const currentText = watch('text') || '';
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [sessionAddedCount, setSessionAddedCount] = useState(0);
+  const pendingVoiceBlobRef = useRef<Blob | null>(null);
 
   const trimmedLength = currentText.trim().length;
   const isTextValid = trimmedLength >= 5;
@@ -163,6 +165,11 @@ export const AffirmationEditorModal: React.FC = () => {
     };
 
     saveAffirmation(itemToSave);
+
+    if (pendingVoiceBlobRef.current) {
+      saveAffirmationVoiceAudio(itemToSave.id, pendingVoiceBlobRef.current);
+      pendingVoiceBlobRef.current = null;
+    }
 
     if (editingAffirmation || !chainNext) {
       closeAffirmationEditor();
@@ -324,8 +331,14 @@ export const AffirmationEditorModal: React.FC = () => {
                     <VoiceAudioVisualizer
                       initialText={currentText}
                       placeholder="Habla ahora para tu afirmación..."
-                      onCommit={(fullText) => {
+                      onCommit={(fullText, extra) => {
                         setValue('text', fullText, { shouldValidate: true, shouldDirty: true });
+                        if (extra?.audioBlob) {
+                          pendingVoiceBlobRef.current = extra.audioBlob;
+                          if (editingAffirmation?.id) {
+                            saveAffirmationVoiceAudio(editingAffirmation.id, extra.audioBlob);
+                          }
+                        }
                         setIsVoiceActive(false);
                       }}
                       onSend={(fullText) => {
@@ -612,8 +625,14 @@ export const AffirmationEditorModal: React.FC = () => {
                 <VoiceAudioVisualizer
                   initialText={currentText}
                   placeholder="Habla ahora para tu afirmación..."
-                  onCommit={(fullText) => {
+                  onCommit={(fullText, extra) => {
                     setValue('text', fullText, { shouldValidate: true, shouldDirty: true });
+                    if (extra?.audioBlob) {
+                      pendingVoiceBlobRef.current = extra.audioBlob;
+                      if (editingAffirmation?.id) {
+                        saveAffirmationVoiceAudio(editingAffirmation.id, extra.audioBlob);
+                      }
+                    }
                     setIsVoiceActive(false);
                   }}
                   onSend={(fullText) => {

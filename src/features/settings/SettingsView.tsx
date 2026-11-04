@@ -20,10 +20,14 @@ import {
   Zap,
   Mic,
   RotateCcw,
+  Play,
+  Pause,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IOS_TAP_SPRING, LIQUID_GLASS_SPECULAR } from '@/lib/iosSprings';
 import { useVoiceProfile } from '@/hooks/useVoiceProfile';
+import { audioEngine } from '@/lib/audioEngine';
+import { getMasterVoiceSample } from '@/lib/voiceStorage';
 import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
 
 export const SettingsView: React.FC = () => {
@@ -40,6 +44,27 @@ export const SettingsView: React.FC = () => {
 
   const { hasVoice, profile, saveSample, removeProfile } = useVoiceProfile();
   const [isRecalibrating, setIsRecalibrating] = useState(false);
+  const [isPlayingSample, setIsPlayingSample] = useState(false);
+
+  const togglePlaySample = async () => {
+    if (isPlayingSample) {
+      audioEngine.stopVoice();
+      setIsPlayingSample(false);
+      return;
+    }
+    await audioEngine.unlock();
+    const sample = await getMasterVoiceSample();
+    if (sample && sample.blob && sample.blob.size > 200) {
+      setIsPlayingSample(true);
+      const url = URL.createObjectURL(sample.blob);
+      await audioEngine.playVoice(url, () => {
+        setIsPlayingSample(false);
+        URL.revokeObjectURL(url);
+      });
+    } else {
+      showToast('No se encontró muestra grabada previa', 'info');
+    }
+  };
 
   const [nameInput, setNameInput] = useState(settings.userName);
   const [newAffirmation, setNewAffirmation] = useState('');
@@ -307,7 +332,7 @@ export const SettingsView: React.FC = () => {
                   />
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <motion.button
                     type="button"
                     whileTap={IOS_TAP_SPRING}
@@ -320,18 +345,31 @@ export const SettingsView: React.FC = () => {
                   </motion.button>
 
                   {hasVoice && (
-                    <motion.button
-                      type="button"
-                      whileTap={IOS_TAP_SPRING}
-                      onClick={async () => {
-                        await removeProfile();
-                        showToast('Huella vocal eliminada', 'gentle');
-                      }}
-                      data-testid="delete-voice-btn"
-                      className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs font-medium cursor-pointer transition-colors"
-                    >
-                      Eliminar
-                    </motion.button>
+                    <>
+                      <motion.button
+                        type="button"
+                        whileTap={IOS_TAP_SPRING}
+                        onClick={togglePlaySample}
+                        data-testid="play-sample-btn"
+                        className="px-3.5 py-1.5 rounded-xl glass-pill text-manifest-auraPurple border border-manifest-glassBorder hover:bg-manifest-glassControlHover text-xs font-semibold cursor-pointer flex items-center gap-1.5 shadow-xs"
+                      >
+                        {isPlayingSample ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                        <span>{isPlayingSample ? 'Detener' : 'Escuchar mi voz'}</span>
+                      </motion.button>
+
+                      <motion.button
+                        type="button"
+                        whileTap={IOS_TAP_SPRING}
+                        onClick={async () => {
+                          await removeProfile();
+                          showToast('Huella vocal eliminada', 'gentle');
+                        }}
+                        data-testid="delete-voice-btn"
+                        className="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs font-medium cursor-pointer transition-colors"
+                      >
+                        Eliminar
+                      </motion.button>
+                    </>
                   )}
                 </div>
               )}

@@ -7,6 +7,7 @@ import {
   saveMasterVoiceSample,
   deleteMasterVoiceProfile,
   hasMasterVoiceProfile,
+  getMasterVoiceSample,
 } from '@/lib/voiceStorage';
 
 export function useVoiceProfile() {
@@ -54,6 +55,10 @@ export function useVoiceProfile() {
     setIsLoading(false);
   }, []);
 
+  const getMasterSample = useCallback(async () => {
+    return await getMasterVoiceSample();
+  }, []);
+
   return {
     profile,
     hasVoice,
@@ -61,5 +66,6 @@ export function useVoiceProfile() {
     refresh,
     saveSample,
     removeProfile,
+    getMasterSample,
   };
 }

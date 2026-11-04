@@ -1,11 +1,14 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Drawer } from 'vaul';
 import {
   Sparkles,
   X,
   Mic,
+  Play,
+  Pause,
   RotateCcw,
   CheckCircle2,
   Volume2,
@@ -23,8 +26,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { IOS_TAP_SPRING, IOS_LAYOUT_SPRING } from '@/lib/iosSprings';
 import { useVoiceProfile } from '@/hooks/useVoiceProfile';
 import { audioEngine, AmbienceType } from '@/lib/audioEngine';
-import { analyzeAudioBlobPitch } from '@/lib/voiceStorage';
+import { analyzeAudioBlobPitch, getMasterVoiceSample } from '@/lib/voiceStorage';
 import { WaveBars } from '@/components/ui/WaveBars';
+import { VoiceAudioVisualizer } from '@/components/ui/VoiceAudioVisualizer';
 
 interface RampageConfigDrawerProps {
   isOpen: boolean;
@@ -50,8 +54,13 @@ export const RampageConfigDrawer: React.FC<RampageConfigDrawerProps> = ({
   onOpenManualEditor,
 }) => {
   const isDesktop = useIsDesktop(768);
+  const [mounted, setMounted] = useState(false);
   const { showToast, affirmations, journalEntries, activeScope } = useAppStore();
   const { hasVoice, profile, saveSample } = useVoiceProfile();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Wizard Navigation: Step 1 = Calibration, Step 2 = Desires & Nuances, Step 3 = Atmosphere
   const [step, setStep] = useState<1 | 2 | 3>(hasVoice ? 2 : 1);
@@ -68,17 +77,33 @@ export const RampageConfigDrawer: React.FC<RampageConfigDrawerProps> = ({
   const [isCalibrating, setIsCalibrating] = useState(false);
   const [calibrationCountdown, setCalibrationCountdown] = useState(6);
   const [calibrationSuccess, setCalibrationSuccess] = useState(false);
+  const [isPlayingMasterSample, setIsPlayingMasterSample] = useState(false);
   const calibrationMediaRecorderRef = useRef<MediaRecorder | null>(null);
   const calibrationChunksRef = useRef<Blob[]>([]);
   const calibrationIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // In-line Dictation Recording State (Step 2)
-  const [isDictatingSpecs, setIsDictatingSpecs] = useState(false);
-  const [isTranscribingField, setIsTranscribingField] = useState(false);
-  const dictationRecorderRef = useRef<MediaRecorder | null>(null);
-  const dictationChunksRef = useRef<Blob[]>([]);
-  const dictationStreamRef = useRef<MediaStream | null>(null);
-  const recognitionRef = useRef<any>(null);
+  const togglePlayMasterSample = async () => {
+    if (isPlayingMasterSample) {
+      audioEngine.stopVoice();
+      setIsPlayingMasterSample(false);
+      return;
+    }
+    await audioEngine.unlock();
+    const sample = await getMasterVoiceSample();
+    if (sample && sample.blob && sample.blob.size > 200) {
+      setIsPlayingMasterSample(true);
+      const url = URL.createObjectURL(sample.blob);
+      await audioEngine.playVoice(url, () => {
+        setIsPlayingMasterSample(false);
+        URL.revokeObjectURL(url);
+      });
+    } else {
+      showToast('No se encontró muestra grabada previa', 'info');
+    }
+  };
+
+  // Voice Dictation Recording State (Step 2 - VoiceAudioVisualizer)
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
 
   const specTextareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -93,8 +118,7 @@ export const RampageConfigDrawer: React.FC<RampageConfigDrawerProps> = ({
       setCalibrationSuccess(false);
       setIsCalibrating(false);
       setCalibrationCountdown(6);
-      setIsDictatingSpecs(false);
-      setIsTranscribingField(false);
+      setIsVoiceActive(false);
     }
   }, [isOpen, hasVoice]);
 
@@ -231,130 +255,11 @@ export const RampageConfigDrawer: React.FC<RampageConfigDrawerProps> = ({
     setCalibrationCountdown(6);
   };
 
-  // ==========================================
-  // STEP 2: REAL DICTATION RECORDING LOGIC
-  // ==========================================
-  const toggleSpecsDictation = async () => {
-    if (isDictatingSpecs) {
-      stopSpecsDictation();
-      return;
-    }
-
-    try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        showToast('El micrófono no está disponible en este dispositivo', 'info');
-        return;
-      }
-
-      await audioEngine.unlock();
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true },
-      });
-      dictationStreamRef.current = stream;
-
-      dictationChunksRef.current = [];
-      const mime = MediaRecorder.isTypeSupported('audio/webm')
-        ? 'audio/webm'
-        : MediaRecorder.isTypeSupported('audio/mp4')
-        ? 'audio/mp4'
-        : '';
-      const recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
-
-      recorder.ondataavailable = (e) => {
-        if (e.data && e.data.size > 0) {
-          dictationChunksRef.current.push(e.data);
-        }
-      };
-
-      recorder.onstop = async () => {
-        if (stream) stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(dictationChunksRef.current, {
-          type: mime || 'audio/webm',
-        });
-
-        if (blob.size < 400) {
-          setIsDictatingSpecs(false);
-          return;
-        }
-
-        setIsTranscribingField(true);
-        try {
-          const formData = new FormData();
-          formData.append('audio', blob, 'dictation.webm');
-
-          const res = await fetch('/api/ai/transcribe', {
-            method: 'POST',
-            body: formData,
-          });
-
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
-          const cleanText = (data.text || '').trim();
-
-          if (cleanText) {
-            setSpecifications((prev) => (prev ? `${prev}. ${cleanText}` : cleanText));
-          }
-        } catch (err) {
-          console.warn('[Dictation Transcribe Error]', err);
-          showToast('Error al transcribir voz con Gemini Flash', 'info');
-        } finally {
-          setIsTranscribingField(false);
-          setIsDictatingSpecs(false);
-        }
-      };
-
-      recorder.start(250);
-      dictationRecorderRef.current = recorder;
-      setIsDictatingSpecs(true);
-
-      // Web Speech API for real-time visual feedback if supported
-      const SpeechRecognition =
-        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        try {
-          const recognition = new SpeechRecognition();
-          recognition.lang = 'es-ES';
-          recognition.continuous = true;
-          recognition.interimResults = true;
-          recognition.onresult = (event: any) => {
-            let interim = '';
-            for (let i = 0; i < event.results.length; i++) {
-              interim += event.results[i][0]?.transcript || '';
-            }
-            if (interim.trim()) {
-              setSpecifications(interim.trim());
-            }
-          };
-          recognition.start();
-          recognitionRef.current = recognition;
-        } catch (_) {}
-      }
-    } catch (err) {
-      console.warn('[Dictation mic error]', err);
-      showToast('Permite el acceso al micrófono para dictar', 'info');
-      setIsDictatingSpecs(false);
-    }
-  };
-
-  const stopSpecsDictation = () => {
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch (_) {}
-      recognitionRef.current = null;
-    }
-    if (dictationRecorderRef.current && dictationRecorderRef.current.state !== 'inactive') {
-      try {
-        dictationRecorderRef.current.stop();
-      } catch (_) {}
-    }
-  };
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       cancelCalibrationRecording();
-      stopSpecsDictation();
+      setIsVoiceActive(false);
     };
   }, []);
 
@@ -543,12 +448,22 @@ export const RampageConfigDrawer: React.FC<RampageConfigDrawerProps> = ({
                 </div>
 
                 {/* State Feedback */}
-                <div className="mt-4">
+                <div className="mt-4 space-y-2">
                   {calibrationSuccess ? (
-                    <p className="text-xs font-semibold text-emerald-700 flex items-center justify-center gap-1.5 animate-in fade-in">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Timbre y cadencia guardados con éxito</span>
-                    </p>
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-emerald-700 flex items-center justify-center gap-1.5 animate-in fade-in">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Timbre y cadencia guardados con éxito</span>
+                      </p>
+                      <button
+                        type="button"
+                        onClick={togglePlayMasterSample}
+                        className="px-3 py-1.5 rounded-full text-xs font-semibold glass-pill text-manifest-auraPurple border border-manifest-glassBorder flex items-center gap-1.5 mx-auto cursor-pointer shadow-xs hover:bg-manifest-glassControlHover"
+                      >
+                        {isPlayingMasterSample ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                        <span>{isPlayingMasterSample ? 'Detener muestra' : 'Escuchar mi voz grabada'}</span>
+                      </button>
+                    </div>
                   ) : isCalibrating ? (
                     <div className="flex flex-col items-center gap-1.5">
                       <WaveBars count={14} active={true} minHeight={4} maxHeight={20} className="h-5" />
@@ -557,9 +472,21 @@ export const RampageConfigDrawer: React.FC<RampageConfigDrawerProps> = ({
                       </p>
                     </div>
                   ) : (
-                    <p className="text-xs text-manifest-inkMuted">
-                      Toca el orbe y habla durante 6 segundos
-                    </p>
+                    <div className="space-y-2">
+                      <p className="text-xs text-manifest-inkMuted">
+                        Toca el orbe y habla durante 6 segundos
+                      </p>
+                      {hasVoice && (
+                        <button
+                          type="button"
+                          onClick={togglePlayMasterSample}
+                          className="px-3 py-1.5 rounded-full text-xs font-semibold glass-pill text-manifest-auraPurple border border-manifest-glassBorder flex items-center gap-1.5 mx-auto cursor-pointer shadow-xs hover:bg-manifest-glassControlHover"
+                        >
+                          {isPlayingMasterSample ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                          <span>{isPlayingMasterSample ? 'Detener muestra' : 'Escuchar mi voz calibrada'}</span>
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -593,7 +520,7 @@ export const RampageConfigDrawer: React.FC<RampageConfigDrawerProps> = ({
               {/* Tarjeta Única: Matices y deseos específicos */}
               <div
                 className={`p-4 rounded-3xl transition-all border ${
-                  isDictatingSpecs
+                  isVoiceActive
                     ? 'liquid-glass-surface border-manifest-auraPurple/70 ring-2 ring-purple-300/30 shadow-md'
                     : 'liquid-glass-surface border-manifest-glassBorder hover:border-manifest-glassBorderHover shadow-xs'
                 }`}
@@ -606,64 +533,54 @@ export const RampageConfigDrawer: React.FC<RampageConfigDrawerProps> = ({
                   <span className="text-[10px] text-manifest-inkMuted">Habla o escribe libremente</span>
                 </div>
 
-                <div className="relative">
-                  <textarea
-                    ref={specTextareaRef}
-                    data-testid="rampage-specifications-input"
-                    value={specifications}
-                    onChange={(e) => setSpecifications(e.target.value)}
-                    rows={4}
-                    placeholder="ej. Quiero sentir que soy profundamente amado, que todo fluye fácil y sin esfuerzo, éxito total y tranquilidad..."
-                    className="w-full p-3.5 pr-12 rounded-2xl glass-input text-xs sm:text-sm placeholder:text-manifest-inkMuted/40 leading-relaxed resize-none focus:ring-2 focus:ring-manifest-auraPurple/30"
-                    autoFocus
+                {isVoiceActive ? (
+                  <VoiceAudioVisualizer
+                    initialText={specifications}
+                    placeholder="Habla libremente tus deseos o matices para el Rampage..."
+                    onCommit={async (fullText, extra) => {
+                      setSpecifications(fullText);
+                      if (!hasVoice && extra?.audioBlob && extra.audioBlob.size > 800) {
+                        try {
+                          await saveSample(extra.audioBlob, {
+                            durationSeconds: Math.round((extra.durationMs || 6000) / 1000),
+                            detectedTone: extra.detectedTone || 'calma, firme, íntima',
+                          });
+                        } catch (_) {}
+                      }
+                      setIsVoiceActive(false);
+                    }}
+                    onSend={(fullText) => {
+                      setSpecifications(fullText);
+                      setIsVoiceActive(false);
+                    }}
+                    onCancel={() => setIsVoiceActive(false)}
                   />
-                  <div className="absolute right-2.5 bottom-2.5">
-                    <motion.button
-                      type="button"
-                      whileTap={IOS_TAP_SPRING}
-                      onClick={toggleSpecsDictation}
-                      title={isDictatingSpecs ? 'Detener dictado' : 'Hablar notas por voz'}
-                      data-testid="rampage-specs-mic-btn"
-                      className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
-                        isDictatingSpecs
-                          ? 'bg-purple-600 text-white shadow-md animate-pulse'
-                          : 'glass-pill text-manifest-inkMuted hover:text-manifest-ink border border-manifest-glassBorder hover:bg-manifest-glassControlHover shadow-xs'
-                      }`}
-                    >
-                      <Mic className="w-4 h-4" />
-                    </motion.button>
-                  </div>
-                </div>
-
-                {/* Inline listening feedback for specs */}
-                {isDictatingSpecs && (
-                  <div className="mt-2.5 px-3 py-1.5 rounded-xl bg-purple-50/80 border border-purple-200 flex items-center justify-between text-[11px] text-purple-700 animate-in fade-in">
-                    <span className="font-semibold">Escuchando tus deseos...</span>
-                    <WaveBars count={12} active={true} minHeight={3} maxHeight={14} className="h-3.5" />
-                  </div>
-                )}
-
-                {isTranscribingField && (
-                  <div className="mt-2 flex items-center gap-2 text-xs text-purple-700">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Puntuando con Gemini Flash...</span>
+                ) : (
+                  <div className="relative">
+                    <textarea
+                      ref={specTextareaRef}
+                      data-testid="rampage-specifications-input"
+                      value={specifications}
+                      onChange={(e) => setSpecifications(e.target.value)}
+                      rows={4}
+                      placeholder="ej. Quiero sentir que soy profundamente amado, que todo fluye fácil y sin esfuerzo, éxito total y tranquilidad..."
+                      className="w-full p-3.5 pr-12 rounded-2xl glass-input text-base sm:text-sm placeholder:text-manifest-inkMuted/40 leading-relaxed resize-none focus:ring-2 focus:ring-manifest-auraPurple/30"
+                      autoFocus
+                    />
+                    <div className="absolute right-2.5 bottom-2.5">
+                      <motion.button
+                        type="button"
+                        whileTap={IOS_TAP_SPRING}
+                        onClick={() => setIsVoiceActive(true)}
+                        title="Hablar notas por voz"
+                        data-testid="rampage-specs-mic-btn"
+                        className="w-8 h-8 rounded-xl flex items-center justify-center transition-all cursor-pointer glass-pill text-manifest-inkMuted hover:text-manifest-ink border border-manifest-glassBorder hover:bg-manifest-glassControlHover shadow-xs"
+                      >
+                        <Mic className="w-4 h-4" />
+                      </motion.button>
+                    </div>
                   </div>
                 )}
-              </div>
-
-              {/* Dynamic Popurrí Info Banner */}
-              <div className="px-3.5 py-2.5 rounded-2xl bg-manifest-lavender/30 border border-manifest-glassBorder/80 flex items-center gap-2.5">
-                <div className="w-6 h-6 rounded-lg bg-manifest-auraPurple/10 text-manifest-auraPurple flex items-center justify-center shrink-0">
-                  <Sparkles className="w-3 h-3" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] text-manifest-ink font-medium leading-tight">
-                    Popurrí Dinámico Integrado
-                  </p>
-                  <p className="text-[10px] text-manifest-inkMuted leading-tight mt-0.5">
-                    Combinaremos tus {affirmations?.length || 0} decretos guardados y entradas de diario ({activeScope === 'facu' ? 'Facu' : activeScope === 'maia' ? 'Maia' : 'Juntos'}) con lo que expreses aquí.
-                  </p>
-                </div>
               </div>
 
               {/* Bottom iOS Step Button */}
@@ -672,7 +589,7 @@ export const RampageConfigDrawer: React.FC<RampageConfigDrawerProps> = ({
                   type="button"
                   whileTap={IOS_TAP_SPRING}
                   onClick={() => {
-                    stopSpecsDictation();
+                    setIsVoiceActive(false);
                     goToStep(3);
                   }}
                   data-testid="continue-to-ambience-btn"
@@ -847,9 +764,9 @@ export const RampageConfigDrawer: React.FC<RampageConfigDrawerProps> = ({
     </div>
   );
 
-  // Desktop Dialog / Modal
-  if (isDesktop) {
-    return (
+  // Desktop Dialog / Modal (Portal directly to document.body to escape ancestor transform/filter clipping)
+  if (isDesktop && mounted) {
+    return createPortal(
       <AnimatePresence>
         {isOpen && (
           <div
@@ -870,7 +787,8 @@ export const RampageConfigDrawer: React.FC<RampageConfigDrawerProps> = ({
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
     );
   }
 
