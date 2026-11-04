@@ -175,6 +175,18 @@ export const RampageConfigDrawer: React.FC<RampageConfigDrawerProps> = ({
           // 1. Analyze pitch via Autocorrelation
           const pitchData = await analyzeAudioBlobPitch(blob);
 
+          // Map fundamental frequency to Gemini 3.8 matched voice
+          let matchedVoice = 'Charon';
+          if (pitchData.f0 < 125) {
+            matchedVoice = 'Fenrir';
+          } else if (pitchData.f0 < 165) {
+            matchedVoice = 'Charon';
+          } else if (pitchData.f0 < 210) {
+            matchedVoice = 'Kore';
+          } else {
+            matchedVoice = 'Aoede';
+          }
+
           // 2. Transcribe with Gemini to detect vocal cadence
           let detectedTone = 'calma, firme, íntima';
           try {
@@ -196,6 +208,7 @@ export const RampageConfigDrawer: React.FC<RampageConfigDrawerProps> = ({
             detectedTone,
             detectedPitch: pitchData.pitchRate,
             fundamentalFrequency: pitchData.f0,
+            matchedVoice,
           });
 
           setCalibrationSuccess(true);

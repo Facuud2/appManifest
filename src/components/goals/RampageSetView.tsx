@@ -189,6 +189,8 @@ export const RampageSetView: React.FC = () => {
       try {
         const voiceProfileId = profile?.voiceProfileId || 'voice_aya_master';
         const detectedTone = profile?.detectedTone || 'calma, firme, íntima';
+        const matchedVoice = profile?.matchedVoice || 'Charon';
+        const fundamentalFrequency = profile?.fundamentalFrequency || 120;
 
         const res = await fetch('/api/ai/voice-synthesize', {
           method: 'POST',
@@ -199,6 +201,8 @@ export const RampageSetView: React.FC = () => {
             text: aff.text,
             voiceProfileId,
             detectedTone,
+            matchedVoice,
+            fundamentalFrequency,
           }),
         });
 

@@ -443,6 +443,82 @@ export function generateSyntheticWavBuffer(
 }
 
 /**
+ * Options for Gemini 3.8 Flash TTS synthesis
+ */
+export interface GeminiTtsOptions {
+  text: string;
+  matchedVoice?: 'Puck' | 'Charon' | 'Kore' | 'Fenrir' | 'Aoede' | string;
+  detectedTone?: string;
+  fundamentalFrequency?: number;
+}
+
+/**
+ * Synthesizes high-definition vocal audio using models/gemini-3.8-flash-tts
+ * Replicates the user's calibrated vocal profile, tone and fundamental cadence.
+ */
+export async function synthesizeSpeechWithGemini38FlashTTS(
+  options: GeminiTtsOptions
+): Promise<{ wavBuffer: Buffer; voiceUsed: string; source: 'GEMINI_3_8_FLASH_TTS' }> {
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY no configurada');
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+
+  // Map fundamental frequency and tone to best Gemini 3.8 prebuilt voice
+  let voiceName = options.matchedVoice || 'Charon';
+  const f0 = options.fundamentalFrequency;
+  if (!options.matchedVoice && f0) {
+    if (f0 < 125) {
+      voiceName = 'Fenrir'; // Deep resonant masculine
+    } else if (f0 < 165) {
+      voiceName = 'Charon'; // Calm introspective masculine
+    } else if (f0 < 210) {
+      voiceName = 'Kore'; // Warm serene feminine
+    } else {
+      voiceName = 'Aoede'; // Melodic gentle feminine
+    }
+  }
+
+  const tone = options.detectedTone || 'calma profunda, íntima y serena';
+  const prompt = `Actúa como la voz interior de afirmaciones subconscientes y reprogramación mental profunda.
+Pronuncia la siguiente afirmación en español con una cadencia pausada, hipnótica, cálida e íntima, con tono de ${tone}.
+
+Afirmación a pronunciar:
+"${options.text.trim()}"`;
+
+  const res = await ai.models.generateContent({
+    model: 'gemini-3.8-flash-tts',
+    contents: prompt,
+    config: {
+      responseModalities: ['AUDIO'],
+      speechConfig: {
+        voiceConfig: {
+          prebuiltVoiceConfig: {
+            voiceName: voiceName,
+          },
+        },
+      },
+    },
+  });
+
+  const part = res.candidates?.[0]?.content?.parts?.[0];
+  const b64Data = part?.inlineData?.data;
+
+  if (!b64Data) {
+    throw new Error('No se recibió audio desde gemini-3.8-flash-tts');
+  }
+
+  const wavBuffer = Buffer.from(b64Data, 'base64');
+  return {
+    wavBuffer,
+    voiceUsed: voiceName,
+    source: 'GEMINI_3_8_FLASH_TTS',
+  };
+}
+
+/**
  * Standard client telemetry logger
  */
 export function logAiTelemetry(

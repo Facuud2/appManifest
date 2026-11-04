@@ -14,6 +14,8 @@ export interface VoiceProfileMeta {
   mimeType?: string;
   detectedPitch?: number; // 0.75 - 1.25 for SpeechSynthesisUtterance.pitch
   fundamentalFrequency?: number; // e.g. 150 Hz
+  matchedVoice?: 'Puck' | 'Charon' | 'Kore' | 'Fenrir' | 'Aoede' | string;
+  stylePrompt?: string;
 }
 
 const DB_NAME = 'aya_voice_db';
@@ -161,6 +163,13 @@ export async function saveMasterVoiceSample(
     } catch (_) {}
   }
 
+  const f0 = metadata?.fundamentalFrequency ?? pitchInfo.f0;
+  let defaultMatchedVoice = 'Charon';
+  if (f0 < 125) defaultMatchedVoice = 'Fenrir';
+  else if (f0 < 165) defaultMatchedVoice = 'Charon';
+  else if (f0 < 210) defaultMatchedVoice = 'Kore';
+  else defaultMatchedVoice = 'Aoede';
+
   const meta: VoiceProfileMeta = {
     voiceProfileId,
     recordedAt: new Date().toISOString(),
@@ -170,7 +179,8 @@ export async function saveMasterVoiceSample(
     blobSize: blob.size,
     mimeType: blob.type || 'audio/webm',
     detectedPitch: metadata?.detectedPitch ?? pitchInfo.pitchRate,
-    fundamentalFrequency: metadata?.fundamentalFrequency ?? pitchInfo.f0,
+    fundamentalFrequency: f0,
+    matchedVoice: metadata?.matchedVoice || defaultMatchedVoice,
     ...metadata,
   };
 

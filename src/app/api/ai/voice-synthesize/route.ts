@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   isSandboxRequest,
   generateSyntheticWavBuffer,
+  getGeminiApiKey,
+  synthesizeSpeechWithGemini38FlashTTS,
   sleep,
 } from '@/lib/gemini';
 
@@ -15,6 +17,8 @@ export async function POST(req: NextRequest) {
       text,
       voiceProfileId = 'voice_aya_default',
       detectedTone = 'calma, firme, íntima',
+      matchedVoice,
+      fundamentalFrequency,
     } = body;
 
     const spokenText = (text || '').trim();
@@ -25,28 +29,44 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 1. Primary Engine: Gemini 3.8 Flash TTS Voice Replication
+    const geminiKey = getGeminiApiKey();
+    if (geminiKey && !sandbox) {
+      try {
+        const { wavBuffer, voiceUsed } = await synthesizeSpeechWithGemini38FlashTTS({
+          text: spokenText,
+          matchedVoice,
+          detectedTone,
+          fundamentalFrequency,
+        });
+
+        return new Response(new Uint8Array(wavBuffer), {
+          status: 200,
+          headers: {
+            'Content-Type': 'audio/wav',
+            'Content-Length': String(wavBuffer.length),
+            'Cache-Control': 'public, max-age=86400',
+            'x-ai-source': 'GEMINI_3_8_FLASH_TTS',
+            'x-voice-name': voiceUsed,
+            'x-voice-profile-id': voiceProfileId,
+          },
+        });
+      } catch (geminiTtsErr) {
+        console.warn('[voice-synthesize] Gemini 3.8 Flash TTS error:', geminiTtsErr);
+      }
+    }
+
+    // 2. Secondary Engine: ElevenLabs (if configured)
     const voiceApiKey =
       process.env.VOICE_CLONE_API_KEY ||
       process.env.ELEVENLABS_API_KEY ||
       process.env.CARTESIA_API_KEY ||
       '';
 
-    // 1. If no paid voice cloning API key is configured, tell client to use calibrated local engine or user recorded voice
-    if (!voiceApiKey) {
-      return NextResponse.json({
-        useLocalSynthesis: true,
-        text: spokenText,
-        voiceProfileId,
-        detectedTone,
-        source: 'LOCAL_SPEECH_SYNTHESIS',
-      });
-    }
-
-    // 2. ElevenLabs Instant Voice Cloning / TTS Integration
-    if (process.env.ELEVENLABS_API_KEY || process.env.VOICE_CLONE_API_KEY) {
+    if (voiceApiKey && (process.env.ELEVENLABS_API_KEY || process.env.VOICE_CLONE_API_KEY)) {
       const apiKey = process.env.ELEVENLABS_API_KEY || process.env.VOICE_CLONE_API_KEY;
       const voiceId = voiceProfileId.startsWith('voice_aya_')
-        ? '21m00Tcm4TlvDq8ikWAM' // Default neutral voice if custom cloned voice ID hasn't been uploaded yet
+        ? '21m00Tcm4TlvDq8ikWAM'
         : voiceProfileId;
 
       const elevenRes = await fetch(
@@ -81,23 +101,15 @@ export async function POST(req: NextRequest) {
           },
         });
       }
-
-      console.warn(
-        '[API voice-synthesize] ElevenLabs error, falling back to local synthesis:',
-        elevenRes.status
-      );
     }
 
-    // 3. Graceful fallback to local synthetic audio buffer
-    const fallbackBuffer = generateSyntheticWavBuffer(spokenText);
-    return new Response(new Uint8Array(fallbackBuffer), {
-      status: 200,
-      headers: {
-        'Content-Type': 'audio/wav',
-        'Content-Length': String(fallbackBuffer.length),
-        'x-ai-source': 'SANDBOX_MOCK',
-        'x-voice-profile-id': voiceProfileId,
-      },
+    // 3. Fallback to client Web Speech API if offline
+    return NextResponse.json({
+      useLocalSynthesis: true,
+      text: spokenText,
+      voiceProfileId,
+      detectedTone,
+      source: 'LOCAL_SPEECH_SYNTHESIS',
     });
   } catch (err: any) {
     console.error('[API voice-synthesize error]', err);
