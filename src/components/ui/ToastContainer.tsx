@@ -10,7 +10,7 @@ export const ToastContainer: React.FC = () => {
 
   return (
     <div
-      className="fixed top-3 left-0 right-0 z-50 flex flex-col items-center pointer-events-none px-4 space-y-2 select-none"
+      className="fixed top-[calc(env(safe-area-inset-top,0px)+0.75rem)] left-0 right-0 z-50 flex flex-col items-center pointer-events-none px-4 space-y-2 select-none"
       data-testid="toast-container"
     >
       <AnimatePresence>

@@ -66,7 +66,7 @@ export const MobileTopHeader: React.FC = () => {
   return (
     <header
       data-testid="mobile-top-header"
-      className="lg:hidden sticky top-0 z-40 w-full bg-white/85 backdrop-blur-2xl border-b border-purple-100/80 px-3.5 pt-2 pb-1.5 transition-all shadow-[0_2px_16px_rgba(100,70,160,0.05)] space-y-1.5 select-none"
+      className="lg:hidden sticky top-0 z-40 w-full bg-white/85 backdrop-blur-2xl border-b border-purple-100/80 px-3.5 pt-[calc(env(safe-area-inset-top,0px)+0.5rem)] pb-1.5 transition-all shadow-[0_2px_16px_rgba(100,70,160,0.05)] space-y-1.5 select-none"
     >
       {/* 1. Fila Principal: Título Editorial a la izquierda, Acción rápida contextual a la derecha */}
       <div className="flex items-center justify-between gap-3">

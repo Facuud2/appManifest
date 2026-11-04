@@ -39,7 +39,7 @@ export const BottomNavigation: React.FC = () => {
       {/* 2. Dock cápsula compacta estilo iOS 18 */}
       <div
         data-testid="ios-floating-tabbar-wrap"
-        className="lg:hidden fixed bottom-[max(env(safe-area-inset-bottom),10px)] left-0 right-0 z-40 px-3 pointer-events-none flex justify-center"
+        className="lg:hidden fixed bottom-[max(env(safe-area-inset-bottom,0px),10px)] left-0 right-0 z-40 px-3 pointer-events-none flex justify-center"
       >
         <nav
           role="navigation"

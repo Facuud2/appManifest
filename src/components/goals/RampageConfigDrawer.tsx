@@ -894,7 +894,7 @@ export const RampageConfigDrawer: React.FC<RampageConfigDrawerProps> = ({
           <div className="pt-3 pb-1 bg-manifest-surfaceElevated shrink-0">
             <Drawer.Handle
               data-testid="ios-sheet-grabber"
-              className="mx-auto w-12 h-1.5 rounded-full bg-manifest-inkMuted/30 cursor-grab active:cursor-grabbing"
+              className="mx-auto w-12 h-1.5 rounded-full bg-manifest-inkMuted/30 cursor-grab active:cursor-grabbing touch-none"
             />
           </div>
           {renderContent}

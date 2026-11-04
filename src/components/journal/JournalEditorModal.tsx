@@ -520,12 +520,12 @@ export const JournalEditorModal: React.FC = () => {
         <Drawer.Overlay className="fixed inset-0 z-50 bg-slate-900/35 backdrop-blur-sm" />
         <Drawer.Content
           data-testid="journal-vaul-drawer"
-          className="fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2rem] border-t border-purple-200/80 bg-white/98 backdrop-blur-2xl p-5 sm:p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_-12px_40px_rgba(30,20,50,0.14)] outline-none flex flex-col max-h-[92dvh]"
+          className="fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2rem] border-t border-purple-200/80 bg-white/98 backdrop-blur-2xl p-5 sm:p-6 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] shadow-[0_-12px_40px_rgba(30,20,50,0.14)] outline-none flex flex-col max-h-[92dvh]"
         >
           {/* iOS Native Grabber Handle */}
           <Drawer.Handle
             data-testid="ios-sheet-grabber"
-            className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-slate-300 mb-2 cursor-grab active:cursor-grabbing"
+            className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-slate-300 mb-2 cursor-grab active:cursor-grabbing touch-none"
           />
 
           <Drawer.Title className="sr-only">{getModalTitle()}</Drawer.Title>

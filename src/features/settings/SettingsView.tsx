@@ -369,7 +369,7 @@ export const SettingsView: React.FC = () => {
                   value={nameInput}
                   onChange={(e) => setNameInput(e.target.value)}
                   placeholder="Tu nombre o apelativo íntimo..."
-                  className="flex-1 min-w-0 px-3 py-2 rounded-xl glass-input text-xs"
+                  className="flex-1 min-w-0 px-3 py-2 rounded-xl glass-input text-base sm:text-xs"
                 />
                 <motion.button
                   whileTap={IOS_TAP_SPRING}
@@ -418,7 +418,7 @@ export const SettingsView: React.FC = () => {
             value={newAffirmation}
             onChange={(e) => setNewAffirmation(e.target.value)}
             placeholder="Añade una nueva afirmación que te inspire..."
-            className="flex-1 min-w-0 px-3 py-2 rounded-xl glass-input text-xs"
+            className="flex-1 min-w-0 px-3 py-2 rounded-xl glass-input text-base sm:text-xs"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();

@@ -51,7 +51,7 @@ export const OfflineBanner: React.FC = () => {
             exit={{ opacity: 0, y: -24 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             data-testid="offline-banner"
-            className="w-full bg-manifest-surfaceNav/95 backdrop-blur-md border-b border-amber-500/30 px-3.5 py-2 text-manifest-ink select-none relative z-40 shadow-sm"
+            className="w-full bg-manifest-surfaceNav/95 backdrop-blur-md border-b border-amber-500/30 px-3.5 pt-[calc(env(safe-area-inset-top,0px)+0.5rem)] pb-2 text-manifest-ink select-none relative z-40 shadow-sm"
           >
             <div className="max-w-2xl mx-auto flex items-center justify-between gap-2.5">
               <div className="flex items-center gap-2 min-w-0">

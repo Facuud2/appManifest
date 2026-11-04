@@ -146,11 +146,15 @@ export const JournalView: React.FC = () => {
       <div className="relative">
         <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
         <input
-          type="text"
+          type="search"
+          enterKeyHint="search"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="none"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Buscar notas o revelaciones en tu grimorio..."
-          className="w-full pl-9 pr-8 py-2 rounded-xl bg-white border border-purple-200/80 shadow-xs text-xs text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-400/20 outline-none"
+          className="w-full pl-9 pr-8 py-2 rounded-xl bg-white border border-purple-200/80 shadow-xs text-base sm:text-xs text-slate-900 placeholder:text-slate-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-400/20 outline-none"
         />
         {searchQuery && (
           <button

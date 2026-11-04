@@ -2,6 +2,9 @@ import type { Config } from "tailwindcss";
 import konstaConfig from "konsta/config";
 
 const config: Config = konstaConfig({
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
   konsta: {
     colors: {
       primary: "#A78BFA",
@@ -15,6 +18,12 @@ const config: Config = konstaConfig({
   ],
   theme: {
     extend: {
+      minHeight: {
+        screen: '100dvh',
+      },
+      height: {
+        screen: '100dvh',
+      },
       colors: {
         manifest: {
           // Liquid Glass Semantic Colors mapped to CSS Variables

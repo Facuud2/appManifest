@@ -251,7 +251,7 @@ export const SignsView: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="w-full max-w-sm rounded-3xl glass-card border border-manifest-glassBorder shadow-liquid p-5 space-y-4 max-h-[90vh] overflow-y-auto tarot-card-border"
+              className="w-full max-w-sm rounded-3xl glass-card border border-manifest-glassBorder shadow-liquid p-5 space-y-4 max-h-[90dvh] overflow-y-auto overscroll-contain touch-pan-y tarot-card-border"
             >
               <div className="flex items-center justify-between pb-2 border-b border-purple-900/30">
                 <h3 className="font-serif text-sm font-bold text-manifest-ink flex items-center gap-1.5">
@@ -274,7 +274,7 @@ export const SignsView: React.FC = () => {
                   <select
                     value={signType}
                     onChange={(e) => setSignType(e.target.value as SignType)}
-                    className="w-full px-3 py-2 rounded-xl glass-input text-xs"
+                    className="w-full px-3 py-2 rounded-xl glass-input text-base sm:text-xs"
                   >
                     {SIGN_TYPES.map((t) => (
                       <option key={t.key} value={t.key} className="bg-manifest-surfaceElevated text-manifest-ink">
@@ -308,7 +308,7 @@ export const SignsView: React.FC = () => {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Ej: Secuencia 444 en la matrícula de un auto..."
-                    className="w-full px-3 py-2 rounded-xl glass-input text-xs font-bold text-manifest-ink placeholder:text-manifest-inkMuted/40"
+                    className="w-full px-3 py-2 rounded-xl glass-input text-base sm:text-xs font-bold text-manifest-ink placeholder:text-manifest-inkMuted/40"
                   />
                 </div>
 
@@ -320,7 +320,7 @@ export const SignsView: React.FC = () => {
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-xl glass-input text-xs"
+                    className="w-full px-3 py-1.5 rounded-xl glass-input text-base sm:text-xs"
                   />
                 </div>
 
@@ -333,7 +333,7 @@ export const SignsView: React.FC = () => {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="¿En qué estabas pensando justo antes? ¿Qué detalles ocurrieron en ese instante?"
-                    className="w-full px-3 py-2 rounded-xl glass-input text-xs resize-none placeholder:text-manifest-inkMuted/40"
+                    className="w-full px-3 py-2 rounded-xl glass-input text-base sm:text-xs resize-none placeholder:text-manifest-inkMuted/40"
                   />
                 </div>
 
@@ -346,7 +346,7 @@ export const SignsView: React.FC = () => {
                     value={feeling}
                     onChange={(e) => setFeeling(e.target.value)}
                     placeholder="Paz repentina, confirmación, sonrisa interior..."
-                    className="w-full px-3 py-2 rounded-xl glass-input text-xs placeholder:text-manifest-inkMuted/40"
+                    className="w-full px-3 py-2 rounded-xl glass-input text-base sm:text-xs placeholder:text-manifest-inkMuted/40"
                   />
                 </div>
 
@@ -358,7 +358,7 @@ export const SignsView: React.FC = () => {
                     <select
                       value={linkedGoalId}
                       onChange={(e) => setLinkedGoalId(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl glass-input text-xs"
+                      className="w-full px-3 py-2 rounded-xl glass-input text-base sm:text-xs"
                     >
                       <option value="" className="bg-manifest-surfaceElevated text-manifest-ink">Ninguna intención asociada</option>
                       {goals.map((g) => (

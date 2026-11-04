@@ -75,7 +75,7 @@ export const SlowNetworkBanner: React.FC = () => {
           exit={{ opacity: 0, height: 0 }}
           transition={{ duration: 0.3 }}
           data-testid="slow-network-banner"
-          className="w-full bg-manifest-surfaceNav/95 backdrop-blur-md border-b border-manifest-glassBorder px-3.5 py-2 text-manifest-ink select-none relative z-40 shadow-xs"
+          className="w-full bg-manifest-surfaceNav/95 backdrop-blur-md border-b border-manifest-glassBorder px-3.5 pt-[calc(env(safe-area-inset-top,0px)+0.5rem)] pb-2 text-manifest-ink select-none relative z-40 shadow-xs"
         >
           <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5">
             <div className="flex items-center gap-2.5 w-full sm:w-auto">

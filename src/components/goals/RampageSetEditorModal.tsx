@@ -437,7 +437,7 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
                       type="text"
                       autoFocus
                       placeholder="Ej: Abundancia, Paz Serena, Éxito"
-                      className={`w-full p-2.5 sm:p-3 pr-10 rounded-xl glass-input text-xs sm:text-sm placeholder:text-manifest-inkMuted/40 transition-all focus:outline-none ${
+                      className={`w-full p-2.5 sm:p-3 pr-10 rounded-xl glass-input text-base sm:text-sm placeholder:text-manifest-inkMuted/40 transition-all focus:outline-none ${
                         errors.title
                           ? 'border-rose-400 ring-2 ring-rose-400/50'
                           : watch('title')?.trim().length > 0
@@ -695,7 +695,7 @@ export const RampageSetEditorModal: React.FC<RampageSetEditorModalProps> = ({
           <div className="pt-3 pb-1 bg-manifest-surfaceNav/95 shrink-0">
             <Drawer.Handle
               data-testid="ios-sheet-grabber"
-              className="mx-auto w-12 h-1.5 rounded-full bg-manifest-inkMuted/30 cursor-grab active:cursor-grabbing"
+              className="mx-auto w-12 h-1.5 rounded-full bg-manifest-inkMuted/30 cursor-grab active:cursor-grabbing touch-none"
             />
           </div>
 

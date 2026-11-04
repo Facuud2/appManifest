@@ -280,13 +280,13 @@ export const JournalEntryDetailModal: React.FC<JournalEntryDetailModalProps> = (
         />
         <Drawer.Content
           data-testid="journal-detail-modal"
-          className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2rem] border-t border-manifest-glassBorder bg-manifest-surfaceNav/98 backdrop-blur-2xl p-5 sm:p-7 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-liquid outline-none flex flex-col max-h-[90dvh] overflow-y-auto overscroll-contain touch-pan-y select-none overflow-hidden`}
+          className={`fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-lg rounded-t-[2rem] border-t border-manifest-glassBorder bg-manifest-surfaceNav/98 backdrop-blur-2xl p-5 sm:p-7 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] shadow-liquid outline-none flex flex-col max-h-[90dvh] overflow-y-auto overscroll-contain touch-pan-y select-none overflow-hidden`}
           data-vaul-no-drag=""
         >
           {/* iOS Native Grabber Handle */}
           <Drawer.Handle
             data-testid="ios-sheet-grabber"
-            className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-purple-300/25 mb-4 cursor-grab active:cursor-grabbing relative z-10"
+            className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-purple-300/25 mb-4 cursor-grab active:cursor-grabbing relative z-10 touch-none"
           />
 
           <Drawer.Title className="sr-only">

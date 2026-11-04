@@ -252,7 +252,7 @@ export const TrackingView: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-sm rounded-3xl glass-card p-5 border border-white shadow-liquid space-y-4 max-h-[90vh] overflow-y-auto"
+              className="w-full max-w-sm rounded-3xl glass-card p-5 border border-white shadow-liquid space-y-4 max-h-[90dvh] overflow-y-auto overscroll-contain touch-pan-y"
             >
               <div className="flex items-center justify-between pb-2 border-b border-white/70">
                 <h3 className="font-serif text-sm font-bold text-manifest-ink">
@@ -276,7 +276,7 @@ export const TrackingView: React.FC = () => {
                     value={highlights}
                     onChange={(e) => setHighlights(e.target.value)}
                     placeholder="Un encuentro, un avance, una sonrisa..."
-                    className="w-full px-3 py-2 rounded-xl glass-input text-xs resize-none"
+                    className="w-full px-3 py-2 rounded-xl glass-input text-base sm:text-xs resize-none"
                   />
                 </div>
 
@@ -289,7 +289,7 @@ export const TrackingView: React.FC = () => {
                     value={learnings}
                     onChange={(e) => setLearnings(e.target.value)}
                     placeholder="Una nueva perspectiva sobre ti..."
-                    className="w-full px-3 py-2 rounded-xl glass-input text-xs resize-none"
+                    className="w-full px-3 py-2 rounded-xl glass-input text-base sm:text-xs resize-none"
                   />
                 </div>
 
@@ -302,7 +302,7 @@ export const TrackingView: React.FC = () => {
                     value={gratitude}
                     onChange={(e) => setGratitude(e.target.value)}
                     placeholder="Tres razones sencillas para agradecer..."
-                    className="w-full px-3 py-2 rounded-xl glass-input text-xs resize-none"
+                    className="w-full px-3 py-2 rounded-xl glass-input text-base sm:text-xs resize-none"
                   />
                 </div>
               </div>

@@ -109,7 +109,7 @@ export const ReleaseRitual: React.FC = () => {
                 value={fearContent}
                 onChange={(e) => setFearContent(e.target.value)}
                 placeholder="Escribe aquí ese pensamiento limitante, esa duda, ese miedo o esa sombra que sientes que pesa en tu pecho... Este pergamino arderá en el fuego sagrado."
-                className="w-full mt-3 bg-transparent border-none focus:outline-none text-xs md:text-sm leading-relaxed text-manifest-ink placeholder:text-manifest-inkLight/40 resize-none font-sans"
+                className="w-full mt-3 bg-transparent border-none focus:outline-none text-base md:text-sm leading-relaxed text-manifest-ink placeholder:text-manifest-inkLight/40 resize-none font-sans"
               />
 
               <div className="pt-2 text-[10px] text-amber-300/60 text-right">
@@ -160,7 +160,7 @@ export const ReleaseRitual: React.FC = () => {
                     value={whyAffects}
                     onChange={(e) => setWhyAffects(e.target.value)}
                     placeholder="Respuesta breve o intuitiva..."
-                    className="w-full px-3 py-2 rounded-xl glass-input text-xs"
+                    className="w-full px-3 py-2 rounded-xl glass-input text-base sm:text-xs"
                   />
                 </div>
 
@@ -173,7 +173,7 @@ export const ReleaseRitual: React.FC = () => {
                     value={learned}
                     onChange={(e) => setLearned(e.target.value)}
                     placeholder="Lo que me enseña sobre mis límites o anhelos..."
-                    className="w-full px-3 py-2 rounded-xl glass-input text-xs"
+                    className="w-full px-3 py-2 rounded-xl glass-input text-base sm:text-xs"
                   />
                 </div>
 
@@ -186,7 +186,7 @@ export const ReleaseRitual: React.FC = () => {
                     value={chooseNow}
                     onChange={(e) => setChooseNow(e.target.value)}
                     placeholder="Elijo la confianza, la liviandad, el poder personal..."
-                    className="w-full px-3 py-2 rounded-xl glass-input text-xs"
+                    className="w-full px-3 py-2 rounded-xl glass-input text-base sm:text-xs"
                   />
                 </div>
               </div>

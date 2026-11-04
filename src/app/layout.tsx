@@ -41,13 +41,14 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#E8E8E8',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: 'cover',
   interactiveWidget: 'resizes-content',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#FAF9FD' },
+    { media: '(prefers-color-scheme: dark)', color: '#0A0812' },
+  ],
 };
 
 export default function RootLayout({
@@ -60,6 +61,7 @@ export default function RootLayout({
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="color-scheme" content="light dark" />
         <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/icons/icon.svg" />
         <script
@@ -85,86 +87,6 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                // PWA Overscroll Boundary Lock: Bloquea el rubber-band elástico al no haber elementos arriba o abajo
-                (function initPwaScrollLock() {
-                  var startY = 0;
-                  var startX = 0;
-
-                  function isScrollableEl(el) {
-                    if (!el || el === document.body || el === document.documentElement) return false;
-                    var style = window.getComputedStyle(el);
-                    var overflowY = style.overflowY;
-                    var canScroll = (overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight;
-                    return canScroll;
-                  }
-
-                  function getScrollableAncestor(node) {
-                    var curr = node;
-                    while (curr && curr !== document.body && curr !== document.documentElement) {
-                      if (isScrollableEl(curr)) return curr;
-                      curr = curr.parentElement;
-                    }
-                    return null;
-                  }
-
-                  function handleTouchStart(e) {
-                    if (!e.touches || e.touches.length === 0) return;
-                    startY = e.touches[0].clientY;
-                    startX = e.touches[0].clientX;
-                  }
-
-                  function handleTouchMove(e) {
-                    if (!e.touches || e.touches.length === 0) return;
-                    var curY = e.touches[0].clientY;
-                    var curX = e.touches[0].clientX;
-                    var deltaY = curY - startY;
-                    var deltaX = curX - startX;
-
-                    if (Math.abs(deltaY) < 1) return;
-                    if (Math.abs(deltaX) > Math.abs(deltaY)) return;
-
-                    var target = e.target;
-                    var scrollable = getScrollableAncestor(target);
-
-                    if (scrollable) {
-                      var scrollTop = scrollable.scrollTop;
-                      var isAtTop = scrollTop <= 0;
-                      var isAtBottom = scrollTop + scrollable.clientHeight >= scrollable.scrollHeight - 1;
-
-                      if (deltaY > 0 && isAtTop) {
-                        if (e.cancelable) e.preventDefault();
-                      } else if (deltaY < 0 && isAtBottom) {
-                        if (e.cancelable) e.preventDefault();
-                      }
-                    } else {
-                      var doc = document.documentElement;
-                      var body = document.body;
-                      var sTop = window.scrollY || doc.scrollTop || (body ? body.scrollTop : 0) || 0;
-                      var sHeight = Math.max(doc.scrollHeight, body ? body.scrollHeight : 0);
-                      var cHeight = window.innerHeight || doc.clientHeight;
-                      var hasScroll = sHeight > cHeight + 2;
-
-                      if (!hasScroll) {
-                        if (e.cancelable) e.preventDefault();
-                      } else {
-                        var atTop = sTop <= 0;
-                        var atBottom = sTop + cHeight >= sHeight - 2;
-
-                        if (deltaY > 0 && atTop) {
-                          if (e.cancelable) e.preventDefault();
-                        } else if (deltaY < 0 && atBottom) {
-                          if (e.cancelable) e.preventDefault();
-                        }
-                      }
-                    }
-                  }
-
-                  window.addEventListener('touchstart', handleTouchStart, { passive: true });
-                  window.addEventListener('touchmove', handleTouchMove, { passive: false });
-                  document.addEventListener('touchstart', handleTouchStart, { passive: true });
-                  document.addEventListener('touchmove', handleTouchMove, { passive: false });
-                })();
-
                 function purgeNetlifyBadge() {
                   var selectors = [
                     '#nl-badge-frame',

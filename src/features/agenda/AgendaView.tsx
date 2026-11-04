@@ -268,7 +268,7 @@ export const AgendaView: React.FC = () => {
                 if (e.key === 'Enter') handleQuickAdd();
               }}
               placeholder={`+ Añadir compromiso rápido para ${viewMode === 'day' ? format(selectedDate, "d 'de' MMMM", { locale: es }) : 'la agenda'}...`}
-              className="flex-1 px-3 py-1.5 rounded-xl glass-input text-xs placeholder:text-manifest-inkLight"
+              className="flex-1 px-3 py-1.5 rounded-xl glass-input text-base sm:text-xs placeholder:text-manifest-inkLight"
             />
             <button
               onClick={handleQuickAdd}
@@ -385,7 +385,7 @@ export const AgendaView: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="w-full max-w-sm rounded-t-3xl sm:rounded-3xl glass-card p-4 sm:p-5 border border-white shadow-liquid space-y-4 max-h-[85vh] overflow-y-auto"
+              className="w-full max-w-sm rounded-t-3xl sm:rounded-3xl glass-card p-4 sm:p-5 border border-white shadow-liquid space-y-4 max-h-[85dvh] overflow-y-auto overscroll-contain touch-pan-y"
             >
               <div className="flex items-center justify-between pb-2 border-b border-white/70">
                 <h3 className="font-serif text-sm font-bold text-manifest-ink">
@@ -439,7 +439,7 @@ export const AgendaView: React.FC = () => {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Ej: Cita de manifestación, Paseo consciente..."
-                    className="w-full px-3 py-2 rounded-xl glass-input text-xs"
+                    className="w-full px-3 py-2 rounded-xl glass-input text-base sm:text-xs"
                   />
                 </div>
 
@@ -452,7 +452,7 @@ export const AgendaView: React.FC = () => {
                       type="date"
                       value={eventDate}
                       onChange={(e) => setEventDate(e.target.value)}
-                      className="w-full px-2.5 py-1.5 rounded-xl glass-input text-xs"
+                      className="w-full px-2.5 py-1.5 rounded-xl glass-input text-base sm:text-xs"
                     />
                   </div>
                   <div>
@@ -463,7 +463,7 @@ export const AgendaView: React.FC = () => {
                       type="time"
                       value={eventTime}
                       onChange={(e) => setEventTime(e.target.value)}
-                      className="w-full px-2.5 py-1.5 rounded-xl glass-input text-xs"
+                      className="w-full px-2.5 py-1.5 rounded-xl glass-input text-base sm:text-xs"
                     />
                   </div>
                 </div>
@@ -477,7 +477,7 @@ export const AgendaView: React.FC = () => {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Detalles para recordarte la intención..."
-                    className="w-full px-3 py-2 rounded-xl glass-input text-xs resize-none"
+                    className="w-full px-3 py-2 rounded-xl glass-input text-base sm:text-xs resize-none"
                   />
                 </div>
 
@@ -489,7 +489,7 @@ export const AgendaView: React.FC = () => {
                     <select
                       value={linkedGoalId}
                       onChange={(e) => setLinkedGoalId(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl glass-input text-xs"
+                      className="w-full px-3 py-2 rounded-xl glass-input text-base sm:text-xs"
                     >
                       <option value="">Ninguna intención</option>
                       {goals.map((g) => (
